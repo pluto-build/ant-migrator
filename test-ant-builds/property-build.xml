@@ -1,9 +1,11 @@
-<project name="PropertyTest" default="echo" basedir=".">
+<project name="PropertyTest" default="PropertyEcho" basedir=".">
 
     <property name="testProperty" value="Hello, world!" />
+    <property name="testRec1" value="1" />
+    <property name="testRec2" value="${testRec1} 2" />
 
-    <target name="echo">
-        <echo message="${testProperty}"/>
+    <target name="PropertyEcho">
+        <echo message="${testProperty} ${testRec2}"/>
     </target>
 
 </project>

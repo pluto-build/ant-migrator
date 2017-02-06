@@ -21,4 +21,8 @@ public class StringUtils {
         c[0] = Character.toUpperCase(c[0]);
         return new String(c);
     }
+
+    public static String javaPrint(String string) {
+        return "\""+string.replace("\n","\\n")+"\"";
+    }
 }

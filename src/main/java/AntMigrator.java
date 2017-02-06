@@ -1,4 +1,6 @@
 import generate.BuilderGenerator;
+import generate.BuilderInputGenerator;
+import generate.NoExpansionPropertyHelper;
 import org.apache.commons.cli.*;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
@@ -59,13 +61,14 @@ public class AntMigrator {
         Project project = new Project();
         File buildFile = new File(line.getOptionValue("bf"));
         project.init();
+        NoExpansionPropertyHelper.getPropertyHelper(project);
         ProjectHelper.configureProject(project, buildFile);
 
 
         Map<String, String> targets = new HashMap<>();
         for (Target target : project.getTargets().values()) {
             if (!target.getName().isEmpty()) {
-                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), target.getName() + "Builder", !line.hasOption("noFD"));
+                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), target.getName() + "Builder", project.getName(), !line.hasOption("noFD"));
                 generator.setCommands(Arrays.asList(target.getTasks()));
                 generator.setDependentBuilders(Collections.list(target.getDependencies()));
                 targets.put(target.getName(), generator.getPrettyPrint());
@@ -73,5 +76,8 @@ public class AntMigrator {
         }
 
         System.out.println(targets);
+
+        BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName()+"Input", project);
+        System.out.println(builderInputGenerator.getPrettyPrint());
     }
 }

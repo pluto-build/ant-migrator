@@ -1,7 +1,9 @@
 package generate;
 
+import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.UnknownElement;
+import org.apache.tools.ant.taskdefs.Java;
 import utils.ReflectionUtils;
 import utils.StringUtils;
 
@@ -14,6 +16,7 @@ import java.util.List;
  */
 public class BuilderGenerator extends Generator {
     private final String name;
+    private final String projectName;
     private final String pkg;
     private final Boolean useFileDependencyDiscovery;
     private List<String> dependentBuilders = new ArrayList<>();
@@ -65,8 +68,9 @@ public class BuilderGenerator extends Generator {
     }
     //</editor-fold>
 
-    public BuilderGenerator(String pkg, String name, Boolean useFileDependencyDiscovery) {
+    public BuilderGenerator(String pkg, String name, String projectName, Boolean useFileDependencyDiscovery) {
         this.name = StringUtils.capitalize(name);
+        this.projectName = StringUtils.capitalize(projectName);
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
         this.pkg = pkg;
     }
@@ -87,7 +91,7 @@ public class BuilderGenerator extends Generator {
     private void generateBuildMethod() {
         this.addImport("java.io.IOException");
         this.printString("@Override\n" +
-                "protected None build(" + getName() + "Input input) throws IOException {", "}");
+                "protected None build(" + this.projectName + "Input input) throws IOException {", "}");
         this.increaseIndentation(1);
 
         for (String fileDep : getDependentFiles()) {
@@ -95,8 +99,8 @@ public class BuilderGenerator extends Generator {
         }
 
         for (String dep : getDependentBuilders()) {
-            this.printString(StringUtils.capitalize(dep) + "Builder." + StringUtils.capitalize(dep) + "BuilderInput " + StringUtils.decapitalize(dep) + "BuilderInput = new " + StringUtils.capitalize(dep) + "Builder." + StringUtils.capitalize(dep) + "BuilderInput();");
-            this.printString("requireBuild(" + StringUtils.capitalize(dep) + "Builder.factory, " + StringUtils.decapitalize(dep) + "BuilderInput);");
+            this.printString(this.projectName + "Input " + StringUtils.decapitalize(dep) + "Input = new " + this.projectName + "Input();");
+            this.printString("requireBuild(" + StringUtils.capitalize(dep) + "Builder.factory, " + StringUtils.decapitalize(dep) + "Input);");
         }
 
         addImport("org.apache.tools.ant.Project");
@@ -104,6 +108,8 @@ public class BuilderGenerator extends Generator {
         printString("project.addBuildListener(new PlutoBuildListener());");
         for (Task t : getCommands()) {
             if (t instanceof UnknownElement) {
+                PropertyResolver resolver = new PropertyResolver(t.getProject(), "input");
+
                 UnknownElement element = (UnknownElement) t;
                 String fullyQualifiedTaskdefName = "org.apache.tools.ant.taskdefs." + StringUtils.capitalize(t.getTaskName());
                 addImport(fullyQualifiedTaskdefName);
@@ -129,19 +135,19 @@ public class BuilderGenerator extends Generator {
                                 e.printStackTrace();
                             }
 
-                            String argument = "\"" + o.toString() + "\"";
+                            String argument = StringUtils.javaPrint(o.toString());
                             if (argumentClass.getName().equals("boolean")) {
                                 // We expect a boolean, use true or false as values without wrapping into a string.
-                                argument = o.toString();
+                                argument = resolver.getExpandedValue(o.toString());
                             } else if (!argumentClass.getName().equals("java.lang.String")) {
                                 // Not a string. Use single argument constructor from single string...
                                 // This might not exist resulting in a type error in the resulting migrated Script
                                 // TODO: Search for factory methods...
                                 addImport(argumentClass.getName());
-                                argument = "new " + argumentClass.getSimpleName() + "(\"" + o.toString() + "\")";
+                                argument = "new " + argumentClass.getSimpleName() + "(" + resolver.getExpandedValue(argument) + ")";
                             }
 
-                            this.printString(taskName + "." + setter + "(" + argument + ");");
+                            this.printString(taskName + "." + setter + "(" + resolver.getExpandedValue(argument) + ");");
                         }
                 );
                 this.printString(taskName + ".execute();");
@@ -159,24 +165,24 @@ public class BuilderGenerator extends Generator {
     private void generateClass() {
         this.addImport("build.pluto.builder.Builder");
         this.addImport("build.pluto.output.None");
-        this.printString("public class " + getName() + " extends Builder<" + getName() + "Input, None> {", "}");
+        this.printString("public class " + getName() + " extends Builder<" + this.projectName + "Input, None> {", "}");
         this.increaseIndentation(1);
         this.addImport("build.pluto.builder.factory.BuilderFactory");
         this.addImport("build.pluto.builder.factory.BuilderFactoryFactory");
-        this.printString("public static BuilderFactory<" + getName() + "Input, None, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + getName() + "Input.class);");
+        this.printString("public static BuilderFactory<" + this.projectName + "Input, None, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.projectName + "Input.class);");
 
-        generateInputClass();
+        //generateInputClass();
 
-        this.printString("public " + getName() + "(" + getName() + "Input input) { super(input); }");
+        this.printString("public " + getName() + "(" + this.projectName + "Input input) { super(input); }");
 
         this.printString("@Override\n" +
-                "protected String description(" + getName() + "Input input) {\n" +
+                "protected String description(" + this.projectName + "Input input) {\n" +
                 "  return \"Builder " + getName() + ": \" + input;\n" +
                 "}");
 
         this.addImport("java.io.File");
         this.printString("@Override\n" +
-                "public File persistentPath(" + getName() + "Input input) {\n" +
+                "public File persistentPath(" + this.projectName + "Input input) {\n" +
                 "  return new File(\"deps/" + getName() + ".dep\");\n" +
                 "}");
 
