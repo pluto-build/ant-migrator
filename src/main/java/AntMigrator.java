@@ -1,12 +1,19 @@
+import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import generate.BuilderGenerator;
 import generate.BuilderInputGenerator;
+import generate.BuilderMainGenerator;
 import generate.NoExpansionPropertyHelper;
 import org.apache.commons.cli.*;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
 import org.apache.tools.ant.Target;
+import utils.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +46,16 @@ public class AntMigrator {
                 .longOpt("noFileDependencyDiscovery")
                 .desc("Switches off file dependency discovery (not recommended).")
                 .build());
+        options.addOption(Option.builder("od")
+                .longOpt("outputDirectory")
+                .required(false)
+                .hasArg()
+                .desc("Specifies output directory for the produced pluto buildfiles (Prints to console if not specified).")
+                .build());
+        options.addOption(Option.builder("m")
+                .longOpt("main")
+                .desc("Generate a main class")
+                .build());
 
         CommandLineParser parser = new DefaultParser();
         CommandLine line;
@@ -65,19 +82,46 @@ public class AntMigrator {
         ProjectHelper.configureProject(project, buildFile);
 
 
-        Map<String, String> targets = new HashMap<>();
+        Map<String, String> files = new HashMap<>();
         for (Target target : project.getTargets().values()) {
             if (!target.getName().isEmpty()) {
                 BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), target.getName() + "Builder", project.getName(), !line.hasOption("noFD"));
                 generator.setCommands(Arrays.asList(target.getTasks()));
                 generator.setDependentBuilders(Collections.list(target.getDependencies()));
-                targets.put(target.getName(), generator.getPrettyPrint());
+                files.put(StringUtils.capitalize(target.getName()) + "Builder.java", generator.getPrettyPrint());
             }
         }
 
-        System.out.println(targets);
+        BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName() + "Input", project);
+        files.put(project.getName() + "Input.java", builderInputGenerator.getPrettyPrint());
 
-        BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName()+"Input", project);
-        System.out.println(builderInputGenerator.getPrettyPrint());
+        String plutoBuildListener = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoBuildListener.java").toURI())));
+        files.put("PlutoBuildListener.java", plutoBuildListener.replace("<pkg>", line.getOptionValue("pkg")));
+
+        if (line.hasOption("m")) {
+            BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), project.getDefaultTarget());
+            files.put(project.getName() + ".java", mainGenerator.getPrettyPrint());
+        }
+
+        for (Map.Entry<String, String> entry : files.entrySet()) {
+            if (line.hasOption("od")) {
+                writeJavaFile(line.getOptionValue("od"), line.getOptionValue("pkg"), entry.getKey(), entry.getValue());
+            } else {
+                System.out.println(entry.getKey());
+                System.out.println("------------------------");
+                System.out.println(entry.getValue());
+                System.out.println();
+            }
+        }
+    }
+
+    private static void writeJavaFile(String baseDir, String pkg, String name, String content) throws IOException {
+        Path dir = Paths.get(baseDir);
+        dir = dir.resolve(pkg.replace(".", "/"));
+        Files.createDirectories(dir);
+
+        Path file = dir.resolve(StringUtils.capitalize(name));
+        System.out.println("Writing: " + file);
+        Files.write(file, content.getBytes());
     }
 }

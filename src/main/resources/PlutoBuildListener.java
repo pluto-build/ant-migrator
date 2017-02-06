@@ -1,4 +1,4 @@
-package build.pluto.plutoanttester;
+package <pkg>;
 
 import org.apache.tools.ant.BuildEvent;
 import org.apache.tools.ant.BuildListener;

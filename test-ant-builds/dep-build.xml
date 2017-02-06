@@ -1,4 +1,4 @@
-<project name="EchoTest" default="echo" basedir=".">
+<project name="DepTest" default="echo" basedir=".">
 
     <target name="echo" depends="download">
         <echo message="Hello, world"/>
