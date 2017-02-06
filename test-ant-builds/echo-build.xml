@@ -1,0 +1,9 @@
+<project name="EchoTest" default="echo" basedir=".">
+
+    <target name="echo">
+        <echo message="Hello, world"/>
+        <get src="http://manuel.weiel.eu/wp-content/uploads/pluto-incremental-build.pdf" dest="pluto-incremental-build.pdf"/>
+        <copy file="pluto-incremental-build.pdf" todir="test/" overwrite="true" />
+    </target>
+
+</project>

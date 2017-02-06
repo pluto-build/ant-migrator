@@ -1,0 +1,14 @@
+<project name="EchoTest" default="echo" basedir=".">
+
+    <target name="echo" depends="download">
+        <echo message="Hello, world"/>
+        <move file="pluto-incremental-build.pdf" todir="test/" overwrite="true" />
+        <zip destfile="pluto-test.zip" basedir="test/" filesonly="true"/>
+        <echo message="Complete!"/>
+    </target>
+
+    <target name="download">
+        <get src="http://manuel.weiel.eu/wp-content/uploads/pluto-incremental-build.pdf" dest="pluto-incremental-build.pdf"/>
+    </target>
+
+</project>
