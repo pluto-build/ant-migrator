@@ -1,3 +1,6 @@
+<!--
+  -bf test-ant-builds/dep-build.xml -noFD -pkg build.pluto.plutoanttester.deptest -od ./test-ant-builds/dep-build/ -m
+-->
 <project name="DepTest" default="echo" basedir=".">
 
     <target name="echo" depends="download">

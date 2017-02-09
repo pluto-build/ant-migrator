@@ -10,9 +10,11 @@ public class BuilderMainGenerator extends Generator {
     private final String pkg;
     private final String name;
     private final String defTarget;
+    private final NamingManager namingManager;
 
     public BuilderMainGenerator(String pkg, String name, String defTarget) {
-        this.name = name;
+        this.namingManager = new NamingManager();
+        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name));
         this.pkg = pkg;
         this.defTarget = defTarget;
     }
@@ -25,7 +27,7 @@ public class BuilderMainGenerator extends Generator {
         this.printString("import build.pluto.builder.BuildManagers;");
         this.printString("import build.pluto.builder.BuildRequest;");
 
-        this.printString("public class "+ StringUtils.capitalize(name)+" {", "}");
+        this.printString("public class "+ name +" {", "}");
         this.increaseIndentation(1);
 
         this.printString("public static void main(String[] args) throws Throwable {", "}");

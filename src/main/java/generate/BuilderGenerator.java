@@ -142,7 +142,7 @@ public class BuilderGenerator extends Generator {
                             String argument = StringUtils.javaPrint(o.toString());
                             if (argumentClass.getName().equals("boolean")) {
                                 // We expect a boolean, use true or false as values without wrapping into a string.
-                                argument = resolver.getExpandedValue(o.toString());
+                                argument = "Boolean.valueOf(\""+resolver.getExpandedValue(o.toString())+"\")";
                             } else if (!argumentClass.getName().equals("java.lang.String")) {
                                 // Not a string. Use single argument constructor from single string...
                                 // This might not exist resulting in a type error in the resulting migrated Script
