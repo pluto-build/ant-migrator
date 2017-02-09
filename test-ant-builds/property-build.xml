@@ -1,11 +1,17 @@
+<!--
+  -bf test-ant-builds/property-build.xml -noFD -pkg build.pluto.plutoanttester.propertytest -od ./test-ant-builds/property-build/ -m
+-->
 <project name="PropertyTest" default="PropertyEcho" basedir=".">
 
     <property name="testProperty" value="Hello, world!" />
     <property name="testRec1" value="1" />
     <property name="testRec2" value="${testRec1} 2" />
+    <property name="append" value="true" />
 
     <target name="PropertyEcho">
         <echo message="${testProperty} ${testRec2}"/>
+        <echo message="This is test\n" file="result.txt" append="false"/>
+        <echo message="This should be appended...\n" file="result.txt" append="${append}"/>
     </target>
 
 </project>
