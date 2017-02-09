@@ -1,9 +1,7 @@
 package generate;
 
-import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.UnknownElement;
-import org.apache.tools.ant.taskdefs.Java;
 import utils.ReflectionUtils;
 import utils.StringUtils;
 
@@ -16,6 +14,7 @@ import java.util.List;
  */
 public class BuilderGenerator extends Generator {
     private final String name;
+
     private final String projectName;
     private final String pkg;
     private final Boolean useFileDependencyDiscovery;
@@ -24,7 +23,7 @@ public class BuilderGenerator extends Generator {
     private List<Task> commands = new ArrayList<>();
     private List<String> imports = new ArrayList<>();
 
-    private NamingManager namingManager = new NamingManager();
+    private final NamingManager namingManager = new NamingManager();
 
     //<editor-fold desc="Getters and Setters" defaultstate="collapsed">
     public List<String> getDependentBuilders() {
@@ -66,11 +65,23 @@ public class BuilderGenerator extends Generator {
     public List<String> getImports() {
         return imports;
     }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public String getInputName() {
+        return getProjectName() + "Input";
+    }
+
+    public NamingManager getNamingManager() {
+        return namingManager;
+    }
     //</editor-fold>
 
     public BuilderGenerator(String pkg, String name, String projectName, Boolean useFileDependencyDiscovery) {
-        this.name = StringUtils.capitalize(name);
-        this.projectName = StringUtils.capitalize(projectName);
+        this.name = getNamingManager().getClassNameFor(StringUtils.capitalize(name));
+        this.projectName = getNamingManager().getClassNameFor(StringUtils.capitalize(projectName));
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
         this.pkg = pkg;
     }
@@ -80,18 +91,10 @@ public class BuilderGenerator extends Generator {
             imports.add(cls);
     }
 
-    private void generateInputClass() {
-        this.addImport("java.io.Serializable");
-        this.addImport(getPkg() + "." + getName() + "." + getName() + "Input");
-        this.printString("public static class " + getName() + "Input implements Serializable {\n" +
-                "  //TODO\n" +
-                "}");
-    }
-
     private void generateBuildMethod() {
         this.addImport("java.io.IOException");
         this.printString("@Override\n" +
-                "protected None build(" + this.projectName + "Input input) throws IOException {", "}");
+                "protected None build(" + this.getInputName() + " input) throws IOException {", "}");
         this.increaseIndentation(1);
 
         for (String fileDep : getDependentFiles()) {
@@ -99,8 +102,9 @@ public class BuilderGenerator extends Generator {
         }
 
         for (String dep : getDependentBuilders()) {
-            this.printString(this.projectName + "Input " + StringUtils.decapitalize(dep) + "Input = new " + this.projectName + "Input();");
-            this.printString("requireBuild(" + StringUtils.capitalize(dep) + "Builder.factory, " + StringUtils.decapitalize(dep) + "Input);");
+            String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(dep));
+            this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
+            this.printString("requireBuild(" + depName + "Builder.factory, " + StringUtils.decapitalize(depName) + "Input);");
         }
 
         addImport("org.apache.tools.ant.Project");
@@ -115,7 +119,7 @@ public class BuilderGenerator extends Generator {
                 addImport(fullyQualifiedTaskdefName);
 
                 String taskClassName = StringUtils.capitalize(t.getTaskName());
-                String taskName = namingManager.getNameFor(StringUtils.decapitalize(t.getTaskName()));
+                String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(t.getTaskName()));
 
                 this.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
                 this.printString(taskName + ".setProject(project);");
@@ -165,24 +169,24 @@ public class BuilderGenerator extends Generator {
     private void generateClass() {
         this.addImport("build.pluto.builder.Builder");
         this.addImport("build.pluto.output.None");
-        this.printString("public class " + getName() + " extends Builder<" + this.projectName + "Input, None> {", "}");
+        this.printString("public class " + getName() + " extends Builder<" + this.getProjectName() + "Input, None> {", "}");
         this.increaseIndentation(1);
         this.addImport("build.pluto.builder.factory.BuilderFactory");
         this.addImport("build.pluto.builder.factory.BuilderFactoryFactory");
-        this.printString("public static BuilderFactory<" + this.projectName + "Input, None, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.projectName + "Input.class);");
+        this.printString("public static BuilderFactory<" + this.getProjectName() + "Input, None, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.getProjectName() + "Input.class);");
 
         //generateInputClass();
 
-        this.printString("public " + getName() + "(" + this.projectName + "Input input) { super(input); }");
+        this.printString("public " + getName() + "(" + this.getProjectName() + "Input input) { super(input); }");
 
         this.printString("@Override\n" +
-                "protected String description(" + this.projectName + "Input input) {\n" +
+                "protected String description(" + this.getProjectName() + "Input input) {\n" +
                 "  return \"Builder " + getName() + ": \" + input;\n" +
                 "}");
 
         this.addImport("java.io.File");
         this.printString("@Override\n" +
-                "public File persistentPath(" + this.projectName + "Input input) {\n" +
+                "public File persistentPath(" + this.getProjectName() + "Input input) {\n" +
                 "  return new File(\"deps/" + getName() + ".dep\");\n" +
                 "}");
 

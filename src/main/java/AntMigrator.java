@@ -1,8 +1,8 @@
-import com.sun.org.apache.bcel.internal.generic.IF_ACMPEQ;
 import generate.BuilderGenerator;
 import generate.BuilderInputGenerator;
 import generate.BuilderMainGenerator;
-import generate.NoExpansionPropertyHelper;
+import generate.NamingManager;
+import generate.anthelpers.NoExpansionPropertyHelper;
 import org.apache.commons.cli.*;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.ProjectHelper;
@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.rmi.Naming;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -85,22 +86,25 @@ public class AntMigrator {
         Map<String, String> files = new HashMap<>();
         for (Target target : project.getTargets().values()) {
             if (!target.getName().isEmpty()) {
+                NamingManager namingManager = new NamingManager();
                 BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), target.getName() + "Builder", project.getName(), !line.hasOption("noFD"));
                 generator.setCommands(Arrays.asList(target.getTasks()));
                 generator.setDependentBuilders(Collections.list(target.getDependencies()));
-                files.put(StringUtils.capitalize(target.getName()) + "Builder.java", generator.getPrettyPrint());
+                files.put(namingManager.getClassNameFor(StringUtils.capitalize(target.getName())) + "Builder.java", generator.getPrettyPrint());
             }
         }
 
+        NamingManager namingManager = new NamingManager();
+
         BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName() + "Input", project);
-        files.put(project.getName() + "Input.java", builderInputGenerator.getPrettyPrint());
+        files.put(namingManager.getClassNameFor(project.getName()) + "Input.java", builderInputGenerator.getPrettyPrint());
 
         String plutoBuildListener = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoBuildListener.java").toURI())));
         files.put("PlutoBuildListener.java", plutoBuildListener.replace("<pkg>", line.getOptionValue("pkg")));
 
         if (line.hasOption("m")) {
             BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), project.getDefaultTarget());
-            files.put(project.getName() + ".java", mainGenerator.getPrettyPrint());
+            files.put(namingManager.getClassNameFor(project.getName()) + ".java", mainGenerator.getPrettyPrint());
         }
 
         for (Map.Entry<String, String> entry : files.entrySet()) {

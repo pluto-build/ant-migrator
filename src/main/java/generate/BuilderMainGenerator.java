@@ -1,6 +1,5 @@
 package generate;
 
-import com.sun.xml.internal.messaging.saaj.soap.StringDataContentHandler;
 import utils.StringUtils;
 
 /**

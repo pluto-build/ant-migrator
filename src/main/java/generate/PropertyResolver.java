@@ -1,7 +1,7 @@
 package generate;
 
+import generate.anthelpers.PlutoExpansionPropertyHelper;
 import org.apache.tools.ant.Project;
-import org.apache.tools.ant.PropertyHelper;
 
 /**
  * Created by manuel on 06.02.17.

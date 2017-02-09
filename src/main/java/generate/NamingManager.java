@@ -20,4 +20,12 @@ public class NamingManager {
         return prefix + (old + 1);
     }
 
+    public String getClassNameFor(String name) {
+        String replaced = name.replace(".", "_").trim();
+        while (replaced.indexOf(" ") > -1) {
+            replaced = replaced.substring(0, replaced.indexOf(" ")) + replaced.toUpperCase().substring(replaced.indexOf(" ")+1, replaced.indexOf(" ") + 2) + replaced.substring(replaced.indexOf(" ")+2);
+        }
+        return replaced;
+    }
+
 }

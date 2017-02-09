@@ -1,6 +1,5 @@
-package generate;
+package generate.anthelpers;
 
-import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.MagicNames;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.PropertyHelper;

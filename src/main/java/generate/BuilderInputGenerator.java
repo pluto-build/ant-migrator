@@ -16,9 +16,11 @@ public class BuilderInputGenerator extends Generator {
     private final Project project;
     private boolean includeEmpty = true;
     private PropertyResolver resolver;
+    private NamingManager namingManager;
 
     public BuilderInputGenerator(String pkg, String name, Project project) {
-        this.name = name;
+        this.namingManager = new NamingManager();
+        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name));
         this.pkg = pkg;
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
@@ -47,8 +49,7 @@ public class BuilderInputGenerator extends Generator {
         this.increaseIndentation(1);
         this.printString("switch (v) {", "}");
         this.increaseIndentation(1);
-        //PropertyHelper propertyHelper = PropertyHelper.getPropertyHelper(project);
-        //propertyHelper.getProperties();
+
         project.getProperties().forEach(
                 (k, v) -> {
                     this.printString("case \"" + k + "\":", "");
