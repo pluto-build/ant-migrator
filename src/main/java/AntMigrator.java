@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.rmi.Naming;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -87,8 +86,8 @@ public class AntMigrator {
         for (Target target : project.getTargets().values()) {
             if (!target.getName().isEmpty()) {
                 NamingManager namingManager = new NamingManager();
-                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), target.getName() + "Builder", project.getName(), !line.hasOption("noFD"));
-                generator.setCommands(Arrays.asList(target.getTasks()));
+                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), target.getName() + "Builder", project, !line.hasOption("noFD"));
+                generator.setTasks(Arrays.asList(target.getTasks()));
                 generator.setDependentBuilders(Collections.list(target.getDependencies()));
                 files.put(namingManager.getClassNameFor(StringUtils.capitalize(target.getName())) + "Builder.java", generator.getPrettyPrint());
             }

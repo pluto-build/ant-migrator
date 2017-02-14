@@ -1,0 +1,13 @@
+<!--
+  -bf test-ant-builds/nested-build.xml -noFD -pkg build.pluto.plutoanttester.nestedtest -od ./test-ant-builds/nested-build/ -m
+-->
+<project name="NestedTest" default="echo" basedir=".">
+
+    <target name="echo">
+        <echo message="Hello, world"/>
+        <zip destfile="result.zip">
+            <zipfileset dir="." prefix="sub"/>
+        </zip>
+    </target>
+
+</project>
