@@ -16,9 +16,7 @@ import java.util.Map;
 /**
  * Created by manuel on 13.12.16.
  */
-public class BuilderInputGenerator extends Generator {
-
-    private final String pkg;
+public class BuilderInputGenerator extends JavaGenerator {
     private final String name;
     private final Project project;
     private boolean includeEmpty = true;
@@ -26,9 +24,9 @@ public class BuilderInputGenerator extends Generator {
     private NamingManager namingManager;
 
     public BuilderInputGenerator(String pkg, String name, Project project) {
+        super(pkg);
         this.namingManager = new NamingManager();
         this.name = namingManager.getClassNameFor(StringUtils.capitalize(name));
-        this.pkg = pkg;
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
     }
@@ -46,8 +44,7 @@ public class BuilderInputGenerator extends Generator {
     public void generatePrettyPrint() {
         super.generatePrettyPrint();
 
-        this.printString("package " + pkg + ";");
-        this.printString("import java.io.Serializable;");
+        this.addImport("java.io.Serializable");
 
         this.printString("public class " + name + " implements Serializable {", "}");
         this.increaseIndentation(1);
@@ -69,12 +66,36 @@ public class BuilderInputGenerator extends Generator {
                     }
                 }
         );
-        this.printString("default:\n" +
-                "  // TODO: Remove prefix and check against environment prefixes...\n" +
-                "  String envValue = System.getenv(v);\n" +
-                "  if (envValue != null)\n" +
-                "    return envValue;\n" +
-                "  return \"\";");
+        String envVars = "";
+        for (String prefix : getEnvPrefixes()) {
+            if (prefix.endsWith("."))
+                prefix = prefix.substring(0, prefix.length()-1);
+            envVars += "\"" + prefix + "\", ";
+        }
+        if (envVars.endsWith(", "))
+            envVars = envVars.substring(0, envVars.length()-2);
+
+        if (!envVars.isEmpty()) {
+            this.addImport("java.util.List");
+            this.addImport("java.util.Arrays");
+            this.printString("default:\n" +
+                    "  if (v.contains(\".\")) {\n" +
+                    "    String prefix = v.substring(0, v.indexOf(\".\"));\n" +
+                    "    String rest = v.substring(v.indexOf(\".\")+1);\n" +
+                    "    List<String> envPrefixes = Arrays.asList(" + envVars + ");\n" +
+                    "\n" +
+                    "    if (envPrefixes.contains(prefix)) {\n" +
+                    "      String envValue = System.getenv(rest);\n" +
+                    "      if (envValue != null)\n" +
+                    "        return envValue;\n" +
+                    "    }\n" +
+                    "  }\n" +
+                    "  return \"\";");
+        } else {
+            this.printString("default:\n" +
+            "  return \"\";"
+            );
+        }
         this.closeOneLevel();
         this.closeOneLevel();
         this.closeOneLevel();

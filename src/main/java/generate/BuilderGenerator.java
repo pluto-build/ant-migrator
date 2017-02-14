@@ -12,16 +12,14 @@ import java.util.List;
 /**
  * Created by manuel on 29.11.16.
  */
-public class BuilderGenerator extends Generator {
+public class BuilderGenerator extends JavaGenerator {
     private final String name;
 
     private final String projectName;
-    private final String pkg;
     private final Boolean useFileDependencyDiscovery;
     private List<String> dependentBuilders = new ArrayList<>();
     private List<String> dependentFiles = new ArrayList<>();
     private List<Task> commands = new ArrayList<>();
-    private List<String> imports = new ArrayList<>();
 
     private final NamingManager namingManager = new NamingManager();
 
@@ -54,16 +52,8 @@ public class BuilderGenerator extends Generator {
         return name;
     }
 
-    public String getPkg() {
-        return pkg;
-    }
-
     public Boolean getUseFileDependencyDiscovery() {
         return useFileDependencyDiscovery;
-    }
-
-    public List<String> getImports() {
-        return imports;
     }
 
     public String getProjectName() {
@@ -80,15 +70,10 @@ public class BuilderGenerator extends Generator {
     //</editor-fold>
 
     public BuilderGenerator(String pkg, String name, String projectName, Boolean useFileDependencyDiscovery) {
+        super(pkg);
         this.name = getNamingManager().getClassNameFor(StringUtils.capitalize(name));
         this.projectName = getNamingManager().getClassNameFor(StringUtils.capitalize(projectName));
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
-        this.pkg = pkg;
-    }
-
-    public void addImport(String cls) {
-        if (!imports.contains(cls))
-            imports.add(cls);
     }
 
     private void generateBuildMethod() {
@@ -213,19 +198,8 @@ public class BuilderGenerator extends Generator {
                 "}");
     }
 
-    private String getImportPrettyPrint() {
-        StringBuilder sb = new StringBuilder();
-        for (String anImport : getImports()) {
-            sb.append("import ").append(anImport).append(";\n");
-        }
-        return sb.toString();
-    }
-
     public void generatePrettyPrint() {
         super.generatePrettyPrint();
-        printString("package " + getPkg() + ";\n");
-        printLater(() -> getImportPrettyPrint());
-        this.printString("");
         generateClass();
     }
 }

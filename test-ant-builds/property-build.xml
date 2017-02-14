@@ -7,11 +7,18 @@
     <property name="testRec1" value="1" />
     <property name="testRec2" value="${testRec1} 2" />
     <property name="append" value="true" />
+    <property environment="env"/>
+    <!--<condition property="noAppend">
+        <not>
+            <equals arg1="${append}" arg2="true"/>
+        </not>
+    </condition>-->
 
     <target name="PropertyEcho">
         <echo message="${testProperty} ${testRec2}"/>
-        <echo message="This is test\n" file="result.txt" append="false"/>
-        <echo message="This should be appended...\n" file="result.txt" append="${append}"/>
+        <echo message="This is test${line.separator}" file="result.txt" append="false"/>
+        <echo message="This should be appended...${line.separator}" file="result.txt" append="${append}"/>
+        <echo message="This is the PATH: ${env.PATH}"/>
     </target>
 
 </project>
