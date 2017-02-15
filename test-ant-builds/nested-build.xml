@@ -7,6 +7,7 @@
         <echo message="Hello, world"/>
         <zip destfile="result.zip">
             <zipfileset dir="." prefix="sub"/>
+            <zipfileset dir="." prefix="sub2"/>
         </zip>
     </target>
 

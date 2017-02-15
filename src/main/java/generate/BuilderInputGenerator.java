@@ -1,6 +1,6 @@
 package generate;
 
-import generate.anthelpers.TargetReflectionHelpers;
+import generate.anthelpers.ReflectionHelpers;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.PropertyHelper;
 import org.apache.tools.ant.Target;
@@ -105,7 +105,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         List<String> result = new ArrayList<>();
 
         Target mainTarget = this.project.getTargets().get("");
-        List<Object> children = TargetReflectionHelpers.getChildren(mainTarget);
+        List<Object> children = ReflectionHelpers.getChildrenFor(mainTarget);
 
         children.forEach(o ->  {
             if (o instanceof UnknownElement) {

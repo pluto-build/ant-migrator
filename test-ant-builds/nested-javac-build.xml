@@ -1,0 +1,20 @@
+<!--
+  -bf test-ant-builds/nested-javac-build.xml -noFD -pkg build.pluto.plutoanttester.nestedjavactest -od ./test-ant-builds/nested-javac-build/ -m
+-->
+<project name="NestedTest" default="compile" basedir=".">
+
+    <target name="compile">
+        <echo message="Compiling"/>
+        <zip destfile="result.zip">
+            <zipfileset dir="." prefix="sub"/>
+            <zipfileset dir="." prefix="sub2"/>
+        </zip>
+        <javac destdir="out"
+               classpath="/Users/manuel/.m2/repository/org/apache/ant/ant/1.10.0/ant-1.10.0.jar"
+               debug="on">
+            <src path="src/main/java"/>
+            <src path="test/main/java"/>
+        </javac>
+    </target>
+
+</project>
