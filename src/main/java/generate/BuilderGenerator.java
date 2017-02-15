@@ -3,6 +3,7 @@ package generate;
 import generate.anthelpers.ReflectionHelpers;
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.Javac;
+import org.apache.tools.ant.types.EnumeratedAttribute;
 import sun.lwawt.macosx.CImage;
 import utils.ReflectionUtils;
 import utils.StringUtils;
@@ -88,7 +89,7 @@ public class BuilderGenerator extends JavaGenerator {
     private void generateBuildMethod() {
         this.addImport("java.io.IOException");
         this.printString("@Override\n" +
-                "protected None build(" + this.getInputName() + " input) throws IOException {", "}");
+                "protected None build(" + this.getInputName() + " input) throws Exception {", "}");
         this.increaseIndentation(1);
 
         for (String fileDep : getDependentFiles()) {
@@ -112,7 +113,8 @@ public class BuilderGenerator extends JavaGenerator {
 
                 generateElement(taskName, element, null, false);
 
-                this.printString(taskName + ".execute();");
+                if (!element.getTaskName().equals("antcall"))
+                    this.printString(taskName + ".execute();");
             } else {
                 throw new RuntimeException("Didn't know how to handle " + t.toString());
                 // TODO: Deal with non UnknownElements.
@@ -129,10 +131,26 @@ public class BuilderGenerator extends JavaGenerator {
         ComponentHelper componentHelper = ComponentHelper.getComponentHelper(project);
 
 
-        if (elementTypeClass == null) {
-            AntTypeDefinition typeDefinition = componentHelper.getDefinition(element.getTaskName());
-            typeDefinition = componentHelper.getDefinition(element.getTaskName());
-            elementTypeClass = typeDefinition.getTypeClass(project);
+        if (element.getTaskName().equals("antcall")) {
+            // Deal with antcalls
+
+            String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(element.getWrapper().getAttributeMap().get("target").toString()));
+            this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
+            this.printString("requireBuild(" + depName + "Builder.factory, " + StringUtils.decapitalize(depName) + "Input);");
+
+            return;
+        }
+
+        try {
+            if (elementTypeClass == null) {
+                AntTypeDefinition typeDefinition = componentHelper.getDefinition(element.getTaskName());
+                typeDefinition = componentHelper.getDefinition(element.getTaskName());
+                elementTypeClass = typeDefinition.getTypeClass(project);
+                if (elementTypeClass == null)
+                    throw new RuntimeException("Could not get type definition for " + element.getTaskName());
+            }
+        } catch (NullPointerException e) {
+            throw new RuntimeException("Could not get type definition for " + element.getTaskName());
         }
 
         //String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
@@ -148,7 +166,7 @@ public class BuilderGenerator extends JavaGenerator {
         }
         if (constructor == null) {
             if (!noConstructor) {
-                String fullyQualifiedTaskdefName = elementTypeClass.getName();
+                String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
                 addImport(fullyQualifiedTaskdefName);
 
                 String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
@@ -157,9 +175,22 @@ public class BuilderGenerator extends JavaGenerator {
             }
         } else {
             // TODO: We have a contructor
-            System.out.println(constructor.toGenericString());
+            System.out.println("CONSTRUCTOR!: " + constructor.toGenericString());
         }
-        this.printString(taskName + ".setProject(project);");
+        boolean hasProjectSetter = false;
+        for (Method method: elementTypeClass.getMethods()) {
+            if (method.getName().equals("setProject") && method.getParameterCount() == 1 && method.getParameterTypes()[0].getName().equals("org.apache.tools.ant.Project")) {
+                hasProjectSetter = true;
+                break;
+            }
+        }
+        if (hasProjectSetter)
+            this.printString(taskName + ".setProject(project);");
+
+        if (element.getWrapper().getAttributeMap().contains("id")) {
+            // We have a reference id. Add code to add it to the project.
+            this.printString("project.addReference(\""+element.getWrapper().getAttributeMap().get("id")+"\", " + taskName + ");");
+        }
 
         try {
             element.maybeConfigure();
@@ -167,9 +198,6 @@ public class BuilderGenerator extends JavaGenerator {
         catch (Throwable t) {
 
         }
-
-        System.out.println("attrs: " + introspectionHelper.getAttributeMap());
-        System.out.println("nested: " + introspectionHelper.getNestedElementMap());
 
         element.getWrapper().getAttributeMap().forEach((n, o) ->
                 {
@@ -184,6 +212,12 @@ public class BuilderGenerator extends JavaGenerator {
                     if (argumentClass.getName().equals("boolean")) {
                         // We expect a boolean, use true or false as values without wrapping into a string.
                         argument = "Boolean.valueOf(\"" + resolver.getExpandedValue(o.toString()) + "\")";
+                    } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
+                        String completeClassName = argumentClass.getCanonicalName();
+                        String shortName = argumentClass.getSimpleName();
+                        String attrName = getNamingManager().getNameFor(shortName);
+                        this.printString(completeClassName + " " + attrName + " = new " + completeClassName + "();");
+                        this.printString(attrName + ".setValue(\"" + o.toString() + "\");");
                     } else if (!argumentClass.getName().equals("java.lang.String")) {
 
                         boolean includeProject;
@@ -226,13 +260,24 @@ public class BuilderGenerator extends JavaGenerator {
                 if (introspectionHelper.supportsNestedElement("", child.getTaskName())) {
                     IntrospectionHelper.Creator ccreator = introspectionHelper.getElementCreator(project, "", null, child.getTaskName(), child);
                     Method method = ReflectionHelpers.getNestedCreatorMethodFor(ccreator);
+                    Constructor<?> cconstructor = ReflectionHelpers.getNestedCreatorConstructorFor(ccreator);
                     if (method != null) {
                         String childName = getNamingManager().getNameFor(StringUtils.decapitalize(child.getTaskName()));
                         if (method.getAnnotatedReturnType().getType().getTypeName().equals("void")) {
-                            generateElement(childName, child, null, false);
+                            if (cconstructor != null) {
+                                Class<?> cls = null;
+                                try {
+                                    cls = Class.forName(cconstructor.getAnnotatedReturnType().getType().getTypeName());
+                                } catch (ClassNotFoundException e) {
+                                    e.printStackTrace();
+                                }
+                                generateElement(childName, child, cls, false);
+                            }
+                            else
+                                generateElement(childName, child, null, false);
                             this.printString(taskName + "." + method.getName() + "(" + childName + ");");
                         } else {
-                            this.printString(method.getAnnotatedReturnType().getType().getTypeName() + " " + childName + " = " + taskName + "." + method.getName() + "();");
+                            this.printString(method.getAnnotatedReturnType().getType().getTypeName().replace("$", ".") + " " + childName + " = " + taskName + "." + method.getName() + "();");
 
                             String returnTypeName = method.getReturnType().getName();
 
