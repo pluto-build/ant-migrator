@@ -15,7 +15,6 @@ public class BuilderGenerator extends JavaGenerator {
     private final String name;
 
     private final Project project;
-    private final String projectName;
     private final Boolean useFileDependencyDiscovery;
     private List<String> dependentBuilders = new ArrayList<>();
     private List<String> dependentFiles = new ArrayList<>();
@@ -60,7 +59,7 @@ public class BuilderGenerator extends JavaGenerator {
     }
 
     public String getProjectName() {
-        return projectName;
+        return getNamingManager().getClassNameFor(StringUtils.capitalize(project.getName()));
     }
 
     public String getInputName() {
@@ -81,7 +80,6 @@ public class BuilderGenerator extends JavaGenerator {
         super(pkg);
         this.name = getNamingManager().getClassNameFor(StringUtils.capitalize(name));
         this.project = project;
-        this.projectName = getNamingManager().getClassNameFor(StringUtils.capitalize(project.getName()));
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
         this.resolver = new PropertyResolver(project, "input");
         this.elementGenerator = new ElementGenerator(this, project, getNamingManager(), resolver);
@@ -110,19 +108,23 @@ public class BuilderGenerator extends JavaGenerator {
             if (t instanceof UnknownElement) {
                 UnknownElement element = (UnknownElement) t;
 
+                // Create unique name for the task
                 String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
+                // Generate code for the task, including all children in the build file
                 getElementGenerator().generateElement(taskName, element, null, false);
 
+                // Antcalls are resolved directly to builder calls. No calling of execute...
                 if (!element.getTaskName().equals("antcall"))
                     this.printString(taskName + ".execute();");
             } else {
+                // All tasks should also be UnknownElements. If not, fail the conversion
                 throw new RuntimeException("Didn't know how to handle " + t.toString());
-                // TODO: Deal with non UnknownElements.
             }
-            // TODO: task
         }
 
+        // Currently everything relies on immutable state between builders, so we don't need to output anything.
+        // This will change when dealing with certain tasks like
         this.printString("return None.val;");
         this.closeOneLevel();
     }
@@ -136,8 +138,6 @@ public class BuilderGenerator extends JavaGenerator {
         this.addImport("build.pluto.builder.factory.BuilderFactory");
         this.addImport("build.pluto.builder.factory.BuilderFactoryFactory");
         this.printString("public static BuilderFactory<" + this.getProjectName() + "Input, None, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.getProjectName() + "Input.class);");
-
-        //generateInputClass();
 
         this.printString("public " + getName() + "(" + this.getProjectName() + "Input input) { super(input); }");
 

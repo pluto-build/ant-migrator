@@ -49,13 +49,14 @@ public class ElementGenerator {
             generator.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
             generator.printString("requireBuild(" + depName + "Builder.factory, " + StringUtils.decapitalize(depName) + "Input);");
 
+            // TODO: Deal with children of antcall (params)
+
             return;
         }
 
         try {
             if (elementTypeClass == null) {
                 AntTypeDefinition typeDefinition = componentHelper.getDefinition(element.getTaskName());
-                typeDefinition = componentHelper.getDefinition(element.getTaskName());
                 elementTypeClass = typeDefinition.getTypeClass(project);
                 if (elementTypeClass == null)
                     throw new RuntimeException("Could not get type definition for " + element.getTaskName());
@@ -63,8 +64,6 @@ public class ElementGenerator {
         } catch (NullPointerException e) {
             throw new RuntimeException("Could not get type definition for " + element.getTaskName());
         }
-
-        //String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
         final IntrospectionHelper introspectionHelper = IntrospectionHelper.getHelper(elementTypeClass);
 
@@ -75,45 +74,29 @@ public class ElementGenerator {
         } catch (NullPointerException e) {
 
         }
-        if (constructor == null) {
-            if (!noConstructor) {
-                String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
-                generator.addImport(fullyQualifiedTaskdefName);
+        if (!noConstructor) {
+            if (constructor == null) {
+                generateConstructor(taskName, elementTypeClass);
+            } else {
+                // TODO: We have a contructor, use it and not the "general one"
+                System.out.println("CONSTRUCTOR!: " + constructor.toGenericString());
 
-                String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
-
-                generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
-            }
-        } else {
-            // TODO: We have a contructor
-            System.out.println("CONSTRUCTOR!: " + constructor.toGenericString());
-
-            String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
-            generator.addImport(fullyQualifiedTaskdefName);
-
-            String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
-
-            generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
-        }
-        boolean hasProjectSetter = false;
-        for (Method method: elementTypeClass.getMethods()) {
-            if (method.getName().equals("setProject") && method.getParameterCount() == 1 && method.getParameterTypes()[0].getName().equals("org.apache.tools.ant.Project")) {
-                hasProjectSetter = true;
-                break;
+                generateConstructor(taskName, elementTypeClass);
             }
         }
-        if (hasProjectSetter)
+        if (hasProjectSetter(elementTypeClass))
             generator.printString(taskName + ".setProject(project);");
 
         if (element.getWrapper().getAttributeMap().contains("id")) {
             // We have a reference id. Add code to add it to the project.
-            generator.printString("project.addReference(\""+element.getWrapper().getAttributeMap().get("id")+"\", " + taskName + ");");
+            generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
         }
 
         try {
+            // Just for debugging purposes right now
+            // TODO: Remove in release
             element.maybeConfigure();
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
 
         }
 
@@ -136,7 +119,7 @@ public class ElementGenerator {
                         String attrName = getNamingManager().getNameFor(shortName);
                         generator.printString(completeClassName + " " + attrName + " = new " + completeClassName + "();");
                         generator.printString(attrName + ".setValue(\"" + o.toString() + "\");");
-                    } else if (!(argumentClass.getName().equals("java.lang.String")|| argumentClass.getName().equals("java.lang.Object"))) {
+                    } else if (!(argumentClass.getName().equals("java.lang.String") || argumentClass.getName().equals("java.lang.Object"))) {
 
                         boolean includeProject;
                         Constructor<?> c;
@@ -171,7 +154,7 @@ public class ElementGenerator {
         );
 
         if (element.getChildren() != null) {
-            for (UnknownElement child: element.getChildren()) {
+            for (UnknownElement child : element.getChildren()) {
                 if (introspectionHelper.supportsNestedElement("", child.getTaskName())) {
                     IntrospectionHelper.Creator ccreator = introspectionHelper.getElementCreator(project, "", null, child.getTaskName(), child);
                     Method method = ReflectionHelpers.getNestedCreatorMethodFor(ccreator);
@@ -187,8 +170,7 @@ public class ElementGenerator {
                                     e.printStackTrace();
                                 }
                                 generateElement(childName, child, cls, false);
-                            }
-                            else
+                            } else
                                 generateElement(childName, child, null, false);
                             generator.printString(taskName + "." + method.getName() + "(" + childName + ");");
                         } else {
@@ -214,6 +196,26 @@ public class ElementGenerator {
                 }
             }
         }
+    }
+
+    private void generateConstructor(String taskName, Class<?> elementTypeClass) {
+        String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
+        generator.addImport(fullyQualifiedTaskdefName);
+
+        String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
+
+        generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
+    }
+
+    private boolean hasProjectSetter(Class<?> elementTypeClass) {
+        boolean hasProjectSetter = false;
+        for (Method method : elementTypeClass.getMethods()) {
+            if (method.getName().equals("setProject") && method.getParameterCount() == 1 && method.getParameterTypes()[0].getName().equals("org.apache.tools.ant.Project")) {
+                hasProjectSetter = true;
+                break;
+            }
+        }
+        return hasProjectSetter;
     }
 
 }
