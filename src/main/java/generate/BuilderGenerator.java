@@ -176,6 +176,13 @@ public class BuilderGenerator extends JavaGenerator {
         } else {
             // TODO: We have a contructor
             System.out.println("CONSTRUCTOR!: " + constructor.toGenericString());
+
+            String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
+            addImport(fullyQualifiedTaskdefName);
+
+            String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
+
+            this.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
         }
         boolean hasProjectSetter = false;
         for (Method method: elementTypeClass.getMethods()) {
@@ -201,12 +208,12 @@ public class BuilderGenerator extends JavaGenerator {
 
         element.getWrapper().getAttributeMap().forEach((n, o) ->
                 {
-                    Method attributeMethod = introspectionHelper.getAttributeMethod(n);
+                    Method attributeMethod = introspectionHelper.getAttributeMethod(n.toLowerCase());
 
                     String setter = attributeMethod.getName();
 
                     // Get type of argument
-                    Class<?> argumentClass = introspectionHelper.getAttributeType(n);
+                    Class<?> argumentClass = introspectionHelper.getAttributeType(n.toLowerCase());
 
                     String argument = StringUtils.javaPrint(o.toString());
                     if (argumentClass.getName().equals("boolean")) {
@@ -218,7 +225,7 @@ public class BuilderGenerator extends JavaGenerator {
                         String attrName = getNamingManager().getNameFor(shortName);
                         this.printString(completeClassName + " " + attrName + " = new " + completeClassName + "();");
                         this.printString(attrName + ".setValue(\"" + o.toString() + "\");");
-                    } else if (!argumentClass.getName().equals("java.lang.String")) {
+                    } else if (!(argumentClass.getName().equals("java.lang.String")|| argumentClass.getName().equals("java.lang.Object"))) {
 
                         boolean includeProject;
                         Constructor<?> c;
@@ -246,9 +253,6 @@ public class BuilderGenerator extends JavaGenerator {
                         } else {
                             argument = "new " + argumentClass.getSimpleName() + "(" + resolver.getExpandedValue(argument) + ")";
                         }
-
-                        // TODO: Search for factory methods...
-
                     }
 
                     this.printString(taskName + "." + setter + "(" + resolver.getExpandedValue(argument) + ");");
@@ -295,10 +299,7 @@ public class BuilderGenerator extends JavaGenerator {
                         throw new RuntimeException("Unexpected exception inspecting ant framework...");
                     }
                 } else {
-                    // TODO: This should probably not happen...
-                    //String childName = generateElement(null, child);
-                    //this.printString(taskName + ".add(" + childName + ");");
-                    throw new RuntimeException("Didn't support nested element...");
+                    throw new RuntimeException("Didn't support nested element: " + child.getTaskName());
                 }
             }
         }
