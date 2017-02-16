@@ -87,11 +87,6 @@ public class ElementGenerator {
         if (hasProjectSetter(elementTypeClass))
             generator.printString(taskName + ".setProject(project);");
 
-        if (element.getWrapper().getAttributeMap().contains("id")) {
-            // We have a reference id. Add code to add it to the project.
-            generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
-        }
-
         try {
             // Just for debugging purposes right now
             // TODO: Remove in release
@@ -102,6 +97,13 @@ public class ElementGenerator {
 
         element.getWrapper().getAttributeMap().forEach((n, o) ->
                 {
+                    // ID's are dealt with above
+                    if (n.equals("id")) {
+                        // We have a reference id. Add code to add it to the project.
+                        generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
+                        return;
+                    }
+
                     Method attributeMethod = introspectionHelper.getAttributeMethod(n.toLowerCase());
 
                     String setter = attributeMethod.getName();
@@ -198,13 +200,38 @@ public class ElementGenerator {
         }
     }
 
+    private String getContructor(Class<?> cls) {
+        boolean includeProject;
+        Constructor<?> c;
+        try {
+            // First try with Project.
+            c = cls.getConstructor(Project.class);
+            includeProject = true;
+        } catch (final NoSuchMethodException nme) {
+            // OK, try without.
+            try {
+                c = cls.getConstructor();
+                includeProject = false;
+            } catch (final NoSuchMethodException nme2) {
+                // Well, no matching constructor.
+                throw new RuntimeException("We didn't find any matching constructor for type " + cls.toString());
+            }
+        }
+
+        if (includeProject) {
+            return "new " + cls.getSimpleName() + "(project)";
+        } else {
+            return "new " + cls.getSimpleName() + "()";
+        }
+    }
+
     private void generateConstructor(String taskName, Class<?> elementTypeClass) {
         String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
         generator.addImport(fullyQualifiedTaskdefName);
 
         String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
 
-        generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
+        generator.printString(taskClassName + " " + taskName + " = " + getContructor(elementTypeClass) + ";");
     }
 
     private boolean hasProjectSetter(Class<?> elementTypeClass) {

@@ -22,6 +22,7 @@ public class BuilderInputGenerator extends JavaGenerator {
     private boolean includeEmpty = true;
     private PropertyResolver resolver;
     private NamingManager namingManager;
+    private final ElementGenerator elementGenerator;
 
     public BuilderInputGenerator(String pkg, String name, Project project) {
         super(pkg);
@@ -29,6 +30,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.name = namingManager.getClassNameFor(StringUtils.capitalize(name));
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
+        this.elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
     }
 
     /**
@@ -96,8 +98,35 @@ public class BuilderInputGenerator extends JavaGenerator {
             "  return \"\";"
             );
         }
-        this.closeOneLevel();
-        this.closeOneLevel();
+        this.closeOneLevel(); // end switch
+        this.closeOneLevel(); // end method
+
+        this.generateConfigureProjectMethod();
+
+
+        this.closeOneLevel(); // end class
+    }
+
+    private void generateConfigureProjectMethod() {
+        this.addImport("org.apache.tools.ant.Project");
+        this.printString("public void configureProject(Project project) {", "}");
+        this.increaseIndentation(1);
+
+        Target mainTarget = this.project.getTargets().get("");
+        List<Object> children = ReflectionHelpers.getChildrenFor(mainTarget);
+
+        for (Object o: children) {
+            if (o instanceof UnknownElement) {
+                UnknownElement child = (UnknownElement)o;
+
+                if (child.getWrapper().getAttributeMap().containsKey("id")) {
+                    String childName = namingManager.getNameFor(child.getTaskName());
+
+                    elementGenerator.generateElement(childName, child, null, false);
+                }
+            }
+        }
+
         this.closeOneLevel();
     }
 

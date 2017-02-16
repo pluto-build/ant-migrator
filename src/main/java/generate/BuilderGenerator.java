@@ -104,6 +104,7 @@ public class BuilderGenerator extends JavaGenerator {
         addImport("org.apache.tools.ant.Project");
         printString("Project project = new Project();");
         printString("project.addBuildListener(new PlutoBuildListener());");
+        printString("input.configureProject(project);");
         for (Task t : getTasks()) {
             if (t instanceof UnknownElement) {
                 UnknownElement element = (UnknownElement) t;
