@@ -176,7 +176,11 @@ public class ElementGenerator {
                                 generateElement(childName, child, null, false);
                             generator.printString(taskName + "." + method.getName() + "(" + childName + ");");
                         } else {
-                            generator.printString(method.getAnnotatedReturnType().getType().getTypeName().replace("$", ".") + " " + childName + " = " + taskName + "." + method.getName() + "();");
+                            String fullyQualifiedChildTypeName = method.getAnnotatedReturnType().getType().getTypeName().replace("$", ".");
+                            String childTypeName = fullyQualifiedChildTypeName.substring(fullyQualifiedChildTypeName.lastIndexOf(".")+1);
+
+                            generator.addImport(fullyQualifiedChildTypeName);
+                            generator.printString( childTypeName + " " + childName + " = " + taskName + "." + method.getName() + "();");
 
                             String returnTypeName = method.getReturnType().getName();
 

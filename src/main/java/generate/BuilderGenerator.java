@@ -86,7 +86,6 @@ public class BuilderGenerator extends JavaGenerator {
     }
 
     private void generateBuildMethod() {
-        this.addImport("java.io.IOException");
         this.printString("@Override\n" +
                 "protected None build(" + this.getInputName() + " input) throws Exception {", "}");
         this.increaseIndentation(1);

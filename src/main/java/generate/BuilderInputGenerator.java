@@ -1,10 +1,7 @@
 package generate;
 
 import generate.anthelpers.ReflectionHelpers;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.PropertyHelper;
-import org.apache.tools.ant.Target;
-import org.apache.tools.ant.UnknownElement;
+import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.Execute;
 import utils.StringUtils;
 
@@ -123,6 +120,8 @@ public class BuilderInputGenerator extends JavaGenerator {
                     String childName = namingManager.getNameFor(child.getTaskName());
 
                     elementGenerator.generateElement(childName, child, null, false);
+                } else if (!(child instanceof Task)) {
+                    System.out.println("Encountered toplevel definition " + child.getTaskName() + " that didn't have an id. Don't know how to deal with that (yet).");
                 }
             }
         }
