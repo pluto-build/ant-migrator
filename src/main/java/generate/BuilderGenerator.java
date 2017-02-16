@@ -1,15 +1,10 @@
 package generate;
 
-import generate.anthelpers.ReflectionHelpers;
-import org.apache.tools.ant.*;
-import org.apache.tools.ant.taskdefs.Javac;
-import org.apache.tools.ant.types.EnumeratedAttribute;
-import sun.lwawt.macosx.CImage;
-import utils.ReflectionUtils;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.Task;
+import org.apache.tools.ant.UnknownElement;
 import utils.StringUtils;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +23,7 @@ public class BuilderGenerator extends JavaGenerator {
 
     private final NamingManager namingManager = new NamingManager();
     private final PropertyResolver resolver;
-
+    private final ElementGenerator elementGenerator;
 
 
     //<editor-fold desc="Getters and Setters" defaultstate="collapsed">
@@ -75,6 +70,11 @@ public class BuilderGenerator extends JavaGenerator {
     public NamingManager getNamingManager() {
         return namingManager;
     }
+
+    public ElementGenerator getElementGenerator() {
+        return elementGenerator;
+    }
+
     //</editor-fold>
 
     public BuilderGenerator(String pkg, String name, Project project, Boolean useFileDependencyDiscovery) {
@@ -84,6 +84,7 @@ public class BuilderGenerator extends JavaGenerator {
         this.projectName = getNamingManager().getClassNameFor(StringUtils.capitalize(project.getName()));
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
         this.resolver = new PropertyResolver(project, "input");
+        this.elementGenerator = new ElementGenerator(this, project, getNamingManager(), resolver);
     }
 
     private void generateBuildMethod() {
@@ -111,7 +112,7 @@ public class BuilderGenerator extends JavaGenerator {
 
                 String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
-                generateElement(taskName, element, null, false);
+                getElementGenerator().generateElement(taskName, element, null, false);
 
                 if (!element.getTaskName().equals("antcall"))
                     this.printString(taskName + ".execute();");
@@ -126,184 +127,6 @@ public class BuilderGenerator extends JavaGenerator {
         this.closeOneLevel();
     }
 
-    private void generateElement(String taskName, UnknownElement element, Class<?> elementTypeClass, boolean noConstructor) {
-
-        ComponentHelper componentHelper = ComponentHelper.getComponentHelper(project);
-
-
-        if (element.getTaskName().equals("antcall")) {
-            // Deal with antcalls
-
-            String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(element.getWrapper().getAttributeMap().get("target").toString()));
-            this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            this.printString("requireBuild(" + depName + "Builder.factory, " + StringUtils.decapitalize(depName) + "Input);");
-
-            return;
-        }
-
-        try {
-            if (elementTypeClass == null) {
-                AntTypeDefinition typeDefinition = componentHelper.getDefinition(element.getTaskName());
-                typeDefinition = componentHelper.getDefinition(element.getTaskName());
-                elementTypeClass = typeDefinition.getTypeClass(project);
-                if (elementTypeClass == null)
-                    throw new RuntimeException("Could not get type definition for " + element.getTaskName());
-            }
-        } catch (NullPointerException e) {
-            throw new RuntimeException("Could not get type definition for " + element.getTaskName());
-        }
-
-        //String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
-
-        final IntrospectionHelper introspectionHelper = IntrospectionHelper.getHelper(elementTypeClass);
-
-        Constructor<?> constructor = null;
-        try {
-            IntrospectionHelper.Creator creator = introspectionHelper.getElementCreator(project, "", null, element.getTaskName(), element);
-            constructor = ReflectionHelpers.getNestedCreatorConstructorFor(creator);
-        } catch (NullPointerException e) {
-
-        }
-        if (constructor == null) {
-            if (!noConstructor) {
-                String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
-                addImport(fullyQualifiedTaskdefName);
-
-                String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
-
-                this.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
-            }
-        } else {
-            // TODO: We have a contructor
-            System.out.println("CONSTRUCTOR!: " + constructor.toGenericString());
-
-            String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
-            addImport(fullyQualifiedTaskdefName);
-
-            String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
-
-            this.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
-        }
-        boolean hasProjectSetter = false;
-        for (Method method: elementTypeClass.getMethods()) {
-            if (method.getName().equals("setProject") && method.getParameterCount() == 1 && method.getParameterTypes()[0].getName().equals("org.apache.tools.ant.Project")) {
-                hasProjectSetter = true;
-                break;
-            }
-        }
-        if (hasProjectSetter)
-            this.printString(taskName + ".setProject(project);");
-
-        if (element.getWrapper().getAttributeMap().contains("id")) {
-            // We have a reference id. Add code to add it to the project.
-            this.printString("project.addReference(\""+element.getWrapper().getAttributeMap().get("id")+"\", " + taskName + ");");
-        }
-
-        try {
-            element.maybeConfigure();
-        }
-        catch (Throwable t) {
-
-        }
-
-        element.getWrapper().getAttributeMap().forEach((n, o) ->
-                {
-                    Method attributeMethod = introspectionHelper.getAttributeMethod(n.toLowerCase());
-
-                    String setter = attributeMethod.getName();
-
-                    // Get type of argument
-                    Class<?> argumentClass = introspectionHelper.getAttributeType(n.toLowerCase());
-
-                    String argument = StringUtils.javaPrint(o.toString());
-                    if (argumentClass.getName().equals("boolean")) {
-                        // We expect a boolean, use true or false as values without wrapping into a string.
-                        argument = "Boolean.valueOf(\"" + resolver.getExpandedValue(o.toString()) + "\")";
-                    } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
-                        String completeClassName = argumentClass.getCanonicalName();
-                        String shortName = argumentClass.getSimpleName();
-                        String attrName = getNamingManager().getNameFor(shortName);
-                        this.printString(completeClassName + " " + attrName + " = new " + completeClassName + "();");
-                        this.printString(attrName + ".setValue(\"" + o.toString() + "\");");
-                    } else if (!(argumentClass.getName().equals("java.lang.String")|| argumentClass.getName().equals("java.lang.Object"))) {
-
-                        boolean includeProject;
-                        Constructor<?> c;
-                        try {
-                            // First try with Project.
-                            c = argumentClass.getConstructor(Project.class, String.class);
-                            includeProject = true;
-                        } catch (final NoSuchMethodException nme) {
-                            // OK, try without.
-                            try {
-                                c = argumentClass.getConstructor(String.class);
-                                includeProject = false;
-                            } catch (final NoSuchMethodException nme2) {
-                                // Well, no matching constructor.
-                                throw new RuntimeException("We didn't find any matching constructor for type " + argumentClass.toString());
-                            }
-                        }
-
-                        addImport(argumentClass.getName());
-
-                        // Not a string. Use single argument constructor from single string...
-                        // This might not exist resulting in a type error in the resulting migrated Script
-                        if (includeProject) {
-                            argument = "new " + argumentClass.getSimpleName() + "(project, " + resolver.getExpandedValue(argument) + ")";
-                        } else {
-                            argument = "new " + argumentClass.getSimpleName() + "(" + resolver.getExpandedValue(argument) + ")";
-                        }
-                    }
-
-                    this.printString(taskName + "." + setter + "(" + resolver.getExpandedValue(argument) + ");");
-                }
-        );
-
-        if (element.getChildren() != null) {
-            for (UnknownElement child: element.getChildren()) {
-                if (introspectionHelper.supportsNestedElement("", child.getTaskName())) {
-                    IntrospectionHelper.Creator ccreator = introspectionHelper.getElementCreator(project, "", null, child.getTaskName(), child);
-                    Method method = ReflectionHelpers.getNestedCreatorMethodFor(ccreator);
-                    Constructor<?> cconstructor = ReflectionHelpers.getNestedCreatorConstructorFor(ccreator);
-                    if (method != null) {
-                        String childName = getNamingManager().getNameFor(StringUtils.decapitalize(child.getTaskName()));
-                        if (method.getAnnotatedReturnType().getType().getTypeName().equals("void")) {
-                            if (cconstructor != null) {
-                                Class<?> cls = null;
-                                try {
-                                    cls = Class.forName(cconstructor.getAnnotatedReturnType().getType().getTypeName());
-                                } catch (ClassNotFoundException e) {
-                                    e.printStackTrace();
-                                }
-                                generateElement(childName, child, cls, false);
-                            }
-                            else
-                                generateElement(childName, child, null, false);
-                            this.printString(taskName + "." + method.getName() + "(" + childName + ");");
-                        } else {
-                            this.printString(method.getAnnotatedReturnType().getType().getTypeName().replace("$", ".") + " " + childName + " = " + taskName + "." + method.getName() + "();");
-
-                            String returnTypeName = method.getReturnType().getName();
-
-                            Class<?> cls = null;
-                            try {
-                                cls = Class.forName(returnTypeName);
-                            } catch (ClassNotFoundException e) {
-                                e.printStackTrace();
-                            }
-
-                            generateElement(childName, child, cls, true);
-                        }
-
-                    } else {
-                        throw new RuntimeException("Unexpected exception inspecting ant framework...");
-                    }
-                } else {
-                    throw new RuntimeException("Didn't support nested element: " + child.getTaskName());
-                }
-            }
-        }
-    }
 
     private void generateClass() {
         this.addImport("build.pluto.builder.Builder");
