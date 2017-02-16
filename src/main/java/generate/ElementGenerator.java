@@ -115,6 +115,8 @@ public class ElementGenerator {
                     if (argumentClass.getName().equals("boolean")) {
                         // We expect a boolean, use true or false as values without wrapping into a string.
                         argument = "Boolean.valueOf(\"" + resolver.getExpandedValue(o.toString()) + "\")";
+                    } else if (java.io.File.class.equals(argumentClass)) {
+                        argument = "project.resolveFile(\""+o.toString()+"\")";
                     } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
                         String completeClassName = argumentClass.getCanonicalName();
                         String shortName = argumentClass.getSimpleName();
@@ -176,7 +178,7 @@ public class ElementGenerator {
                                 generateElement(childName, child, null, false);
                             generator.printString(taskName + "." + method.getName() + "(" + childName + ");");
                         } else {
-                            String fullyQualifiedChildTypeName = method.getAnnotatedReturnType().getType().getTypeName().replace("$", ".");
+                            String fullyQualifiedChildTypeName = method.getReturnType().getCanonicalName();
                             String childTypeName = fullyQualifiedChildTypeName.substring(fullyQualifiedChildTypeName.lastIndexOf(".")+1);
 
                             generator.addImport(fullyQualifiedChildTypeName);
