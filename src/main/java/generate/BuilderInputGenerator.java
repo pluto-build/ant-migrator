@@ -120,7 +120,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                     String childName = namingManager.getNameFor(child.getTaskName());
 
                     elementGenerator.generateElement(childName, child, null, false);
-                } else if (!(child instanceof Task)) {
+                } else if (!child.getTaskName().equals("property")) {
                     System.out.println("Encountered toplevel definition " + child.getTaskName() + " that didn't have an id. Don't know how to deal with that (yet).");
                 }
             }

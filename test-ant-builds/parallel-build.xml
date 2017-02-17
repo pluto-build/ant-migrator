@@ -1,0 +1,17 @@
+<project name="ParallelTest" default="par" basedir=".">
+
+    <target name="par">
+        <parallel>
+            <daemons>
+                <java taskname="server" classname="org.apache.jmeter.NewDriver" fork="yes" dir="${batchtestserver.out}">
+                    <classpath>
+                        <fileset dir="${dest.jar.jmeter}" includes="*.jar"/>
+                        <fileset dir="${dest.jar}" includes="*.jar"/>
+                        <path refid="classpath"/>
+                    </classpath>
+                </java>
+            </daemons>
+        </parallel>
+    </target>
+
+</project>

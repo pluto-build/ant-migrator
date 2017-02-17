@@ -2,6 +2,7 @@ import generate.BuilderGenerator;
 import generate.BuilderInputGenerator;
 import generate.BuilderMainGenerator;
 import generate.NamingManager;
+import generate.anthelpers.LauncherHelpers;
 import generate.anthelpers.NoExpansionPropertyHelper;
 import org.apache.commons.cli.*;
 import org.apache.tools.ant.Project;
@@ -14,10 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by manuel on 31.01.17.
@@ -74,6 +72,10 @@ public class AntMigrator {
             return;
         }
 
+        List<String> libs = new ArrayList<>();
+        libs.add("/usr/local/Cellar/ant/1.9.7/libexec/lib");
+        libs.add("/Users/manuel/.m2/repository/junit/junit/4.12/");
+        //LauncherHelpers.prepareClassLoader(null, libs);
 
         Project project = new Project();
         File buildFile = new File(line.getOptionValue("bf"));

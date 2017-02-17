@@ -7,7 +7,7 @@
         <junit>
             <classpath>
                 <pathelement path="/Users/manuel/.m2/repository/junit/junit/4.12/junit-4.12.jar"/>
-                <pathelement path="/Users/manuel/.m2/repository/ant/ant-junit/1.6.5/ant-junit-1.6.5.jar"/>
+                <!--<pathelement path="/Users/manuel/.m2/repository/ant/ant-junit/1.6.5/ant-junit-1.6.5.jar"/>-->
             </classpath>
             <test name="my.test.TestCase"/>
         </junit>

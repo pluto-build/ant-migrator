@@ -120,9 +120,17 @@ public class ElementGenerator {
                     } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
                         String completeClassName = argumentClass.getCanonicalName();
                         String shortName = argumentClass.getSimpleName();
-                        String attrName = getNamingManager().getNameFor(shortName);
-                        generator.printString(completeClassName + " " + attrName + " = new " + completeClassName + "();");
-                        generator.printString(attrName + ".setValue(\"" + o.toString() + "\");");
+                        String attrName = getNamingManager().getNameFor(StringUtils.decapitalize(shortName));
+                        generator.addImport(completeClassName);
+                        generator.printString(shortName + " " + attrName + " = new " + shortName + "();");
+                        generator.printString(attrName + ".setValue(\""+o.toString()+"\");");
+                        argument = attrName;
+                    } else if (argumentClass.getTypeName().equals("int")) {
+                        argument = "Integer.parseInt(\""+o.toString()+"\")";
+
+                    } else if (argumentClass.getTypeName().equals("long")) {
+                        argument = "Long.parseInt(\""+o.toString()+"\")";
+
                     } else if (!(argumentClass.getName().equals("java.lang.String") || argumentClass.getName().equals("java.lang.Object"))) {
 
                         boolean includeProject;
@@ -200,7 +208,22 @@ public class ElementGenerator {
                         throw new RuntimeException("Unexpected exception inspecting ant framework...");
                     }
                 } else {
-                    throw new RuntimeException("Didn't support nested element: " + child.getTaskName());
+                    if (!(TaskContainer.class.isAssignableFrom(elementTypeClass))) {
+                        throw new RuntimeException("Didn't support nested element: " + child.getTaskName());
+                    } else {
+                        // a task container - anything could happen - just add the
+                        // child to the container
+
+                        //TaskContainer container = (TaskContainer) parent;
+                        //container.addTask(child);
+
+                        String childName = getNamingManager().getNameFor(StringUtils.decapitalize(child.getTaskName()));
+
+                        generateElement(childName, child, null, false);
+
+                        generator.printString(taskName + ".addTask(" + childName + ");");
+                    }
+
                 }
             }
         }
@@ -235,7 +258,7 @@ public class ElementGenerator {
         String fullyQualifiedTaskdefName = elementTypeClass.getCanonicalName();
         generator.addImport(fullyQualifiedTaskdefName);
 
-        String taskClassName = fullyQualifiedTaskdefName.substring(fullyQualifiedTaskdefName.lastIndexOf(".") + 1);
+        String taskClassName = elementTypeClass.getSimpleName();
 
         generator.printString(taskClassName + " " + taskName + " = " + getContructor(elementTypeClass) + ";");
     }
