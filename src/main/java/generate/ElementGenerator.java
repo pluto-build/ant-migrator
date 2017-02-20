@@ -97,7 +97,6 @@ public class ElementGenerator {
 
         element.getWrapper().getAttributeMap().forEach((n, o) ->
                 {
-                    // ID's are dealt with above
                     if (n.equals("id")) {
                         // We have a reference id. Add code to add it to the project.
                         generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
@@ -167,6 +166,7 @@ public class ElementGenerator {
 
         if (element.getChildren() != null) {
             for (UnknownElement child : element.getChildren()) {
+                generator.increaseIndentation(1);
                 if (introspectionHelper.supportsNestedElement("", child.getTaskName())) {
                     IntrospectionHelper.Creator ccreator = introspectionHelper.getElementCreator(project, "", null, child.getTaskName(), child);
                     Method method = ReflectionHelpers.getNestedCreatorMethodFor(ccreator);
@@ -225,6 +225,7 @@ public class ElementGenerator {
                     }
 
                 }
+                generator.increaseIndentation(-1);
             }
         }
     }
