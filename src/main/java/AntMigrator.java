@@ -88,9 +88,7 @@ public class AntMigrator {
         for (Target target : project.getTargets().values()) {
             if (!target.getName().isEmpty()) {
                 NamingManager namingManager = new NamingManager();
-                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), target.getName() + "Builder", project, !line.hasOption("noFD"));
-                generator.setTasks(Arrays.asList(target.getTasks()));
-                generator.setDependentBuilders(Collections.list(target.getDependencies()));
+                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), project, target, !line.hasOption("noFD"));
                 files.put(namingManager.getClassNameFor(StringUtils.capitalize(target.getName())) + "Builder.java", generator.getPrettyPrint());
             }
         }
@@ -102,6 +100,8 @@ public class AntMigrator {
 
         String plutoBuildListener = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoBuildListener.java").toURI())));
         files.put("PlutoBuildListener.java", plutoBuildListener.replace("<pkg>", line.getOptionValue("pkg")));
+        String plutoPropertyHelper = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoPropertyHelper.java").toURI())));
+        files.put("PlutoPropertyHelper.java", plutoPropertyHelper.replace("<pkg>", line.getOptionValue("pkg")));
 
         if (line.hasOption("m")) {
             BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), project.getDefaultTarget());

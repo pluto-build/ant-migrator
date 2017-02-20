@@ -1,0 +1,16 @@
+<project name="IfUnlessTest" default="echo" basedir=".">
+
+    <target name="echo" depends="echo2, echo3">
+        <echo message="Hello, world"/>
+    </target>
+
+    <target name="echo2" unless="some.property">
+        <echo message="This was execute (unless)" />
+    </target>
+
+
+    <target name="echo3" if="some.property">
+        <echo message="This was execute (if)" />
+    </target>
+
+</project>

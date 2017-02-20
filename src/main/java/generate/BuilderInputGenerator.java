@@ -44,12 +44,18 @@ public class BuilderInputGenerator extends JavaGenerator {
         super.generatePrettyPrint();
 
         this.addImport("java.io.Serializable");
+        this.addImport("build.pluto.output.Output");
 
-        this.printString("public class " + name + " implements Serializable {", "}");
+        this.printString("public class " + name + " implements Serializable, Output, PlutoPropertyHelper.PropertySetter, Cloneable {", "}");
         this.increaseIndentation(1);
+
+        this.generateClonableStructure();
+        this.generatePropertySetter();
 
         this.printString("public String get(String v) {","}");
         this.increaseIndentation(1);
+        this.printString("if (newProperties.containsKey(v))\n" +
+                "  return newProperties.get(v);");
         this.printString("switch (v) {", "}");
         this.increaseIndentation(1);
 
@@ -92,7 +98,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                     "  return \"\";");
         } else {
             this.printString("default:\n" +
-            "  return \"\";"
+            "  return null;"
             );
         }
         this.closeOneLevel(); // end switch
@@ -100,8 +106,38 @@ public class BuilderInputGenerator extends JavaGenerator {
 
         this.generateConfigureProjectMethod();
 
+        this.printString("");
+        this.generateNullOrEmptyMethod();
+        this.generateEvalAsBooleanOrPropertyNameMethod();
+        this.generateTestIfMethod();
+        this.generateTestUnlessMethod();
+
 
         this.closeOneLevel(); // end class
+    }
+
+    private void generateClonableStructure() {
+        this.addImport("java.util.HashMap");
+        this.printString("private HashMap<String, String> newProperties = new HashMap<>();");
+
+        this.printString("public " + name + "() { }");
+
+        this.printString("private " + name + "(HashMap<String, String> properties) {", "}");
+        this.increaseIndentation(1);
+        this.printString("this.newProperties = properties;");
+        this.closeOneLevel();
+
+        this.printString("public " + name + " clone() {\n" +
+                "  "+name+" clone = new "+name+"((HashMap<String, String>)newProperties.clone());\n" +
+                "  return clone;\n" +
+                "}");
+    }
+
+    public void generatePropertySetter() {
+        this.printString("public void setProperty(String k, String v) {\n" +
+                "  if (k != null && v != null)\n" +
+                "    this.newProperties.put(k, v);\n" +
+                "  }");
     }
 
     private void generateConfigureProjectMethod() {
@@ -127,6 +163,70 @@ public class BuilderInputGenerator extends JavaGenerator {
         }
 
         this.closeOneLevel();
+    }
+
+    private void generateNullOrEmptyMethod() {
+        /*
+        private static boolean nullOrEmpty(Object value) {
+            return value == null || "".equals(value);
+        }
+         */
+
+        this.printString("private boolean nullOrEmpty(Object v) {", "}");
+        this.increaseIndentation(1);
+
+        this.printString("return v == null || \"\".equals(v);");
+
+        this.closeOneLevel(); // end method
+    }
+
+    private void generateEvalAsBooleanOrPropertyNameMethod() {
+        this.addImport("org.apache.tools.ant.PropertyHelper");
+
+        this.printString("private boolean evalAsBooleanOrPropertyName(Object v) {", "}");
+        this.increaseIndentation(1);
+
+        /*
+            private boolean evalAsBooleanOrPropertyName(Object v) {
+            Boolean b = toBoolean(v);
+            if (b != null) {
+                return b.booleanValue();
+            }
+            return this.get(String.valueOf(v)) != null;
+        }
+         */
+
+        this.printString("Boolean b = PropertyHelper.toBoolean(v);");
+        this.printString("if (b != null) {", "}");
+        this.increaseIndentation(1);
+        this.printString("return b.booleanValue();");
+        this.closeOneLevel(); // end if
+
+        this.printString("return this.get(String.valueOf(v)) != null;");
+
+        this.closeOneLevel(); // end method
+    }
+
+    private void generateTestIfMethod() {
+        this.addImport("org.apache.tools.ant.PropertyHelper");
+
+        this.printString("public boolean testIf(Object v) {", "}");
+        this.increaseIndentation(1);
+
+        this.printString("return this.nullOrEmpty(v) || this.evalAsBooleanOrPropertyName(get(String.valueOf(v)));");
+
+        this.closeOneLevel(); // end method
+    }
+
+    private void generateTestUnlessMethod() {
+        this.addImport("org.apache.tools.ant.PropertyHelper");
+
+        this.printString("public boolean testUnless(Object v) {", "}");
+        this.increaseIndentation(1);
+
+        this.printString("return this.nullOrEmpty(v) || !this.evalAsBooleanOrPropertyName(get(String.valueOf(v)));");
+
+        this.closeOneLevel(); // end method
     }
 
     public List<String> getEnvPrefixes() {

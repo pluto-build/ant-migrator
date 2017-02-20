@@ -1,11 +1,13 @@
 package generate;
 
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.Target;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.UnknownElement;
 import utils.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -16,9 +18,8 @@ public class BuilderGenerator extends JavaGenerator {
 
     private final Project project;
     private final Boolean useFileDependencyDiscovery;
-    private List<String> dependentBuilders = new ArrayList<>();
     private List<String> dependentFiles = new ArrayList<>();
-    private List<Task> tasks = new ArrayList<>();
+    private final Target target;
 
     private final NamingManager namingManager = new NamingManager();
     private final PropertyResolver resolver;
@@ -27,11 +28,7 @@ public class BuilderGenerator extends JavaGenerator {
 
     //<editor-fold desc="Getters and Setters" defaultstate="collapsed">
     public List<String> getDependentBuilders() {
-        return dependentBuilders;
-    }
-
-    public void setDependentBuilders(List<String> dependentBuilders) {
-        this.dependentBuilders = dependentBuilders;
+        return Collections.list(target.getDependencies());
     }
 
     public List<String> getDependentFiles() {
@@ -42,12 +39,8 @@ public class BuilderGenerator extends JavaGenerator {
         this.dependentFiles = dependentFiles;
     }
 
-    public List<Task> getTasks() {
-        return tasks;
-    }
-
-    public void setTasks(List<Task> tasks) {
-        this.tasks = tasks;
+    public Target getTarget() {
+        return target;
     }
 
     public String getName() {
@@ -76,19 +69,22 @@ public class BuilderGenerator extends JavaGenerator {
 
     //</editor-fold>
 
-    public BuilderGenerator(String pkg, String name, Project project, Boolean useFileDependencyDiscovery) {
+    public BuilderGenerator(String pkg, Project project, Target target, Boolean useFileDependencyDiscovery) {
         super(pkg);
-        this.name = getNamingManager().getClassNameFor(StringUtils.capitalize(name));
+        this.name = getNamingManager().getClassNameFor(StringUtils.capitalize(target.getName() + "Builder"));
         this.project = project;
+        this.target = target;
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
-        this.resolver = new PropertyResolver(project, "input");
+        this.resolver = new PropertyResolver(project, "cinput");
         this.elementGenerator = new ElementGenerator(this, project, getNamingManager(), resolver);
     }
 
     private void generateBuildMethod() {
         this.printString("@Override\n" +
-                "protected None build(" + this.getInputName() + " input) throws Exception {", "}");
+                "protected "+getInputName()+" build(" + this.getInputName() + " input) throws Exception {", "}");
         this.increaseIndentation(1);
+
+        this.printString(this.getInputName() + " cinput = input.clone();");
 
         for (String fileDep : getDependentFiles()) {
             this.printString("require(new File(\"" + fileDep + "\"));");
@@ -96,15 +92,29 @@ public class BuilderGenerator extends JavaGenerator {
 
         for (String dep : getDependentBuilders()) {
             String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(dep));
-            this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            this.printString("requireBuild(" + depName + "Builder.factory, " + StringUtils.decapitalize(depName) + "Input);");
+            //this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
+            this.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone());");
+        }
+
+        // Check for if and unless conditions:
+        if (target.getIf() != null) {
+            this.printString("if (!input.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
+            this.increaseIndentation(1);
+            this.printString("return cinput.clone();");
+            this.closeOneLevel();
+        }
+        if (target.getUnless() != null) {
+            this.printString("if (!input.testUnless(\"" + resolver.getExpandedValue(target.getUnless()) + "\")) {", "}");
+            this.increaseIndentation(1);
+            this.printString("return cinput.clone();");
+            this.closeOneLevel();
         }
 
         addImport("org.apache.tools.ant.Project");
         printString("Project project = new Project();");
         printString("project.addBuildListener(new PlutoBuildListener());");
         printString("input.configureProject(project);");
-        for (Task t : getTasks()) {
+        for (Task t : target.getTasks()) {
             if (t instanceof UnknownElement) {
                 UnknownElement element = (UnknownElement) t;
 
@@ -123,9 +133,7 @@ public class BuilderGenerator extends JavaGenerator {
             }
         }
 
-        // Currently everything relies on immutable state between builders, so we don't need to output anything.
-        // This will change when dealing with certain tasks like
-        this.printString("return None.val;");
+        this.printString("return cinput.clone();");
         this.closeOneLevel();
     }
 
@@ -133,11 +141,11 @@ public class BuilderGenerator extends JavaGenerator {
     private void generateClass() {
         this.addImport("build.pluto.builder.Builder");
         this.addImport("build.pluto.output.None");
-        this.printString("public class " + getName() + " extends Builder<" + this.getProjectName() + "Input, None> {", "}");
+        this.printString("public class " + getName() + " extends Builder<" + this.getProjectName() + "Input, " + this.getProjectName() + "Input> {", "}");
         this.increaseIndentation(1);
         this.addImport("build.pluto.builder.factory.BuilderFactory");
         this.addImport("build.pluto.builder.factory.BuilderFactoryFactory");
-        this.printString("public static BuilderFactory<" + this.getProjectName() + "Input, None, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.getProjectName() + "Input.class);");
+        this.printString("public static BuilderFactory<" + this.getProjectName() + "Input, " + this.getProjectName() + "Input, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.getProjectName() + "Input.class);");
 
         this.printString("public " + getName() + "(" + this.getProjectName() + "Input input) { super(input); }");
 
