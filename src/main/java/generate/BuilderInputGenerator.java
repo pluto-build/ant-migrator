@@ -112,6 +112,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.generateTestIfMethod();
         this.generateTestUnlessMethod();
 
+        this.generateToStringMethod();
 
         this.closeOneLevel(); // end class
     }
@@ -227,6 +228,13 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("return this.nullOrEmpty(v) || !this.evalAsBooleanOrPropertyName(v);");
 
         this.closeOneLevel(); // end method
+    }
+
+    private void generateToStringMethod() {
+        this.printString("@Override\n" +
+                "public String toString() {\n" +
+                "  return this.getClass().getSimpleName() + \"@\" + this.hashCode() + \" \" + this.newProperties.toString() + \"\";\n" +
+                "}");
     }
 
     public List<String> getEnvPrefixes() {
