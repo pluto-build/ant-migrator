@@ -34,6 +34,16 @@ public class PlutoPropertyHelper extends PropertyHelper {
         return super.setProperty(name, value, verbose);
     }
 
+    @Override
+    public void setNewProperty(String name, Object value) {
+        Log.log.log("New property " + name + " was set to " + value.toString(), Log.ALWAYS);
+
+        if (propertySetter != null)
+            propertySetter.setProperty(name, value.toString());
+
+        super.setNewProperty(name, value);
+    }
+
     /**
      * Factory method to create a property processor.
      * Users can provide their own or replace it using "ant.PropertyHelper"

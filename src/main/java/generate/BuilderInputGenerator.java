@@ -213,7 +213,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("public boolean testIf(Object v) {", "}");
         this.increaseIndentation(1);
 
-        this.printString("return this.nullOrEmpty(v) || this.evalAsBooleanOrPropertyName(get(String.valueOf(v)));");
+        this.printString("return this.nullOrEmpty(v) || this.evalAsBooleanOrPropertyName(v);");
 
         this.closeOneLevel(); // end method
     }
@@ -224,7 +224,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("public boolean testUnless(Object v) {", "}");
         this.increaseIndentation(1);
 
-        this.printString("return this.nullOrEmpty(v) || !this.evalAsBooleanOrPropertyName(get(String.valueOf(v)));");
+        this.printString("return this.nullOrEmpty(v) || !this.evalAsBooleanOrPropertyName(v);");
 
         this.closeOneLevel(); // end method
     }

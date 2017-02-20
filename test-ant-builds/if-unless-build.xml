@@ -1,6 +1,6 @@
 <project name="IfUnlessTest" default="echo" basedir=".">
 
-    <target name="echo" depends="echo2, echo3, echo4, echo5">
+    <target name="echo" depends="echo2, echo3, echo4, echo5, echo6, echo7">
         <echo message="Hello, world"/>
     </target>
 
@@ -25,6 +25,14 @@
 
     <target name="echo5" depends="echo5.prepare" if="this.is.also.defined">
         <echo message="This should be printed too..."/>
+    </target>
+
+    <target name="echo6" unless="${this.is.defined}">
+        <echo message="This should not be printed."/>
+    </target>
+
+    <target name="echo7" if="${this.is.defined}">
+        <echo message="This should be printed."/>
     </target>
 
 </project>

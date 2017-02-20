@@ -98,7 +98,7 @@ public class BuilderGenerator extends JavaGenerator {
 
         // Check for if and unless conditions:
         if (target.getIf() != null) {
-            this.printString("if (!input.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
+            this.printString("if (!cinput.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
             this.increaseIndentation(1);
             this.printString("return cinput.clone();");
             this.closeOneLevel();
