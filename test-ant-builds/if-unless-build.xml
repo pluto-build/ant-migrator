@@ -1,6 +1,6 @@
 <project name="IfUnlessTest" default="echo" basedir=".">
 
-    <target name="echo" depends="echo2, echo3">
+    <target name="echo" depends="echo2, echo3, echo4, echo5">
         <echo message="Hello, world"/>
     </target>
 
@@ -10,7 +10,21 @@
 
 
     <target name="echo3" if="some.property">
-        <echo message="This was execute (if)" />
+        <echo message="This was execute (if), but shuoldn't be" />
+    </target>
+
+    <property name="this.is.defined" value="true"/>
+
+    <target name="echo4" if="this.is.defined">
+        <echo message="This should be printed..."/>
+    </target>
+
+    <target name="echo5.prepare">
+        <property name="this.is.also.defined" value="Some Value" />
+    </target>
+
+    <target name="echo5" depends="echo5.prepare" if="this.is.also.defined">
+        <echo message="This should be printed too..."/>
     </target>
 
 </project>
