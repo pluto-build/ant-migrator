@@ -45,7 +45,7 @@ public class PlutoPropertyHelper extends PropertyHelper {
      * @return the project's property helper.
      */
     public static synchronized PlutoPropertyHelper getPropertyHelper(Project project) {
-        build.pluto.plutoanttester.commonsiotest.PlutoPropertyHelper helper = null;
+        PlutoPropertyHelper helper = null;
         if (project != null) {
             helper = project.getReference(MagicNames
                     .REFID_PROPERTY_HELPER);
