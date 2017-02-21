@@ -57,8 +57,10 @@ public class PlutoPropertyHelper extends PropertyHelper {
     public static synchronized PlutoPropertyHelper getPropertyHelper(Project project) {
         PlutoPropertyHelper helper = null;
         if (project != null) {
-            helper = project.getReference(MagicNames
-                    .REFID_PROPERTY_HELPER);
+            try {
+                helper = project.getReference(MagicNames
+                        .REFID_PROPERTY_HELPER);
+            } catch (ClassCastException e) { }
         }
         if (helper != null) {
             return helper;

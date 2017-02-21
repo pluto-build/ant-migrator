@@ -6,7 +6,7 @@ import org.apache.tools.ant.Project;
 /**
  * Created by manuel on 06.02.17.
  */
-public class PropertyResolver {
+public class PropertyResolver implements Resolvable {
     private final String callerName;
     private final Project project;
 
@@ -24,6 +24,4 @@ public class PropertyResolver {
     public String getExpandedValue(String unexpanded) {
         return propertyHelper.parseProperties(unexpanded).toString();
     }
-
-
 }

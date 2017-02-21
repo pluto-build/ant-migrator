@@ -1,13 +1,8 @@
-import generate.BuilderGenerator;
-import generate.BuilderInputGenerator;
-import generate.BuilderMainGenerator;
-import generate.NamingManager;
+import generate.*;
 import generate.anthelpers.LauncherHelpers;
 import generate.anthelpers.NoExpansionPropertyHelper;
 import org.apache.commons.cli.*;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.ProjectHelper;
-import org.apache.tools.ant.Target;
+import org.apache.tools.ant.*;
 import utils.StringUtils;
 
 import java.io.File;
@@ -93,6 +88,19 @@ public class AntMigrator {
             }
         }
 
+        // Deal with all macros
+        for (Target target: project.getTargets().values()) {
+            for (Task task: target.getTasks()) {
+                if (task.getTaskName().equals("macrodef")) {
+                    // We have a macro. Use a MacroGenerator to generate a class for it
+                    NamingManager namingManager = new NamingManager();
+                    PropertyResolver resolver = new PropertyResolver(project, "input");
+                    MacroGenerator macroGenerator = new MacroGenerator(line.getOptionValue("pkg") + ".macros", project, namingManager, resolver, (UnknownElement)task);
+                    files.put("macros/" + macroGenerator.getName() + ".java", macroGenerator.getPrettyPrint());
+                }
+            }
+        }
+
         NamingManager namingManager = new NamingManager();
 
         BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName() + "Input", project);
@@ -124,6 +132,8 @@ public class AntMigrator {
         Path dir = Paths.get(baseDir);
         dir = dir.resolve(pkg.replace(".", "/"));
         Files.createDirectories(dir);
+        Path macrosDir = dir.resolve("macros");
+        Files.createDirectories(macrosDir);
 
         Path file = dir.resolve(StringUtils.capitalize(name));
         System.out.println("Writing: " + file);

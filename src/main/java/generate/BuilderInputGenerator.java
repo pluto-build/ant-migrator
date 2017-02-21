@@ -157,6 +157,10 @@ public class BuilderInputGenerator extends JavaGenerator {
                     String childName = namingManager.getNameFor(child.getTaskName());
 
                     elementGenerator.generateElement(childName, child, null, false);
+                } else if (child.getTaskName().equals("macrodef")) {
+                    // Deal with macros. First do macrodef execution to make them available everywhere
+
+                    // This should have already been done by AntMigrator.java
                 } else if (!child.getTaskName().equals("property")) {
                     System.out.println("Encountered toplevel definition " + child.getTaskName() + " that didn't have an id. Don't know how to deal with that (yet).");
                 }

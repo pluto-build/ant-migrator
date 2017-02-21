@@ -1,0 +1,16 @@
+<project name="MacrodefTest" default="echo" basedir=".">
+
+    <macrodef name="echotest">
+        <text name="text"/>
+        <sequential>
+            <echo>@{text}</echo>
+        </sequential>
+    </macrodef>
+
+    <target name="echo">
+        <echotest>
+            Hello world
+        </echotest>
+    </target>
+
+</project>

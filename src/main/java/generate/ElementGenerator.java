@@ -16,7 +16,7 @@ public class ElementGenerator {
     private final JavaGenerator generator;
     private final Project project;
     private final NamingManager namingManager;
-    private final PropertyResolver resolver;
+    private final Resolvable resolver;
 
     public NamingManager getNamingManager() {
         return namingManager;
@@ -30,7 +30,7 @@ public class ElementGenerator {
         return getProjectName() + "Input";
     }
 
-    public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, PropertyResolver resolver) {
+    public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, Resolvable resolver) {
         this.generator = generator;
         this.project = project;
         this.namingManager = namingManager;
@@ -163,6 +163,12 @@ public class ElementGenerator {
                     generator.printString(taskName + "." + setter + "(" + resolver.getExpandedValue(argument) + ");");
                 }
         );
+
+        // Element might include text. Call addText method...
+        String text = resolver.getExpandedValue(element.getWrapper().getText().toString());
+        if (!text.trim().isEmpty()) {
+            generator.printString(taskName + ".addText(\"" + text.replace("\n","\\n") + "\");");
+        }
 
         if (element.getChildren() != null) {
             for (UnknownElement child : element.getChildren()) {

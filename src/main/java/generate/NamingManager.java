@@ -1,5 +1,7 @@
 package generate;
 
+import utils.StringUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +27,7 @@ public class NamingManager {
         while (replaced.indexOf(" ") > -1) {
             replaced = replaced.substring(0, replaced.indexOf(" ")) + replaced.toUpperCase().substring(replaced.indexOf(" ")+1, replaced.indexOf(" ") + 2) + replaced.substring(replaced.indexOf(" ")+2);
         }
-        return replaced;
+        return StringUtils.capitalize(replaced);
     }
 
 }
