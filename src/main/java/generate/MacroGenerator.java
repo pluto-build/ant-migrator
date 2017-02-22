@@ -46,6 +46,8 @@ public class MacroGenerator extends JavaGenerator {
         this.printString("public class " + this.name + " {", "}");
         this.increaseIndentation(1);
 
+        this.generateProject();
+
         for (UnknownElement child: this.macroDef.getChildren()) {
             generateElement(child);
         }
@@ -54,6 +56,17 @@ public class MacroGenerator extends JavaGenerator {
 
 
         this.closeOneLevel(); // end class
+    }
+
+    private void generateProject() {
+        this.addImport("org.apache.tools.ant.Project");
+        this.printString("Project project = null;");
+        this.printString("public Project getProject() {" +
+                "  return this.project;" +
+                "}");
+        this.printString("public void setProject(Project project) {" +
+                "  this.project = project;" +
+                "}");
     }
 
     private void generateExecuteMethod() {

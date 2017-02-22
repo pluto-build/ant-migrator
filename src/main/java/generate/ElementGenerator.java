@@ -1,11 +1,14 @@
 package generate;
 
+import com.sun.tools.javac.code.Symbol;
 import generate.anthelpers.ReflectionHelpers;
 import org.apache.tools.ant.*;
+import org.apache.tools.ant.taskdefs.MacroDef;
 import org.apache.tools.ant.types.EnumeratedAttribute;
 import utils.StringUtils;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
@@ -54,15 +57,37 @@ public class ElementGenerator {
             return;
         }
 
+        AntTypeDefinition typeDefinition = null;
         try {
             if (elementTypeClass == null) {
-                AntTypeDefinition typeDefinition = componentHelper.getDefinition(element.getTaskName());
+                typeDefinition = componentHelper.getDefinition(element.getTaskName());
                 elementTypeClass = typeDefinition.getTypeClass(project);
                 if (elementTypeClass == null)
                     throw new RuntimeException("Could not get type definition for " + element.getTaskName());
             }
         } catch (NullPointerException e) {
             throw new RuntimeException("Could not get type definition for " + element.getTaskName());
+        }
+
+        if (typeDefinition.getClass().getSimpleName().equals("MyAntTypeDefinition")) {
+            // We have a macro invocation. Deal with it differently
+
+            MacroDef macroDef = null;
+            try {
+                Class<?> myAntTypeDefinitionClass = Class.forName("org.apache.tools.ant.taskdefs.MacroDef$MyAntTypeDefinition");
+                Field field = myAntTypeDefinitionClass.getDeclaredField("macroDef");
+                field.setAccessible(true);
+                macroDef = (MacroDef)field.get(typeDefinition);
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+            generateMacroElement(taskName, element, elementTypeClass, noConstructor, macroDef);
+            return;
         }
 
         final IntrospectionHelper introspectionHelper = IntrospectionHelper.getHelper(elementTypeClass);
@@ -233,6 +258,33 @@ public class ElementGenerator {
                 }
                 generator.increaseIndentation(-1);
             }
+        }
+    }
+
+    private void generateMacroElement(String taskName, UnknownElement element, Class<?> elementTypeClass, boolean noConstructor, MacroDef macroDef) {
+        String macroDefName = "";
+        try {
+            Field macroDefNameField = macroDef.getClass().getDeclaredField("name");
+            macroDefNameField.setAccessible(true);
+            macroDefName = (String)macroDefNameField.get(macroDef);
+        } catch (Exception e) {
+            throw new RuntimeException("Could not retrieve name of macro.");
+        }
+
+        String definedName = macroDefName + "Macro";
+        String taskClassName = namingManager.getClassNameFor(definedName);
+
+        // TODO: Generate everything here...
+        if (!noConstructor) {
+            generator.addImport(generator.getPkg() + ".macros." + taskClassName);
+            generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
+        }
+
+        generator.printString(taskName + ".setProject(project);");
+
+        String text = resolver.getExpandedValue(element.getWrapper().getText().toString());
+        if (!text.trim().isEmpty()) {
+            generator.printString(taskName + ".addText(\"" + text.replace("\n","\\n") + "\");");
         }
     }
 

@@ -1,6 +1,7 @@
 package generate;
 
 import org.apache.tools.ant.Project;
+import utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,10 +33,11 @@ public class MacroPropertyResolver implements Resolvable {
 
     @Override
     public String getExpandedValue(String unexpanded) {
+        // TODO: This is very naive expansion. Rework this to be as robust as normal property expansion!!!
         String expanded = baseResolver.getExpandedValue(unexpanded);
 
         for (String attributeName: attributes) {
-            expanded = expanded.replace("@{"+attributeName+"}", "\"+this."+attributeName+"+\"");
+            expanded = expanded.replace("@{"+attributeName+"}", "\"+this.get"+ StringUtils.capitalize(attributeName)+"()+\"");
         }
 
         return expanded;
