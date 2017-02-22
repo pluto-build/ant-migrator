@@ -10,6 +10,7 @@ import utils.StringUtils;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * Created by manuel on 16.02.17.
@@ -77,7 +78,7 @@ public class ElementGenerator {
                 Class<?> myAntTypeDefinitionClass = Class.forName("org.apache.tools.ant.taskdefs.MacroDef$MyAntTypeDefinition");
                 Field field = myAntTypeDefinitionClass.getDeclaredField("macroDef");
                 field.setAccessible(true);
-                macroDef = (MacroDef)field.get(typeDefinition);
+                macroDef = (MacroDef) field.get(typeDefinition);
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             } catch (NoSuchFieldException e) {
@@ -120,79 +121,80 @@ public class ElementGenerator {
 
         }
 
-        element.getWrapper().getAttributeMap().forEach((n, o) ->
-                {
-                    if (n.equals("id")) {
-                        // We have a reference id. Add code to add it to the project.
-                        generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
-                        return;
+        for (Map.Entry<String, Object> entry : element.getWrapper().getAttributeMap().entrySet()) {
+            String n = entry.getKey();
+            Object o = entry.getValue();
+
+            if (n.equals("id")) {
+                // We have a reference id. Add code to add it to the project.
+                generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
+                return;
+            }
+
+            Method attributeMethod = introspectionHelper.getAttributeMethod(n.toLowerCase());
+
+            String setter = attributeMethod.getName();
+
+            // Get type of argument
+            Class<?> argumentClass = introspectionHelper.getAttributeType(n.toLowerCase());
+
+            String argument = StringUtils.javaPrint(o.toString());
+            if (argumentClass.getName().equals("boolean")) {
+                // We expect a boolean, use true or false as values without wrapping into a string.
+                argument = "Boolean.valueOf(\"" + resolver.getExpandedValue(o.toString()) + "\")";
+            } else if (java.io.File.class.equals(argumentClass)) {
+                argument = "project.resolveFile(\"" + o.toString() + "\")";
+            } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
+                String completeClassName = argumentClass.getCanonicalName();
+                String shortName = argumentClass.getSimpleName();
+                String attrName = getNamingManager().getNameFor(StringUtils.decapitalize(shortName));
+                generator.addImport(completeClassName);
+                generator.printString(shortName + " " + attrName + " = new " + shortName + "();");
+                generator.printString(attrName + ".setValue(\"" + o.toString() + "\");");
+                argument = attrName;
+            } else if (argumentClass.getTypeName().equals("int")) {
+                argument = "Integer.parseInt(\"" + o.toString() + "\")";
+
+            } else if (argumentClass.getTypeName().equals("long")) {
+                argument = "Long.parseInt(\"" + o.toString() + "\")";
+
+            } else if (!(argumentClass.getName().equals("java.lang.String") || argumentClass.getName().equals("java.lang.Object"))) {
+
+                boolean includeProject;
+                Constructor<?> c;
+                try {
+                    // First try with Project.
+                    c = argumentClass.getConstructor(Project.class, String.class);
+                    includeProject = true;
+                } catch (final NoSuchMethodException nme) {
+                    // OK, try without.
+                    try {
+                        c = argumentClass.getConstructor(String.class);
+                        includeProject = false;
+                    } catch (final NoSuchMethodException nme2) {
+                        // Well, no matching constructor.
+                        throw new RuntimeException("We didn't find any matching constructor for type " + argumentClass.toString());
                     }
-
-                    Method attributeMethod = introspectionHelper.getAttributeMethod(n.toLowerCase());
-
-                    String setter = attributeMethod.getName();
-
-                    // Get type of argument
-                    Class<?> argumentClass = introspectionHelper.getAttributeType(n.toLowerCase());
-
-                    String argument = StringUtils.javaPrint(o.toString());
-                    if (argumentClass.getName().equals("boolean")) {
-                        // We expect a boolean, use true or false as values without wrapping into a string.
-                        argument = "Boolean.valueOf(\"" + resolver.getExpandedValue(o.toString()) + "\")";
-                    } else if (java.io.File.class.equals(argumentClass)) {
-                        argument = "project.resolveFile(\""+o.toString()+"\")";
-                    } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
-                        String completeClassName = argumentClass.getCanonicalName();
-                        String shortName = argumentClass.getSimpleName();
-                        String attrName = getNamingManager().getNameFor(StringUtils.decapitalize(shortName));
-                        generator.addImport(completeClassName);
-                        generator.printString(shortName + " " + attrName + " = new " + shortName + "();");
-                        generator.printString(attrName + ".setValue(\""+o.toString()+"\");");
-                        argument = attrName;
-                    } else if (argumentClass.getTypeName().equals("int")) {
-                        argument = "Integer.parseInt(\""+o.toString()+"\")";
-
-                    } else if (argumentClass.getTypeName().equals("long")) {
-                        argument = "Long.parseInt(\""+o.toString()+"\")";
-
-                    } else if (!(argumentClass.getName().equals("java.lang.String") || argumentClass.getName().equals("java.lang.Object"))) {
-
-                        boolean includeProject;
-                        Constructor<?> c;
-                        try {
-                            // First try with Project.
-                            c = argumentClass.getConstructor(Project.class, String.class);
-                            includeProject = true;
-                        } catch (final NoSuchMethodException nme) {
-                            // OK, try without.
-                            try {
-                                c = argumentClass.getConstructor(String.class);
-                                includeProject = false;
-                            } catch (final NoSuchMethodException nme2) {
-                                // Well, no matching constructor.
-                                throw new RuntimeException("We didn't find any matching constructor for type " + argumentClass.toString());
-                            }
-                        }
-
-                        generator.addImport(argumentClass.getName());
-
-                        // Not a string. Use single argument constructor from single string...
-                        // This might not exist resulting in a type error in the resulting migrated Script
-                        if (includeProject) {
-                            argument = "new " + argumentClass.getSimpleName() + "(project, " + resolver.getExpandedValue(argument) + ")";
-                        } else {
-                            argument = "new " + argumentClass.getSimpleName() + "(" + resolver.getExpandedValue(argument) + ")";
-                        }
-                    }
-
-                    generator.printString(taskName + "." + setter + "(" + resolver.getExpandedValue(argument) + ");");
                 }
-        );
+
+                generator.addImport(argumentClass.getName());
+
+                // Not a string. Use single argument constructor from single string...
+                // This might not exist resulting in a type error in the resulting migrated Script
+                if (includeProject) {
+                    argument = "new " + argumentClass.getSimpleName() + "(project, " + resolver.getExpandedValue(argument) + ")";
+                } else {
+                    argument = "new " + argumentClass.getSimpleName() + "(" + resolver.getExpandedValue(argument) + ")";
+                }
+            }
+
+            generator.printString(taskName + "." + setter + "(" + resolver.getExpandedValue(argument) + ");");
+        }
 
         // Element might include text. Call addText method...
         String text = resolver.getExpandedValue(element.getWrapper().getText().toString());
         if (!text.trim().isEmpty()) {
-            generator.printString(taskName + ".addText(\"" + text.replace("\n","\\n") + "\");");
+            generator.printString(taskName + ".addText(\"" + text.replace("\n", "\\n") + "\");");
         }
 
         if (element.getChildren() != null) {
@@ -218,10 +220,10 @@ public class ElementGenerator {
                             generator.printString(taskName + "." + method.getName() + "(" + childName + ");");
                         } else {
                             String fullyQualifiedChildTypeName = method.getReturnType().getCanonicalName();
-                            String childTypeName = fullyQualifiedChildTypeName.substring(fullyQualifiedChildTypeName.lastIndexOf(".")+1);
+                            String childTypeName = fullyQualifiedChildTypeName.substring(fullyQualifiedChildTypeName.lastIndexOf(".") + 1);
 
                             generator.addImport(fullyQualifiedChildTypeName);
-                            generator.printString( childTypeName + " " + childName + " = " + taskName + "." + method.getName() + "();");
+                            generator.printString(childTypeName + " " + childName + " = " + taskName + "." + method.getName() + "();");
 
                             String returnTypeName = method.getReturnType().getName();
 
@@ -266,7 +268,7 @@ public class ElementGenerator {
         try {
             Field macroDefNameField = macroDef.getClass().getDeclaredField("name");
             macroDefNameField.setAccessible(true);
-            macroDefName = (String)macroDefNameField.get(macroDef);
+            macroDefName = (String) macroDefNameField.get(macroDef);
         } catch (Exception e) {
             throw new RuntimeException("Could not retrieve name of macro.");
         }
@@ -275,16 +277,25 @@ public class ElementGenerator {
         String taskClassName = namingManager.getClassNameFor(definedName);
 
         // TODO: Generate everything here...
+
+        // Constructor
         if (!noConstructor) {
             generator.addImport(generator.getPkg() + ".macros." + taskClassName);
-            generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "();");
+            generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "(project);");
         }
 
-        generator.printString(taskName + ".setProject(project);");
-
+        // text
         String text = resolver.getExpandedValue(element.getWrapper().getText().toString());
         if (!text.trim().isEmpty()) {
-            generator.printString(taskName + ".addText(\"" + text.replace("\n","\\n") + "\");");
+            generator.printString(taskName + ".addText(\"" + text.replace("\n", "\\n") + "\");");
+        }
+
+        // attributes
+        for (Map.Entry<String, Object> entry : element.getWrapper().getAttributeMap().entrySet()) {
+            String n = entry.getKey();
+            String o = String.valueOf(entry.getValue());
+
+            generator.printString(taskName + ".set" + StringUtils.capitalize(n) + "(\"" + o + "\");");
         }
     }
 

@@ -60,12 +60,13 @@ public class MacroGenerator extends JavaGenerator {
 
     private void generateProject() {
         this.addImport("org.apache.tools.ant.Project");
-        this.printString("Project project = null;");
-        this.printString("public Project getProject() {" +
-                "  return this.project;" +
+        this.printString("final Project project;");
+        this.printString("public Project getProject() {\n" +
+                "  return this.project;\n" +
                 "}");
-        this.printString("public void setProject(Project project) {" +
-                "  this.project = project;" +
+
+        this.printString("public " + getName() + "(Project project) {\n" +
+                "  this.project = project;\n" +
                 "}");
     }
 
@@ -99,12 +100,12 @@ public class MacroGenerator extends JavaGenerator {
             macroPropertyResolver.addAttribute(textName);
             this.printString("String "+textName+" = " + def + ";");
 
-            this.printString("public void addText(String "+textName+") {" +
-                    "  this."+textName+" = "+textName+";" +
+            this.printString("public void addText(String "+textName+") {\n" +
+                    "  this."+textName+" = "+textName+";\n" +
                     "}");
 
-            this.printString("public String getText() {" +
-                    "  return this."+textName+";" +
+            this.printString("public String get"+StringUtils.capitalize(textName)+"() {\n" +
+                    "  return this."+textName+";\n" +
                     "}");
 
             // TODO: optional, trim, description
@@ -121,12 +122,12 @@ public class MacroGenerator extends JavaGenerator {
 
             this.printString("String "+attributeName+" = " + def + ";");
 
-            this.printString("public void set"+StringUtils.capitalize(attributeName)+"(String "+attributeName+") {" +
-                    "  this."+attributeName+" = "+attributeName+";" +
+            this.printString("public void set"+StringUtils.capitalize(attributeName)+"(String "+attributeName+") {\n" +
+                    "  this."+attributeName+" = "+attributeName+";\n" +
                     "}");
 
-            this.printString("public String get"+StringUtils.capitalize(attributeName)+"() {" +
-                    "  return this."+attributeName+";" +
+            this.printString("public String get"+StringUtils.capitalize(attributeName)+"() {\n" +
+                    "  return this."+attributeName+";\n" +
                     "}");
 
             // TODO: doubleexpanding, description
