@@ -1,9 +1,11 @@
-<project name="MacrodefTest" default="echo" basedir=".">
+<project name="MacrodefTest" default="main" basedir=".">
+
+    <target name="main" depends="echo, echo2" />
 
     <macrodef name="echotest">
         <text name="text"/>
         <sequential>
-            <echo>@{text}</echo>
+            <echo>[Echo test] @{text}</echo>
         </sequential>
     </macrodef>
 
@@ -11,6 +13,21 @@
         <echotest>
             Hello world
         </echotest>
+    </target>
+
+    <macrodef name="prefixecho">
+        <attribute name="prefix" default=""/>
+        <attribute name="postfix" default="."/>
+        <text name="thetext"/>
+        <sequential>
+            <echo>[@{prefix}] @{thetext}@{postfix}</echo>
+        </sequential>
+    </macrodef>
+
+    <target name="echo2">
+        <prefixecho prefix="This is a test" postfix="!">
+            Let's do this!
+        </prefixecho>
     </target>
 
 </project>
