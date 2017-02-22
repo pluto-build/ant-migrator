@@ -34,12 +34,12 @@ public class MacroPropertyResolver implements Resolvable {
     @Override
     public String getExpandedValue(String unexpanded) {
         // TODO: This is very naive expansion. Rework this to be as robust as normal property expansion!!!
-        String expanded = baseResolver.getExpandedValue(unexpanded);
+        String expanded = unexpanded;
 
         for (String attributeName: attributes) {
             expanded = expanded.replace("@{"+attributeName+"}", "\"+this.get"+ StringUtils.capitalize(attributeName)+"()+\"");
         }
 
-        return expanded;
+        return baseResolver.getExpandedValue(expanded);
     }
 }

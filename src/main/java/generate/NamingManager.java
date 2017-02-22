@@ -13,6 +13,7 @@ public class NamingManager {
     private Map<String, Integer> nameMap = new HashMap<>();
 
     public String getNameFor(String prefix) {
+        prefix = prefix.replace(".", "_").replace("-", "_").trim();
         Integer old = 0;
         if (nameMap.containsKey(prefix)) {
             old = nameMap.get(prefix);
