@@ -78,26 +78,28 @@ public class AntMigrator {
         NoExpansionPropertyHelper.getPropertyHelper(project);
         ProjectHelper.configureProject(project, buildFile);
 
-
         Map<String, String> files = new HashMap<>();
-        for (Target target : project.getTargets().values()) {
-            if (!target.getName().isEmpty()) {
-                NamingManager namingManager = new NamingManager();
-                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), project, target, !line.hasOption("noFD"));
-                files.put(namingManager.getClassNameFor(StringUtils.capitalize(target.getName())) + "Builder.java", generator.getPrettyPrint());
-            }
-        }
 
-        // Deal with all macros
+        // Deal with all macros first, as evaluated macros are needed for the rest of the migration...
         for (Target target: project.getTargets().values()) {
             for (Task task: target.getTasks()) {
                 if (task.getTaskName().equals("macrodef")) {
                     // We have a macro. Use a MacroGenerator to generate a class for it
                     NamingManager namingManager = new NamingManager();
                     PropertyResolver resolver = new PropertyResolver(project, "input");
-                    MacroGenerator macroGenerator = new MacroGenerator(line.getOptionValue("pkg") + ".macros", project, namingManager, resolver, (UnknownElement)task);
+                    // Exceute to add to the type table
+                    task.perform();
+                    MacroGenerator macroGenerator = new MacroGenerator(line.getOptionValue("pkg"), project, namingManager, resolver, (UnknownElement)task);
                     files.put("macros/" + macroGenerator.getName() + ".java", macroGenerator.getPrettyPrint());
                 }
+            }
+        }
+
+        for (Target target : project.getTargets().values()) {
+            if (!target.getName().isEmpty()) {
+                NamingManager namingManager = new NamingManager();
+                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), project, target, !line.hasOption("noFD"));
+                files.put(namingManager.getClassNameFor(StringUtils.capitalize(target.getName())) + "Builder.java", generator.getPrettyPrint());
             }
         }
 

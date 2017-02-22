@@ -2,6 +2,7 @@ package generate;
 
 import com.sun.tools.javac.code.Symbol;
 import generate.anthelpers.ReflectionHelpers;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MacroDef;
 import org.apache.tools.ant.types.EnumeratedAttribute;
@@ -70,7 +71,7 @@ public class ElementGenerator {
             throw new RuntimeException("Could not get type definition for " + element.getTaskName());
         }
 
-        if (typeDefinition.getClass().getSimpleName().equals("MyAntTypeDefinition")) {
+        if (typeDefinition != null && typeDefinition.getClass().getSimpleName().equals("MyAntTypeDefinition")) {
             // We have a macro invocation. Deal with it differently
 
             MacroDef macroDef = null;
@@ -138,25 +139,26 @@ public class ElementGenerator {
             // Get type of argument
             Class<?> argumentClass = introspectionHelper.getAttributeType(n.toLowerCase());
 
-            String argument = StringUtils.javaPrint(o.toString());
+            final String escapedValue = resolver.getExpandedValue(StringEscapeUtils.escapeJava(o.toString()));
+            String argument = "\"" + escapedValue + "\"";
             if (argumentClass.getName().equals("boolean")) {
                 // We expect a boolean, use true or false as values without wrapping into a string.
-                argument = "Boolean.valueOf(\"" + resolver.getExpandedValue(o.toString()) + "\")";
+                argument = "Boolean.valueOf(\"" + escapedValue + "\")";
             } else if (java.io.File.class.equals(argumentClass)) {
-                argument = "project.resolveFile(\"" + o.toString() + "\")";
+                argument = "project.resolveFile(\"" + escapedValue + "\")";
             } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
                 String completeClassName = argumentClass.getCanonicalName();
                 String shortName = argumentClass.getSimpleName();
                 String attrName = getNamingManager().getNameFor(StringUtils.decapitalize(shortName));
                 generator.addImport(completeClassName);
                 generator.printString(shortName + " " + attrName + " = new " + shortName + "();");
-                generator.printString(attrName + ".setValue(\"" + o.toString() + "\");");
+                generator.printString(attrName + ".setValue(\"" + escapedValue + "\");");
                 argument = attrName;
             } else if (argumentClass.getTypeName().equals("int")) {
                 argument = "Integer.parseInt(\"" + o.toString() + "\")";
 
             } else if (argumentClass.getTypeName().equals("long")) {
-                argument = "Long.parseInt(\"" + o.toString() + "\")";
+                argument = "Long.parseLong(\"" + o.toString() + "\")";
 
             } else if (!(argumentClass.getName().equals("java.lang.String") || argumentClass.getName().equals("java.lang.Object"))) {
 
@@ -182,19 +184,19 @@ public class ElementGenerator {
                 // Not a string. Use single argument constructor from single string...
                 // This might not exist resulting in a type error in the resulting migrated Script
                 if (includeProject) {
-                    argument = "new " + argumentClass.getSimpleName() + "(project, " + resolver.getExpandedValue(argument) + ")";
+                    argument = "new " + argumentClass.getSimpleName() + "(project, " + argument + ")";
                 } else {
-                    argument = "new " + argumentClass.getSimpleName() + "(" + resolver.getExpandedValue(argument) + ")";
+                    argument = "new " + argumentClass.getSimpleName() + "(" + argument + ")";
                 }
             }
 
-            generator.printString(taskName + "." + setter + "(" + resolver.getExpandedValue(argument) + ");");
+            generator.printString(taskName + "." + setter + "(" + argument + ");");
         }
 
         // Element might include text. Call addText method...
         String text = resolver.getExpandedValue(element.getWrapper().getText().toString());
         if (!text.trim().isEmpty()) {
-            generator.printString(taskName + ".addText(\"" + text.replace("\n", "\\n") + "\");");
+            generator.printString(taskName + ".addText(\"" + StringEscapeUtils.escapeJava(text) + "\");");
         }
 
         if (element.getChildren() != null) {
@@ -281,7 +283,7 @@ public class ElementGenerator {
         // Constructor
         if (!noConstructor) {
             generator.addImport(generator.getPkg() + ".macros." + taskClassName);
-            generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "(project);");
+            generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "(project, input);");
         }
 
         // text
@@ -295,7 +297,7 @@ public class ElementGenerator {
             String n = entry.getKey();
             String o = String.valueOf(entry.getValue());
 
-            generator.printString(taskName + ".set" + StringUtils.capitalize(n) + "(\"" + o + "\");");
+            generator.printString(taskName + ".set" + namingManager.getClassNameFor(n) + "(\"" + StringEscapeUtils.escapeJava(o) + "\");");
         }
     }
 

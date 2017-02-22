@@ -18,6 +18,8 @@ public class MacroGenerator extends JavaGenerator {
     private final MacroPropertyResolver macroPropertyResolver;
     private final UnknownElement macroDef;
     private final String name;
+    private final String inputName;
+    private final String basePkg;
 
     public String getName() {
         return name;
@@ -25,7 +27,8 @@ public class MacroGenerator extends JavaGenerator {
 
 
     public MacroGenerator(String pkg, Project project, NamingManager namingManager, Resolvable resolver, UnknownElement macroDef) {
-        super(pkg);
+        super(pkg + ".macros");
+        this.basePkg = pkg;
         this.project = project;
         this.namingManager = namingManager;
         this.resolver = resolver;
@@ -37,6 +40,7 @@ public class MacroGenerator extends JavaGenerator {
 
         String definedName = this.macroDef.getWrapper().getAttributeMap().get("name").toString() + "Macro";
         this.name = namingManager.getClassNameFor(definedName);
+        this.inputName = namingManager.getClassNameFor(project.getName() + "Input");
     }
 
     @Override
@@ -60,13 +64,16 @@ public class MacroGenerator extends JavaGenerator {
 
     private void generateProject() {
         this.addImport("org.apache.tools.ant.Project");
+        this.addImport(basePkg + "." + inputName);
         this.printString("final Project project;");
+        this.printString("final "+ inputName + " input;");
         this.printString("public Project getProject() {\n" +
                 "  return this.project;\n" +
                 "}");
 
-        this.printString("public " + getName() + "(Project project) {\n" +
+        this.printString("public " + getName() + "(Project project, " + inputName + " input) {\n" +
                 "  this.project = project;\n" +
+                "  this.input = input;\n" +
                 "}");
     }
 
@@ -96,7 +103,7 @@ public class MacroGenerator extends JavaGenerator {
             if (element.getWrapper().getAttributeMap().containsKey("default")) {
                 def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
             }
-            String textName = StringUtils.decapitalize(element.getWrapper().getAttributeMap().get("name").toString());
+            String textName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
             macroPropertyResolver.addAttribute(textName);
             this.printString("String "+textName+" = " + def + ";");
 
@@ -115,7 +122,7 @@ public class MacroGenerator extends JavaGenerator {
             if (element.getWrapper().getAttributeMap().containsKey("default")) {
                 def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
             }
-            String attributeName = StringUtils.decapitalize(element.getWrapper().getAttributeMap().get("name").toString());
+            String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
 
             // TODO: probably fill these first to enable proper expansion
             macroPropertyResolver.addAttribute(attributeName);
