@@ -1,13 +1,16 @@
 package generate.anthelpers;
 
 import com.sun.tools.internal.jxc.ap.Const;
+import org.apache.commons.lang.ClassUtils;
 import org.apache.tools.ant.IntrospectionHelper;
 import org.apache.tools.ant.Target;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by manuel on 15.02.17.
@@ -70,6 +73,27 @@ public class ReflectionHelpers {
         }
         catch (IllegalArgumentException e) {
             //e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static final Map<String, Class<?>> PRIMITIVE_TYPE_MAP = new HashMap<String, Class<?>>(8);
+    static {
+
+        final Class<?>[] primitives = {Boolean.TYPE, Byte.TYPE, Character.TYPE, Short.TYPE,
+                Integer.TYPE, Long.TYPE, Float.TYPE, Double.TYPE};
+        for (int i = 0; i < primitives.length; i++) {
+            PRIMITIVE_TYPE_MAP.put (primitives[i].getName(), primitives[i]);
+        }
+    }
+
+    public static Class<?> getClassFor(String name) {
+        try {
+            if (PRIMITIVE_TYPE_MAP.containsKey(name))
+                return PRIMITIVE_TYPE_MAP.get(name);
+            return Class.forName(name);
+        } catch (ClassNotFoundException e) {
+
         }
         return null;
     }

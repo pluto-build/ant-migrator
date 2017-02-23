@@ -33,11 +33,6 @@ public abstract class Generator {
         closingStrings = new ArrayList<>();
     }
 
-    @Override
-    public String toString() {
-        return getPrettyPrint();
-    }
-
     protected void increaseIndentation(int level) {
         indent += level;
     }
@@ -65,8 +60,11 @@ public abstract class Generator {
     }
 
     protected void closeOneLevel() {
-        increaseIndentation(-1);
-        builder.append(getIndentString()).append(closingStrings.get(0)).append("\n");
-        closingStrings.remove(0);
+        if (indent > 0)
+            increaseIndentation(-1);
+        if (closingStrings.size() > 0) {
+            builder.append(getIndentString()).append(closingStrings.get(0)).append("\n");
+            closingStrings.remove(0);
+        }
     }
 }

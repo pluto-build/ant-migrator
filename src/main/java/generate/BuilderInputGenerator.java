@@ -154,9 +154,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                 UnknownElement child = (UnknownElement)o;
 
                 if (child.getWrapper().getAttributeMap().containsKey("id")) {
-                    String childName = namingManager.getNameFor(child.getTaskName());
-
-                    elementGenerator.generateElement(childName, child, null, false);
+                    String childName = elementGenerator.generateElement(null, child);
                 } else if (child.getTaskName().equals("macrodef")) {
                     // Deal with macros. First do macrodef execution to make them available everywhere
 

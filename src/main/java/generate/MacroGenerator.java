@@ -89,7 +89,7 @@ public class MacroGenerator extends JavaGenerator {
 
         for (UnknownElement child: sequential.getChildren()) {
             String childName = namingManager.getNameFor(child.getTaskName());
-            elementGenerator.generateElement(childName, child, null, false);
+            elementGenerator.generateElement(null, child);
 
             this.printString(childName+".execute();");
         }

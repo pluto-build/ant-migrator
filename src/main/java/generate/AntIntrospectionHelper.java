@@ -1,8 +1,9 @@
 package generate;
 
+import generate.types.TConstructor;
+import generate.types.TMethod;
 import org.apache.tools.ant.*;
 
-import java.lang.reflect.Constructor;
 import java.util.Map;
 
 /**
@@ -11,13 +12,24 @@ import java.util.Map;
 abstract class AntIntrospectionHelper {
 
     private final Project project;
+    private final String name;
     private final UnknownElement element;
+    private final AntIntrospectionHelper parentIntrospectionHelper;
     private final ComponentHelper componentHelper;
-    private Class<?> elementTypeClass;
-    private AntTypeDefinition antTypeDefinition;
+    protected Class<?> elementTypeClass;
+    protected AntTypeDefinition antTypeDefinition;
+
+    public AntIntrospectionHelper getParentIntrospectionHelper() {
+        return parentIntrospectionHelper;
+    }
 
     public ComponentHelper getComponentHelper() {
         return componentHelper;
+    }
+
+
+    public String getName() {
+        return name;
     }
 
     public Project getProject() {
@@ -33,36 +45,21 @@ abstract class AntIntrospectionHelper {
         this.elementTypeClass = elementTypeClass;
     }
 
-    protected AntIntrospectionHelper(Project project, UnknownElement element) {
+    protected AntIntrospectionHelper(Project project, UnknownElement element, String name, AntIntrospectionHelper parentIntrospectionHelper) {
         this.project = project;
         this.element = element;
+        this.name = name;
+        this.parentIntrospectionHelper = parentIntrospectionHelper;
         this.componentHelper = ComponentHelper.getComponentHelper(project);
     }
 
-    protected AntIntrospectionHelper(Project project, UnknownElement element, Class<?> elementTypeClass) {
-        this.project = project;
-        this.element = element;
-        this.componentHelper = ComponentHelper.getComponentHelper(project);
-        this.elementTypeClass = elementTypeClass;
-    }
-
-    public static AntIntrospectionHelper getInstanceFor(Project project, UnknownElement element) {
+    public static AntIntrospectionHelper getInstanceFor(Project project, UnknownElement element, String name, AntIntrospectionHelper parentIntrospectionHelper) {
         ComponentHelper componentHelper = ComponentHelper.getComponentHelper(project);
         final AntTypeDefinition definition = componentHelper.getDefinition(element.getTaskName());
         if (definition != null && definition.getClass().getSimpleName().equals("MyAntTypeDefinition")) {
-            return new MacroAntIntrospectionHelper(project, element);
+            return new MacroAntIntrospectionHelper(project, element, name, parentIntrospectionHelper);
         } else {
-            return new PlutoAntIntrospectionHelper(project, element);
-        }
-    }
-
-    public static AntIntrospectionHelper getInstanceFor(Project project, UnknownElement element, Class<?> elementTypeClass) {
-        ComponentHelper componentHelper = ComponentHelper.getComponentHelper(project);
-        final AntTypeDefinition definition = componentHelper.getDefinition(element.getTaskName());
-        if (definition != null && definition.getClass().getSimpleName().equals("MyAntTypeDefinition")) {
-            return new MacroAntIntrospectionHelper(project, element);
-        } else {
-            return new PlutoAntIntrospectionHelper(project, element, elementTypeClass);
+            return new PlutoAntIntrospectionHelper(project, element, name, parentIntrospectionHelper);
         }
     }
 
@@ -78,8 +75,9 @@ abstract class AntIntrospectionHelper {
             return elementTypeClass;
 
         final AntTypeDefinition antTypeDefinition = getAntTypeDefinition();
-        if (antTypeDefinition == null)
+        if (antTypeDefinition == null) {
             return null;
+        }
         elementTypeClass = antTypeDefinition.getTypeClass(project);
 
         return elementTypeClass;
@@ -93,17 +91,23 @@ abstract class AntIntrospectionHelper {
         return element.getTaskName().equals("antcall");
     }
 
-    public abstract Map<String, Object> getAttributeMap();
+    public Map<String, Object> getAttributeMap() {
+        return getElement().getWrapper().getAttributeMap();
+    }
 
-    public abstract Constructor<?> getConstructor();
+    public abstract TConstructor getConstructor();
 
     public abstract boolean hasProjectSetter();
 
-    public abstract String getAttributeMethodName(String attr);
+    public abstract TMethod getAttributeMethod(String attr);
 
-    public abstract Class<?> getAttributeMethodType(String attr);
+    public Class<?> getAttributeMethodType(String attr) {
+        return getAttributeMethod(attr).getParameters().get(0).getType();
+    }
 
     public abstract boolean supportsNestedElement(String name);
 
-    public abstract IntrospectionHelper getIntrospectionHelper();
+    public abstract TMethod getConstructorFactoryMethod();
+
+    public abstract TMethod getAddChildMethod();
 }
