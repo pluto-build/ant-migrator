@@ -100,7 +100,7 @@ public class ElementGenerator {
             if (n.equals("id")) {
                 // We have a reference id. Add code to add it to the project.
                 generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
-                return taskName;
+                continue;
             }
 
             TMethod setterMethod = introspectionHelper.getAttributeMethod(n);
