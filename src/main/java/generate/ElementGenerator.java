@@ -55,7 +55,7 @@ public class ElementGenerator {
 
             String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(introspectionHelper.getAttributeMap().get("target").toString()));
             //generator.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            generator.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone());");
+            generator.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone(\""+depName+"\"));");
 
             // TODO: Deal with children of antcall (params)
 

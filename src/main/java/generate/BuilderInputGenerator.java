@@ -31,7 +31,6 @@ public class BuilderInputGenerator extends JavaGenerator {
     }
 
     /**
-     *
      * @param name
      * @param includeEmpty set this to false, to omit empty variables in the output. This can result in wrong values, as empty variables can override environment variables...
      */
@@ -52,7 +51,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.generateClonableStructure();
         this.generatePropertySetter();
 
-        this.printString("public String get(String v) {","}");
+        this.printString("public String get(String v) {", "}");
         this.increaseIndentation(1);
         this.printString("if (newProperties.containsKey(v))\n" +
                 "  return newProperties.get(v);");
@@ -74,11 +73,11 @@ public class BuilderInputGenerator extends JavaGenerator {
         String envVars = "";
         for (String prefix : getEnvPrefixes()) {
             if (prefix.endsWith("."))
-                prefix = prefix.substring(0, prefix.length()-1);
+                prefix = prefix.substring(0, prefix.length() - 1);
             envVars += "\"" + prefix + "\", ";
         }
         if (envVars.endsWith(", "))
-            envVars = envVars.substring(0, envVars.length()-2);
+            envVars = envVars.substring(0, envVars.length() - 2);
 
         if (!envVars.isEmpty()) {
             this.addImport("java.util.List");
@@ -98,7 +97,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                     "  return \"\";");
         } else {
             this.printString("default:\n" +
-            "  return null;"
+                    "  return null;"
             );
         }
         this.closeOneLevel(); // end switch
@@ -113,23 +112,31 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.generateTestUnlessMethod();
 
         this.generateToStringMethod();
+        this.generateEqualsHashcode();
 
         this.closeOneLevel(); // end class
     }
 
     private void generateClonableStructure() {
         this.addImport("java.util.HashMap");
+        this.printString("private String builderName;");
         this.printString("private HashMap<String, String> newProperties = new HashMap<>();");
 
-        this.printString("public " + name + "() { }");
+        this.printString("public " + name + "(String builderName) { this.builderName = builderName; }");
 
-        this.printString("private " + name + "(HashMap<String, String> properties) {", "}");
+        this.printString("private " + name + "(String builderName, HashMap<String, String> properties) {", "}");
         this.increaseIndentation(1);
+        this.printString("this.builderName = builderName;");
         this.printString("this.newProperties = properties;");
         this.closeOneLevel();
 
         this.printString("public " + name + " clone() {\n" +
-                "  "+name+" clone = new "+name+"((HashMap<String, String>)newProperties.clone());\n" +
+                "  " + name + " clone = new " + name + "(builderName, (HashMap<String, String>)newProperties.clone());\n" +
+                "  return clone;\n" +
+                "}");
+
+        this.printString("public " + name + " clone(String newBuilderName) {\n" +
+                "  " + name + " clone = new " + name + "(newBuilderName, (HashMap<String, String>)newProperties.clone());\n" +
                 "  return clone;\n" +
                 "}");
     }
@@ -151,9 +158,9 @@ public class BuilderInputGenerator extends JavaGenerator {
         Target mainTarget = this.project.getTargets().get("");
         List<Object> children = ReflectionHelpers.getChildrenFor(mainTarget);
 
-        for (Object o: children) {
+        for (Object o : children) {
             if (o instanceof UnknownElement) {
-                UnknownElement child = (UnknownElement)o;
+                UnknownElement child = (UnknownElement) o;
 
                 if (child.getWrapper().getAttributeMap().containsKey("id")) {
                     String childName = elementGenerator.generateElement(null, child);
@@ -241,15 +248,35 @@ public class BuilderInputGenerator extends JavaGenerator {
                 "}");
     }
 
+    private void generateEqualsHashcode() {
+        this.printString("@Override\n" +
+                "public boolean equals(Object o) {\n" +
+                "  if (this == o) return true;\n" +
+                "  if (o == null || getClass() != o.getClass()) return false;\n" +
+                "\n" +
+                "  CommonsIOInput that = (CommonsIOInput) o;\n" +
+                "\n" +
+                "  if (!builderName.equals(that.builderName)) return false;\n" +
+                "  return newProperties.equals(that.newProperties);\n" +
+                "}\n" +
+                "\n" +
+                "@Override\n" +
+                "public int hashCode() {\n" +
+                "  int result = builderName.hashCode();\n" +
+                "  result = 31 * result + newProperties.hashCode();\n" +
+                "  return result;\n" +
+                "}");
+    }
+
     public List<String> getEnvPrefixes() {
         List<String> result = new ArrayList<>();
 
         Target mainTarget = this.project.getTargets().get("");
         List<Object> children = ReflectionHelpers.getChildrenFor(mainTarget);
 
-        children.forEach(o ->  {
+        children.forEach(o -> {
             if (o instanceof UnknownElement) {
-                UnknownElement element = (UnknownElement)o;
+                UnknownElement element = (UnknownElement) o;
                 if (element.getTaskName().equals("property")) {
                     // We have a property. Check if it has an environment attribute
                     if (element.getWrapper().getAttributeMap().containsKey("environment")) {

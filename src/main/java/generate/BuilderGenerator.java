@@ -93,7 +93,7 @@ public class BuilderGenerator extends JavaGenerator {
         for (String dep : getDependentBuilders()) {
             String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(dep));
             //this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            this.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone());");
+            this.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone(\""+depName+"\"));");
         }
 
         // Check for if and unless conditions:

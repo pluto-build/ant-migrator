@@ -32,7 +32,7 @@ public class BuilderMainGenerator extends Generator {
 
         this.printString("public static void main(String[] args) throws Throwable {", "}");
         this.increaseIndentation(1);
-        this.printString(StringUtils.capitalize(name) + "Input input = new " + StringUtils.capitalize(name) + "Input();");
+        this.printString(StringUtils.capitalize(name) + "Input input = new " + StringUtils.capitalize(name) + "Input(\""+StringUtils.capitalize(defTarget)+"\");");
         this.printString("BuildManagers.build(new BuildRequest<>("+StringUtils.capitalize(defTarget)+"Builder.factory, input));");
 
         this.closeOneLevel();
