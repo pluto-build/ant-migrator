@@ -120,6 +120,9 @@ public class BuilderInputGenerator extends JavaGenerator {
     private void generateClonableStructure() {
         this.addImport("java.util.HashMap");
         this.printString("private String builderName;");
+        this.printString("public String getBuilderName() {\n" +
+                "  return this.builderName;\n" +
+                "}");
         this.printString("private HashMap<String, String> newProperties = new HashMap<>();");
 
         this.printString("public " + name + "(String builderName) { this.builderName = builderName; }");
@@ -244,7 +247,7 @@ public class BuilderInputGenerator extends JavaGenerator {
     private void generateToStringMethod() {
         this.printString("@Override\n" +
                 "public String toString() {\n" +
-                "  return this.getClass().getSimpleName() + \"@\" + this.hashCode() + \" \" + this.newProperties.toString() + \"\";\n" +
+                "  return this.builderName + \"@\" + this.hashCode() + \" \" + this.newProperties.toString() + \"\";\n" +
                 "}");
     }
 
