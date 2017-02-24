@@ -15,8 +15,8 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
 
     private final IntrospectionHelper introspectionHelper;
 
-    protected PlutoAntIntrospectionHelper(Project project, UnknownElement element, String name, AntIntrospectionHelper parentIntrospectionHelper) {
-        super(project, element, name, parentIntrospectionHelper);
+    protected PlutoAntIntrospectionHelper(Project project, UnknownElement element, String name, String pkg, AntIntrospectionHelper parentIntrospectionHelper) {
+        super(project, element, name, pkg, parentIntrospectionHelper);
         this.introspectionHelper = IntrospectionHelper.getHelper(getElementTypeClass());
     }
 
@@ -77,7 +77,7 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public TMethod getConstructorFactoryMethod() {
         Method nestedCreatorMethod = getNestedCreatorMethod();
-        if (nestedCreatorMethod == null)
+        if (nestedCreatorMethod == null || nestedCreatorMethod.getAnnotatedReturnType().getType().getTypeName().equals("void"))
             return null;
         return new TMethod(nestedCreatorMethod);
     }

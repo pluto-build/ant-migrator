@@ -88,8 +88,7 @@ public class MacroGenerator extends JavaGenerator {
         UnknownElement sequential = macroDef.getChildren().stream().filter(element ->  element.getTaskName().equals("sequential")).findFirst().get();
 
         for (UnknownElement child: sequential.getChildren()) {
-            String childName = namingManager.getNameFor(child.getTaskName());
-            elementGenerator.generateElement(null, child);
+            String childName = elementGenerator.generateElement(null, child);
 
             this.printString(childName+".execute();");
         }
@@ -125,6 +124,7 @@ public class MacroGenerator extends JavaGenerator {
             String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
 
             // TODO: probably fill these first to enable proper expansion
+            // Remark: Probably not, as https://ant.apache.org/manual/Tasks/macrodef.html notes that order is important and expansion might not happen otherwise...
             macroPropertyResolver.addAttribute(attributeName);
 
             this.printString("String "+attributeName+" = " + def + ";");

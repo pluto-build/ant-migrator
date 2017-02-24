@@ -20,8 +20,8 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     private MacroDef macroDef;
     private final NamingManager namingManager;
 
-    protected MacroAntIntrospectionHelper(Project project, UnknownElement element, String name, AntIntrospectionHelper parentIntrospectionHelper) {
-        super(project, element, name, parentIntrospectionHelper);
+    protected MacroAntIntrospectionHelper(Project project, UnknownElement element, String name, String pkg, AntIntrospectionHelper parentIntrospectionHelper) {
+        super(project, element, name, pkg, parentIntrospectionHelper);
         namingManager = new NamingManager();
     }
 
@@ -49,7 +49,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
         ArrayList<TParameter> parameters = new ArrayList<>();
         parameters.add(new TParameter("project", new TTypeName(Project.class.getName())));
         parameters.add(new TParameter("input", new TTypeName(namingManager.getClassNameFor(getProject().getName() + "Input"))));
-        return new TConstructor(namingManager.getClassNameFor(getElement().getTaskName()), parameters, new TTypeName(namingManager.getClassNameFor(getElement().getTaskName())));
+        return new TConstructor(namingManager.getClassNameFor(getElement().getTaskName()+"Macro"), parameters, new TTypeName(getPkg()+".macros."+namingManager.getClassNameFor(getElement().getTaskName()+"Macro")));
     }
 
     @Override

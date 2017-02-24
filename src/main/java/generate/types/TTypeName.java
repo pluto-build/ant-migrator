@@ -10,11 +10,24 @@ public class TTypeName {
         return fullyQualifiedName;
     }
 
+    public String getImportName() {
+        // We have an inner class, import the parent...
+        if (getFullyQualifiedName().contains("$")) {
+            return getFullyQualifiedName().substring(0, getFullyQualifiedName().indexOf("$"));
+        }
+        // Otherwise return full canonical name...
+        return getCanonicalName();
+    }
+
     public String getShortName() {
         if (getFullyQualifiedName().contains(".")) {
-            return getFullyQualifiedName().substring(getFullyQualifiedName().lastIndexOf(".")+1);
+            return getFullyQualifiedName().substring(getFullyQualifiedName().lastIndexOf(".")+1).replace("$", ".");
         }
-        return fullyQualifiedName;
+        return getFullyQualifiedName();
+    }
+
+    public String getCanonicalName() {
+        return getFullyQualifiedName().replace("$", ".");
     }
 
     public TTypeName(String name) {

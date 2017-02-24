@@ -13,6 +13,7 @@ abstract class AntIntrospectionHelper {
 
     private final Project project;
     private final String name;
+    private final String pkg;
     private final UnknownElement element;
     private final AntIntrospectionHelper parentIntrospectionHelper;
     private final ComponentHelper componentHelper;
@@ -32,6 +33,10 @@ abstract class AntIntrospectionHelper {
         return name;
     }
 
+    public String getPkg() {
+        return pkg;
+    }
+
     public Project getProject() {
         return project;
     }
@@ -45,21 +50,22 @@ abstract class AntIntrospectionHelper {
         this.elementTypeClass = elementTypeClass;
     }
 
-    protected AntIntrospectionHelper(Project project, UnknownElement element, String name, AntIntrospectionHelper parentIntrospectionHelper) {
+    protected AntIntrospectionHelper(Project project, UnknownElement element, String name, String pkg, AntIntrospectionHelper parentIntrospectionHelper) {
         this.project = project;
         this.element = element;
         this.name = name;
+        this.pkg = pkg;
         this.parentIntrospectionHelper = parentIntrospectionHelper;
         this.componentHelper = ComponentHelper.getComponentHelper(project);
     }
 
-    public static AntIntrospectionHelper getInstanceFor(Project project, UnknownElement element, String name, AntIntrospectionHelper parentIntrospectionHelper) {
+    public static AntIntrospectionHelper getInstanceFor(Project project, UnknownElement element, String name, String pkg, AntIntrospectionHelper parentIntrospectionHelper) {
         ComponentHelper componentHelper = ComponentHelper.getComponentHelper(project);
         final AntTypeDefinition definition = componentHelper.getDefinition(element.getTaskName());
         if (definition != null && definition.getClass().getSimpleName().equals("MyAntTypeDefinition")) {
-            return new MacroAntIntrospectionHelper(project, element, name, parentIntrospectionHelper);
+            return new MacroAntIntrospectionHelper(project, element, name, pkg, parentIntrospectionHelper);
         } else {
-            return new PlutoAntIntrospectionHelper(project, element, name, parentIntrospectionHelper);
+            return new PlutoAntIntrospectionHelper(project, element, name, pkg, parentIntrospectionHelper);
         }
     }
 

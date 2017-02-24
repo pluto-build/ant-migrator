@@ -3,17 +3,15 @@ package generate;
 import generate.types.TConstructor;
 import generate.types.TMethod;
 import generate.types.TParameter;
+import generate.types.TTypeName;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.tools.ant.AntTypeDefinition;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.UnknownElement;
-import org.apache.tools.ant.taskdefs.MacroDef;
 import org.apache.tools.ant.types.EnumeratedAttribute;
 import utils.StringUtils;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -50,7 +48,7 @@ public class ElementGenerator {
 
         String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
-        AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, parentIntrospectionHelper);
+        AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, generator.getPkg(), parentIntrospectionHelper);
 
         if (introspectionHelper.isAntCall()) {
             // Deal with antcalls
@@ -64,47 +62,20 @@ public class ElementGenerator {
             return taskName;
         }
 
-        AntTypeDefinition typeDefinition = introspectionHelper.getAntTypeDefinition();
         Class<?> elementTypeClass = introspectionHelper.getElementTypeClass();
         if (elementTypeClass == null)
             throw new RuntimeException("Could not get type definition for " + element.getTaskName());
 
-
-        if (introspectionHelper.isMacroInvocation()) {
-            if (!generator.getPkg().endsWith(".macros"))
-                generator.addImport(generator.getPkg() + ".macros.*");
-        }
-
-        /*if (introspectionHelper.isMacroInvocation()) {
-            // We have a macro invocation. Deal with it differently
-
-            MacroDef macroDef = null;
-            try {
-                Class<?> myAntTypeDefinitionClass = Class.forName("org.apache.tools.ant.taskdefs.MacroDef$MyAntTypeDefinition");
-                Field field = myAntTypeDefinitionClass.getDeclaredField("macroDef");
-                field.setAccessible(true);
-                macroDef = (MacroDef) field.get(typeDefinition);
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (NoSuchFieldException e) {
-                e.printStackTrace();
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-
-            //generateMacroElement(taskName, element, elementTypeClass, noConstructor, macroDef);
-            return taskName;
-        }*/
+        TTypeName elementTypeClassName = new TTypeName(elementTypeClass.getName());
 
         TConstructor constructor = introspectionHelper.getConstructor();
         TMethod constructorFactoryMethod = introspectionHelper.getConstructorFactoryMethod();
 
         if (constructorFactoryMethod != null) {
             // We have a factory method in the parent. Use it...
-            String fullyQualifiedTaskdefName = elementTypeClass.getName();
-            generator.addImport(fullyQualifiedTaskdefName);
+            generator.addImport(elementTypeClassName.getImportName());
 
-            String taskClassName = elementTypeClass.getSimpleName();
+            String taskClassName = elementTypeClassName.getShortName();
 
             generator.printString(taskClassName + " " + taskName + " = " + introspectionHelper.getParentIntrospectionHelper().getName() + "." + constructorFactoryMethod.getName() + "();");
         } else {
@@ -145,10 +116,10 @@ public class ElementGenerator {
             } else if (java.io.File.class.equals(argumentClass)) {
                 argument = "project.resolveFile(\"" + escapedValue + "\")";
             } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
-                String completeClassName = argumentClass.getName();
-                String shortName = argumentClass.getSimpleName();
+                TTypeName argumentClassName = new TTypeName(argumentClass.getName());
+                String shortName = argumentClassName.getShortName();
                 String attrName = getNamingManager().getNameFor(StringUtils.decapitalize(shortName));
-                generator.addImport(completeClassName);
+                generator.addImport(argumentClassName.getImportName());
                 generator.printString(shortName + " " + attrName + " = new " + shortName + "();");
                 generator.printString(attrName + ".setValue(\"" + escapedValue + "\");");
                 argument = attrName;
@@ -192,9 +163,9 @@ public class ElementGenerator {
         }
 
         // Element might include text. Call addText method...
-        String text = resolver.getExpandedValue(element.getWrapper().getText().toString());
+        String text = resolver.getExpandedValue(StringEscapeUtils.escapeJava(element.getWrapper().getText().toString()));
         if (!text.trim().isEmpty()) {
-            generator.printString(taskName + ".addText(\"" + StringEscapeUtils.escapeJava(text) + "\");");
+            generator.printString(taskName + ".addText(\"" + text + "\");");
         }
 
         if (element.getChildren() != null) {
@@ -224,42 +195,6 @@ public class ElementGenerator {
         return taskName;
     }
 
-    private void generateMacroElement(String taskName, UnknownElement element, Class<?> elementTypeClass, boolean noConstructor, MacroDef macroDef) {
-        String macroDefName = "";
-        try {
-            Field macroDefNameField = macroDef.getClass().getDeclaredField("name");
-            macroDefNameField.setAccessible(true);
-            macroDefName = (String) macroDefNameField.get(macroDef);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not retrieve name of macro.");
-        }
-
-        String definedName = macroDefName + "Macro";
-        String taskClassName = namingManager.getClassNameFor(definedName);
-
-        // TODO: Generate everything here...
-
-        // TConstructor
-        if (!noConstructor) {
-            generator.addImport(generator.getPkg() + ".macros." + taskClassName);
-            generator.printString(taskClassName + " " + taskName + " = new " + taskClassName + "(project, input);");
-        }
-
-        // text
-        String text = resolver.getExpandedValue(element.getWrapper().getText().toString());
-        if (!text.trim().isEmpty()) {
-            generator.printString(taskName + ".addText(\"" + text.replace("\n", "\\n") + "\");");
-        }
-
-        // attributes
-        for (Map.Entry<String, Object> entry : element.getWrapper().getAttributeMap().entrySet()) {
-            String n = entry.getKey();
-            String o = String.valueOf(entry.getValue());
-
-            generator.printString(taskName + ".set" + namingManager.getClassNameFor(n) + "(\"" + StringEscapeUtils.escapeJava(o) + "\");");
-        }
-    }
-
     private String getContructor(Class<?> cls) {
         boolean includeProject;
         Constructor<?> c;
@@ -278,20 +213,21 @@ public class ElementGenerator {
             }
         }
 
+        TTypeName clsName = new TTypeName(cls.getName());
+
         if (includeProject) {
-            return "new " + cls.getSimpleName() + "(project)";
+            return "new " + clsName.getShortName() + "(project)";
         } else {
-            return "new " + cls.getSimpleName() + "()";
+            return "new " + clsName.getShortName() + "()";
         }
     }
 
     private void generateConstructor(AntIntrospectionHelper introspectionHelper, TConstructor constructor) {
-        String fullyQualifiedTaskdefName = introspectionHelper.getElementTypeClass().getName();
-        String taskClassName = introspectionHelper.getElementTypeClass().getSimpleName();
+        TTypeName taskClassName = new TTypeName(introspectionHelper.getElementTypeClass().getName());
 
         if (constructor == null) {
-            generator.addImport(fullyQualifiedTaskdefName);
-            generator.printString(taskClassName + " " + introspectionHelper.getName() + " = " + getContructor(introspectionHelper.getElementTypeClass()) + ";");
+            generator.addImport(taskClassName.getImportName());
+            generator.printString(taskClassName.getShortName() + " " + introspectionHelper.getName() + " = " + getContructor(introspectionHelper.getElementTypeClass()) + ";");
         } else {
             ArrayList<String> params = new ArrayList<>();
             // TODO: This is very fragile and wrong
@@ -302,7 +238,8 @@ public class ElementGenerator {
                     params.add("cinput");
                 else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
             }
-            generator.printString(constructor.getDeclaringClassTypeName().getFullyQualifiedName() + " " + introspectionHelper.getName() + " = new " + constructor.formatUse(params) + ";");
+            generator.addImport(constructor.getDeclaringClassTypeName().getImportName());
+            generator.printString(constructor.getDeclaringClassTypeName().getShortName() + " " + introspectionHelper.getName() + " = new " + constructor.formatUse(params) + ";");
         }
     }
 
