@@ -46,7 +46,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.addImport("java.io.Serializable");
         this.addImport("build.pluto.output.Output");
 
-        this.printString("public class " + name + " implements Serializable, Output, PlutoPropertyHelper.PropertySetter, Cloneable {", "}");
+        this.printString("public class " + name + " implements Serializable, Output, PlutoPropertyHelper.PropertyInteractor, Cloneable {", "}");
         this.increaseIndentation(1);
 
         this.generateClonableStructure();
@@ -145,6 +145,8 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.addImport("org.apache.tools.ant.Project");
         this.printString("public void configureProject(Project project) {", "}");
         this.increaseIndentation(1);
+
+        this.printString("project.setBasedir(this.get(\"basedir\"));");
 
         Target mainTarget = this.project.getTargets().get("");
         List<Object> children = ReflectionHelpers.getChildrenFor(mainTarget);

@@ -10,39 +10,46 @@ import org.sugarj.common.Log;
  */
 public class PlutoPropertyHelper extends PropertyHelper {
 
-    public PropertySetter getPropertySetter() {
-        return propertySetter;
+    public PlutoPropertyHelper() {
+        add(new PropertyHelper.PropertySetter() {
+            @Override
+            public boolean setNew(String property, Object value, PropertyHelper propertyHelper) {
+                Log.log.log("New property " + property + " was set to " + value.toString(), Log.ALWAYS);
+                propertyInteractor.setProperty(property, String.valueOf(value));
+                return true;
+            }
+
+            @Override
+            public boolean set(String property, Object value, PropertyHelper propertyHelper) {
+                Log.log.log("Property " + property + " was set to " + value.toString(), Log.ALWAYS);
+                propertyInteractor.setProperty(property, String.valueOf(value));
+                return true;
+            }
+        });
+        add(new PropertyEvaluator() {
+            @Override
+            public Object evaluate(String property, PropertyHelper propertyHelper) {
+                Log.log.log("Property " + property + " was retrieved...", Log.ALWAYS);
+                return propertyInteractor.get(property);
+            }
+        });
     }
 
-    public void setPropertySetter(PropertySetter propertySetter) {
-        this.propertySetter = propertySetter;
+    public PropertyInteractor getPropertyInteractor() {
+        return propertyInteractor;
     }
 
-    public interface PropertySetter {
+    public void setPropertyInteractor(PropertyInteractor propertyInteractor) {
+        this.propertyInteractor = propertyInteractor;
+    }
+
+    public interface PropertyInteractor {
         void setProperty(String k, String v);
+        String get(String k);
     }
 
-    private PropertySetter propertySetter;
+    private PropertyInteractor propertyInteractor;
 
-    @Override
-    public boolean setProperty(String name, Object value, boolean verbose) {
-        Log.log.log("Property " + name + " was set to " + value.toString(), Log.ALWAYS);
-
-        if (propertySetter != null)
-            propertySetter.setProperty(name, value.toString());
-
-        return super.setProperty(name, value, verbose);
-    }
-
-    @Override
-    public void setNewProperty(String name, Object value) {
-        Log.log.log("New property " + name + " was set to " + value.toString(), Log.ALWAYS);
-
-        if (propertySetter != null)
-            propertySetter.setProperty(name, value.toString());
-
-        super.setNewProperty(name, value);
-    }
 
     /**
      * Factory method to create a property processor.

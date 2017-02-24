@@ -163,8 +163,9 @@ public class ElementGenerator {
         }
 
         // Element might include text. Call addText method...
-        String text = resolver.getExpandedValue(StringEscapeUtils.escapeJava(element.getWrapper().getText().toString()));
+        String text = element.getWrapper().getText().toString();
         if (!text.trim().isEmpty()) {
+            text = resolver.getExpandedValue(StringEscapeUtils.escapeJava(text));
             generator.printString(taskName + ".addText(\"" + text + "\");");
         }
 
