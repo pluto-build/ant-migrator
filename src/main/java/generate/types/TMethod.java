@@ -22,8 +22,13 @@ public class TMethod {
         return parameters;
     }
 
+    @Deprecated
     public Class<?> getReturnType() {
         return ReflectionHelpers.getClassFor(returnTypeString.getFullyQualifiedName());
+    }
+
+    public TTypeName getReturnTypeName() {
+        return returnTypeString;
     }
 
     public TMethod(String name, List<TParameter> parameters, TTypeName returnTypeString) {

@@ -10,28 +10,28 @@ import java.lang.reflect.Parameter;
 public class TParameter {
 
     private final String name;
-    private final TTypeName typeString;
+    private final TTypeName typeName;
 
 
     public String getName() {
         return name;
     }
-    public TTypeName getTypeString() {
-        return typeString;
+    public TTypeName getTypeName() {
+        return typeName;
     }
 
     public Class<?> getType() {
-        return ReflectionHelpers.getClassFor(typeString.getFullyQualifiedName());
+        return ReflectionHelpers.getClassFor(typeName.getFullyQualifiedName());
     }
 
 
-    public TParameter(String name, TTypeName typeString) {
+    public TParameter(String name, TTypeName typeName) {
         this.name = name;
-        this.typeString = typeString;
+        this.typeName = typeName;
     }
 
     public TParameter(Parameter parameter) {
         this.name = parameter.getName();
-        this.typeString = new TTypeName(parameter.getType().getName());
+        this.typeName = new TTypeName(parameter.getType().getName());
     }
 }

@@ -1,8 +1,9 @@
-package generate;
+package generate.introspectionhelpers;
 
 import generate.anthelpers.ReflectionHelpers;
 import generate.types.TConstructor;
 import generate.types.TMethod;
+import generate.types.TTypeName;
 import org.apache.tools.ant.*;
 
 import java.lang.reflect.Constructor;
@@ -20,6 +21,34 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
         this.introspectionHelper = IntrospectionHelper.getHelper(getElementTypeClass());
     }
 
+
+    private String getContructor(Class<?> cls) {
+        boolean includeProject;
+        Constructor<?> c;
+        try {
+            // First try with Project.
+            c = cls.getConstructor(Project.class);
+            includeProject = true;
+        } catch (final NoSuchMethodException nme) {
+            // OK, try without.
+            try {
+                c = cls.getConstructor();
+                includeProject = false;
+            } catch (final NoSuchMethodException nme2) {
+                // Well, no matching constructor.
+                throw new RuntimeException("We didn't find any matching constructor for type " + cls.toString());
+            }
+        }
+
+        TTypeName clsName = new TTypeName(cls.getName());
+
+        if (includeProject) {
+            return "new " + clsName.getShortName() + "(project)";
+        } else {
+            return "new " + clsName.getShortName() + "()";
+        }
+    }
+
     @Override
     public TConstructor getConstructor() {
         try {
@@ -29,7 +58,24 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
         } catch (NullPointerException e) {
 
         }
-        return null;
+
+        Constructor<?> constructor = null;
+        try {
+            // First try with Project.
+            constructor = getElementTypeClass().getConstructor(Project.class);
+        } catch (final NoSuchMethodException nme) {
+            // OK, try without.
+            try {
+                constructor = getElementTypeClass().getConstructor();
+            } catch (final NoSuchMethodException nme2) {
+                // Well, no matching constructor.
+            }
+        }
+
+        if (constructor == null)
+            return null;
+
+        return new TConstructor(constructor);
     }
 
     public IntrospectionHelper.Creator getElementCreator(UnknownElement e) {
@@ -52,7 +98,7 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public Class<?> getElementTypeClass() {
-        if (getParentIntrospectionHelper() != null) {
+        if (getParentIntrospectionHelper() != null && getParentIntrospectionHelper() instanceof  PlutoAntIntrospectionHelper) {
             // Try to find element class by looking into parent
             IntrospectionHelper.Creator creator = ((PlutoAntIntrospectionHelper) getParentIntrospectionHelper()).getElementCreator(getElement());
             Method creatorMethod = ReflectionHelpers.getNestedCreatorMethodFor(creator);
@@ -66,29 +112,15 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
         return super.getElementTypeClass();
     }
 
-    private Method getNestedCreatorMethod() {
-        if (getParentIntrospectionHelper() != null) {
-            IntrospectionHelper.Creator creator = ((PlutoAntIntrospectionHelper) getParentIntrospectionHelper()).getElementCreator(getElement());
-            return ReflectionHelpers.getNestedCreatorMethodFor(creator);
-        }
-        return null;
+    public TMethod getCreatorMethod(UnknownElement element) {
+        IntrospectionHelper.Creator creator = this.getElementCreator(element);
+        Method method = ReflectionHelpers.getNestedCreatorMethodFor(creator);
+        if (method == null)
+            return null;
+        return new TMethod(method);
     }
 
-    @Override
-    public TMethod getConstructorFactoryMethod() {
-        Method nestedCreatorMethod = getNestedCreatorMethod();
-        if (nestedCreatorMethod == null || nestedCreatorMethod.getAnnotatedReturnType().getType().getTypeName().equals("void"))
-            return null;
-        return new TMethod(nestedCreatorMethod);
-    }
 
-    @Override
-    public TMethod getAddChildMethod() {
-        Method nestedCreatorMethod = getNestedCreatorMethod();
-        if (nestedCreatorMethod == null || !nestedCreatorMethod.getAnnotatedReturnType().getType().getTypeName().equals("void"))
-            return null;
-        return new TMethod(nestedCreatorMethod);
-    }
 
     @Override
     public TMethod getAttributeMethod(String attr) {
@@ -97,6 +129,8 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public boolean supportsNestedElement(String name) {
-        return introspectionHelper.supportsNestedElement(getElement().getNamespace(), name);
+        if (getMacroIntrospectionHelperThatSupportsElement(name) != null)
+            return true;
+        return introspectionHelper.supportsNestedElement(getElement().getNamespace(), name, getProject(), getParent());
     }
 }

@@ -10,11 +10,11 @@ import java.util.List;
  */
 public class TConstructor {
 
-    private final String name;
+    private final TTypeName name;
     private final TTypeName declaringClassStringTypeName;
     private final List<TParameter> parameters;
 
-    public String getName() {
+    public TTypeName getName() {
         return name;
     }
     public List<TParameter> getParameters() {
@@ -28,14 +28,14 @@ public class TConstructor {
         return ReflectionHelpers.getClassFor(declaringClassStringTypeName.getFullyQualifiedName());
     }
 
-    public TConstructor(String name, List<TParameter> parameters, TTypeName declaringClassStringTypeName) {
+    public TConstructor(TTypeName name, List<TParameter> parameters, TTypeName declaringClassStringTypeName) {
         this.name = name;
         this.parameters = parameters;
         this.declaringClassStringTypeName = declaringClassStringTypeName;
     }
 
     public TConstructor(java.lang.reflect.Constructor<?> constructor) {
-        this.name = constructor.getName();
+        this.name = new TTypeName(constructor.getName());
         this.declaringClassStringTypeName = new TTypeName(constructor.getDeclaringClass().getName());
         this.parameters = new ArrayList<>();
         for (java.lang.reflect.Parameter parameter: constructor.getParameters()) {
@@ -47,13 +47,13 @@ public class TConstructor {
         String p = "(";
 
         for (TParameter parameter: this.getParameters()) {
-            p += parameter.getTypeString().getFullyQualifiedName() + " " + parameter.getName() + ", ";
+            p += parameter.getTypeName().getFullyQualifiedName() + " " + parameter.getName() + ", ";
         }
 
         if (p.endsWith(", "))
             p = p.substring(0, p.length()-2);
 
-        return this.getName() + p + ")";
+        return this.getName().getShortName() + p + ")";
     }
 
     public String formatUse(List<String> parameterNames) {
@@ -66,6 +66,6 @@ public class TConstructor {
         if (p.endsWith(", "))
             p = p.substring(0, p.length()-2);
 
-        return this.getName() + p + ")";
+        return this.getName().getShortName() + p + ")";
     }
 }

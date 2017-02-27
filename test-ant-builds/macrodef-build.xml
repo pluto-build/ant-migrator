@@ -1,6 +1,6 @@
 <project name="MacrodefTest" default="main" basedir=".">
 
-    <target name="main" depends="echo, echo2" />
+    <target name="main" depends="echo, echo2, zip" />
 
     <macrodef name="echotest">
         <text name="text"/>
@@ -28,6 +28,24 @@
         <prefixecho prefix="This is a test" postfix="!">
             Let's do this!
         </prefixecho>
+    </target>
+
+     <macrodef name="zipmacro">
+        <element name="zfs"/>
+        <sequential>
+            <zip destfile="result.zip">
+                <zfs/>
+            </zip>
+        </sequential>
+    </macrodef>
+
+    <target name="zip">
+        <zipmacro>
+            <zfs>
+                <zipfileset dir="src" prefix="src"/>
+                <zipfileset dir="target" prefix="target"/>
+            </zfs>
+        </zipmacro>
     </target>
 
 </project>

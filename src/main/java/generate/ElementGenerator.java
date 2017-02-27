@@ -1,5 +1,6 @@
 package generate;
 
+import generate.introspectionhelpers.AntIntrospectionHelper;
 import generate.types.TConstructor;
 import generate.types.TMethod;
 import generate.types.TParameter;
@@ -13,6 +14,7 @@ import utils.StringUtils;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,6 +26,24 @@ public class ElementGenerator {
     private final Project project;
     private final NamingManager namingManager;
     private final Resolvable resolver;
+    private List<String> ignoredMacroElements = new ArrayList<>();
+    private List<String> alreadyDefinedNames = new ArrayList<>();
+
+    public List<String> getIgnoredMacroElements() {
+        return ignoredMacroElements;
+    }
+
+    public void setIgnoredMacroElements(List<String> ignoredMacroElements) {
+        this.ignoredMacroElements = ignoredMacroElements;
+    }
+
+    public List<String> getAlreadyDefinedNames() {
+        return alreadyDefinedNames;
+    }
+
+    public void setAlreadyDefinedNames(List<String> alreadyDefinedNames) {
+        this.alreadyDefinedNames = alreadyDefinedNames;
+    }
 
     public NamingManager getNamingManager() {
         return namingManager;
@@ -44,46 +64,30 @@ public class ElementGenerator {
         this.resolver = resolver;
     }
 
-    public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element) {
+    public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName) {
 
-        String taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
+        if (taskName == null)
+            taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
         AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, generator.getPkg(), parentIntrospectionHelper);
 
         if (introspectionHelper.isAntCall()) {
             // Deal with antcalls
 
-            String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(introspectionHelper.getAttributeMap().get("target").toString()));
-            //generator.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            generator.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone(\""+depName+"\"));");
+            generateAntCall(introspectionHelper);
 
-            // TODO: Deal with children of antcall (params)
 
             return taskName;
         }
 
-        Class<?> elementTypeClass = introspectionHelper.getElementTypeClass();
-        if (elementTypeClass == null)
+        TTypeName elementTypeClassName = introspectionHelper.getElementTypeClassName();
+        if (elementTypeClassName == null)
             throw new RuntimeException("Could not get type definition for " + element.getTaskName());
 
-        TTypeName elementTypeClassName = new TTypeName(elementTypeClass.getName());
-
-        TConstructor constructor = introspectionHelper.getConstructor();
-        TMethod constructorFactoryMethod = introspectionHelper.getConstructorFactoryMethod();
-
-        if (constructorFactoryMethod != null) {
-            // We have a factory method in the parent. Use it...
-            generator.addImport(elementTypeClassName.getImportName());
-
-            String taskClassName = elementTypeClassName.getShortName();
-
-            generator.printString(taskClassName + " " + taskName + " = " + introspectionHelper.getParentIntrospectionHelper().getName() + "." + constructorFactoryMethod.getName() + "();");
-        } else {
-            generateConstructor(introspectionHelper, constructor);
-        }
+        generateConstructor(introspectionHelper, taskName);
 
         if (introspectionHelper.hasProjectSetter())
-            generator.printString(taskName + ".setProject(project);");
+            generateProjectSetter(taskName);
 
         try {
             // Just for debugging purposes right now
@@ -93,6 +97,52 @@ public class ElementGenerator {
 
         }
 
+        generateAttributes(element, taskName, introspectionHelper);
+
+        // Element might include text. Call addText method...
+        generateText(element, taskName);
+
+        if (introspectionHelper.isMacroInvocation())
+            generator.printString(taskName + ".prepare();");
+
+        if (element.getChildren() != null) {
+            for (UnknownElement child : element.getChildren()) {
+                generator.increaseIndentation(1);
+                if (introspectionHelper.supportsNestedElement(child.getTaskName())) {
+                    generateElement(introspectionHelper, child, null);
+                } else {
+                    if (!(TaskContainer.class.isAssignableFrom(introspectionHelper.getElementTypeClass()))) {
+                        // Ignore macro child elements at definition...
+                        if (!getIgnoredMacroElements().contains(child.getTaskName()))
+                            throw new RuntimeException("Didn't support nested element: " + child.getTaskName());
+                    } else {
+                        // a task container - anything could happen - just add the
+                        // child to the container
+                        String childName = generateElement(introspectionHelper, child, null);
+                        generator.printString(taskName + ".addTask(" + childName + ");");
+                    }
+
+                }
+                generator.increaseIndentation(-1);
+            }
+        }
+
+        if (introspectionHelper.getAddChildMethod() != null) {
+            generator.printString(introspectionHelper.getParentIntrospectionHelper().getName() + "." + introspectionHelper.getAddChildMethod().getName() + "(" + taskName + ");");
+        }
+
+        return taskName;
+    }
+
+    public void generateText(UnknownElement element, String taskName) {
+        String text = element.getWrapper().getText().toString();
+        if (!text.trim().isEmpty()) {
+            text = resolver.getExpandedValue(StringEscapeUtils.escapeJava(text));
+            generator.printString(taskName + ".addText(\"" + text + "\");");
+        }
+    }
+
+    public void generateAttributes(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
         for (Map.Entry<String, Object> entry : introspectionHelper.getAttributeMap().entrySet()) {
             String n = entry.getKey().toLowerCase();
             Object o = entry.getValue();
@@ -161,86 +211,54 @@ public class ElementGenerator {
 
             generator.printString(taskName + "." + setterMethod.getName() + "(" + argument + ");");
         }
+    }
 
-        // Element might include text. Call addText method...
-        String text = element.getWrapper().getText().toString();
-        if (!text.trim().isEmpty()) {
-            text = resolver.getExpandedValue(StringEscapeUtils.escapeJava(text));
-            generator.printString(taskName + ".addText(\"" + text + "\");");
-        }
+    public void generateProjectSetter(String taskName) {
+        generator.printString(taskName + ".setProject(project);");
+    }
 
-        if (element.getChildren() != null) {
-            for (UnknownElement child : element.getChildren()) {
-                generator.increaseIndentation(1);
-                if (introspectionHelper.supportsNestedElement(child.getTaskName())) {
-                    generateElement(introspectionHelper, child);
-                } else {
-                    if (!(TaskContainer.class.isAssignableFrom(elementTypeClass))) {
-                        throw new RuntimeException("Didn't support nested element: " + child.getTaskName());
-                    } else {
-                        // a task container - anything could happen - just add the
-                        // child to the container
-                        String childName = generateElement(introspectionHelper, child);
-                        generator.printString(taskName + ".addTask(" + childName + ");");
-                    }
+    public void generateAntCall(AntIntrospectionHelper introspectionHelper) {
+        String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(introspectionHelper.getAttributeMap().get("target").toString()));
+        //generator.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
+        generator.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone(\""+depName+"\"));");
 
+        // TODO: Deal with children of antcall (params)
+    }
+
+    public void generateConstructor(AntIntrospectionHelper introspectionHelper, String taskName) {
+        TMethod constructorFactoryMethod = introspectionHelper.getConstructorFactoryMethod();
+        TConstructor constructor = introspectionHelper.getConstructor();
+        TTypeName elementTypeClassName = introspectionHelper.getElementTypeClassName();
+
+        if (constructorFactoryMethod != null) {
+            // We have a factory method in the parent. Use it...
+            generator.addImport(elementTypeClassName.getImportName());
+
+            String taskClassName = elementTypeClassName.getShortName();
+
+            if (alreadyDefinedNames.contains(taskName))
+                generator.printString(taskName + " = " + introspectionHelper.getParentIntrospectionHelper().getName() + "." + constructorFactoryMethod.getName() + "();");
+            else
+                generator.printString(taskClassName + " " + taskName + " = " + introspectionHelper.getParentIntrospectionHelper().getName() + "." + constructorFactoryMethod.getName() + "();");
+        } else {
+            if (constructor == null) {
+                throw new RuntimeException("We didn't have a constructor for " + taskName);
+            } else {
+                ArrayList<String> params = new ArrayList<>();
+                // TODO: This is very fragile and wrong
+                for (TParameter parameter : constructor.getParameters()) {
+                    if (parameter.getTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.Project"))
+                        params.add("project");
+                    else if (parameter.getName().equals("input"))
+                        params.add("cinput.clone(\""+taskName+"\")");
+                    else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
                 }
-                generator.increaseIndentation(-1);
+                generator.addImport(constructor.getDeclaringClassTypeName().getImportName());
+                if (alreadyDefinedNames.contains(taskName))
+                    generator.printString(taskName + " = new " + constructor.formatUse(params) + ";");
+                else
+                    generator.printString(constructor.getDeclaringClassTypeName().getShortName() + " " + taskName + " = new " + constructor.formatUse(params) + ";");
             }
-        }
-
-        if (introspectionHelper.getAddChildMethod() != null) {
-            generator.printString(introspectionHelper.getParentIntrospectionHelper().getName() + "." + introspectionHelper.getAddChildMethod().getName() + "(" + taskName + ");");
-        }
-
-        return taskName;
-    }
-
-    private String getContructor(Class<?> cls) {
-        boolean includeProject;
-        Constructor<?> c;
-        try {
-            // First try with Project.
-            c = cls.getConstructor(Project.class);
-            includeProject = true;
-        } catch (final NoSuchMethodException nme) {
-            // OK, try without.
-            try {
-                c = cls.getConstructor();
-                includeProject = false;
-            } catch (final NoSuchMethodException nme2) {
-                // Well, no matching constructor.
-                throw new RuntimeException("We didn't find any matching constructor for type " + cls.toString());
-            }
-        }
-
-        TTypeName clsName = new TTypeName(cls.getName());
-
-        if (includeProject) {
-            return "new " + clsName.getShortName() + "(project)";
-        } else {
-            return "new " + clsName.getShortName() + "()";
-        }
-    }
-
-    private void generateConstructor(AntIntrospectionHelper introspectionHelper, TConstructor constructor) {
-        TTypeName taskClassName = new TTypeName(introspectionHelper.getElementTypeClass().getName());
-
-        if (constructor == null) {
-            generator.addImport(taskClassName.getImportName());
-            generator.printString(taskClassName.getShortName() + " " + introspectionHelper.getName() + " = " + getContructor(introspectionHelper.getElementTypeClass()) + ";");
-        } else {
-            ArrayList<String> params = new ArrayList<>();
-            // TODO: This is very fragile and wrong
-            for (TParameter parameter: constructor.getParameters()) {
-                if (parameter.getName().equals("project"))
-                    params.add("project");
-                else if (parameter.getName().equals("input"))
-                    params.add("cinput");
-                else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
-            }
-            generator.addImport(constructor.getDeclaringClassTypeName().getImportName());
-            generator.printString(constructor.getDeclaringClassTypeName().getShortName() + " " + introspectionHelper.getName() + " = new " + constructor.formatUse(params) + ";");
         }
     }
 

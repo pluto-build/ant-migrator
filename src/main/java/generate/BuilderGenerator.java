@@ -121,7 +121,7 @@ public class BuilderGenerator extends JavaGenerator {
                 UnknownElement element = (UnknownElement) t;
 
                 // Generate code for the task, including all children in the build file
-                String taskName = getElementGenerator().generateElement(null, element);
+                String taskName = getElementGenerator().generateElement(null, element, null);
 
                 // Antcalls are resolved directly to builder calls. No calling of execute...
                 if (!element.getTaskName().equals("antcall"))

@@ -1,10 +1,14 @@
 package generate;
 
+import generate.introspectionhelpers.AntIntrospectionHelper;
+import generate.types.TTypeName;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 import utils.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -56,6 +60,8 @@ public class MacroGenerator extends JavaGenerator {
             generateElement(child);
         }
 
+        this.generatePrepareMethod();
+
         this.generateExecuteMethod();
 
 
@@ -77,24 +83,66 @@ public class MacroGenerator extends JavaGenerator {
                 "}");
     }
 
+    HashMap<UnknownElement, String> childNames = new HashMap<>();
+
+    private void generatePrepareMethod() {
+        // Get the sequential element
+        UnknownElement sequential = macroDef.getChildren().stream().filter(element ->  element.getTaskName().equals("sequential")).findFirst().get();
+
+        // Generate of the rest of toplevel definitions:
+        for (UnknownElement child: sequential.getChildren()) {
+            if (!childNames.containsKey(child)) {
+                String childName = namingManager.getNameFor(StringUtils.decapitalize(child.getTaskName()));
+
+                AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, child, childName, getPkg().replace(".macros",""), null);
+                this.printString("private " + introspectionHelper.getElementTypeClassName().getShortName() + " " + childName + " = null;");
+                childNames.put(child, childName);
+            }
+        }
+
+        this.printString("public void prepare() {","}");
+        this.increaseIndentation(1);
+
+        ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
+        elementGenerator.setIgnoredMacroElements(definedElements);
+        elementGenerator.setAlreadyDefinedNames(new ArrayList(childNames.values()));
+
+        for (UnknownElement child: sequential.getChildren()) {
+            childNames.put(child, elementGenerator.generateElement(null, child, childNames.get(child)));
+        }
+
+        this.closeOneLevel(); // end method
+    }
+
     private void generateExecuteMethod() {
         this.printString("public void execute() {","}");
         this.increaseIndentation(1);
-
-        // TODO: Use more specialized resolver here!
-        ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
 
         // Get the sequential element
         UnknownElement sequential = macroDef.getChildren().stream().filter(element ->  element.getTaskName().equals("sequential")).findFirst().get();
 
         for (UnknownElement child: sequential.getChildren()) {
-            String childName = elementGenerator.generateElement(null, child);
-
-            this.printString(childName+".execute();");
+            this.printString(childNames.get(child) + ".execute();");
         }
 
         this.closeOneLevel(); // end method
     }
+
+    private UnknownElement findParentForElement(UnknownElement element,  String name) {
+        if (element.getChildren().stream().anyMatch(c -> c.getTaskName().equals(name))) {
+            return element;
+        } else
+        {
+            for (UnknownElement c: element.getChildren()) {
+                UnknownElement res = findParentForElement(c, name);
+                if (res != null)
+                    return res;
+            }
+        }
+        return null;
+    }
+
+    List<String> definedElements = new ArrayList<>();
 
     private void generateElement(UnknownElement element) {
         if (element.getTaskName().equals("text")) {
@@ -138,6 +186,30 @@ public class MacroGenerator extends JavaGenerator {
                     "}");
 
             // TODO: doubleexpanding, description
+        }
+        if (element.getTaskName().equals("element")) {
+            String elementName = element.getWrapper().getAttributeMap().get("name").toString();
+            definedElements.add(elementName);
+            String elementClassName = namingManager.getClassNameFor(elementName);
+
+            UnknownElement sequential = macroDef.getChildren().stream().filter(e ->  e.getTaskName().equals("sequential")).findFirst().get();
+            UnknownElement parent = findParentForElement(sequential, elementName);
+
+            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, parent, elementClassName, getPkg().replace(".macros",""), null);
+            TTypeName name = introspectionHelper.getElementTypeClassName();
+
+            String taskName = namingManager.getNameFor(StringUtils.decapitalize(name.getShortName()));
+
+            childNames.put(parent, taskName);
+
+            this.addImport(name.getImportName());
+            this.printString("private " + name.getShortName() + " " + taskName + " = null;");
+            this.printString("public " + name.getShortName() + " get" + elementClassName + "() {" , "}");
+            this.increaseIndentation(1);
+
+            this.printString("return " + taskName + ";");
+
+            this.closeOneLevel();
         }
     }
 }

@@ -166,7 +166,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                 UnknownElement child = (UnknownElement) o;
 
                 if (child.getWrapper().getAttributeMap().containsKey("id")) {
-                    String childName = elementGenerator.generateElement(null, child);
+                    String childName = elementGenerator.generateElement(null, child, null);
                 } else if (child.getTaskName().equals("macrodef")) {
                     // Deal with macros. First do macrodef execution to make them available everywhere
 
@@ -257,7 +257,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                 "  if (this == o) return true;\n" +
                 "  if (o == null || getClass() != o.getClass()) return false;\n" +
                 "\n" +
-                "  CommonsIOInput that = (CommonsIOInput) o;\n" +
+                "  "+this.name+" that = ("+this.name+") o;\n" +
                 "\n" +
                 "  if (!builderName.equals(that.builderName)) return false;\n" +
                 "  return newProperties.equals(that.newProperties);\n" +

@@ -1,5 +1,6 @@
-package generate;
+package generate.introspectionhelpers;
 
+import generate.NamingManager;
 import generate.types.TConstructor;
 import generate.types.TMethod;
 import generate.types.TParameter;
@@ -7,7 +8,6 @@ import generate.types.TTypeName;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 import org.apache.tools.ant.taskdefs.MacroDef;
-import utils.StringUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -49,7 +49,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
         ArrayList<TParameter> parameters = new ArrayList<>();
         parameters.add(new TParameter("project", new TTypeName(Project.class.getName())));
         parameters.add(new TParameter("input", new TTypeName(namingManager.getClassNameFor(getProject().getName() + "Input"))));
-        return new TConstructor(namingManager.getClassNameFor(getElement().getTaskName()+"Macro"), parameters, new TTypeName(getPkg()+".macros."+namingManager.getClassNameFor(getElement().getTaskName()+"Macro")));
+        return new TConstructor(new TTypeName(namingManager.getClassNameFor(getElement().getTaskName()+"Macro")), parameters, new TTypeName(getPkg()+".macros."+namingManager.getClassNameFor(getElement().getTaskName()+"Macro")));
     }
 
     @Override
@@ -71,8 +71,39 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public boolean supportsNestedElement(String name) {
-        // TODO:
-        return false;
+        return (getMacroDef().getElements().containsKey(name));
+    }
+
+    public UnknownElement findParentForElement(UnknownElement element, String name) {
+        for (UnknownElement c: element.getChildren()) {
+            if (c.getTaskName().equals(name))
+                return element;
+            UnknownElement p = findParentForElement(c, name);
+            if (p != null)
+                return p;
+        }
+        return null;
+    }
+
+    @Override
+    public TMethod getCreatorMethod(UnknownElement element) {
+        if (!this.supportsNestedElement(element.getTaskName()))
+            return null;
+
+        MacroAntIntrospectionHelper macroAntIntrospectionHelper = getMacroIntrospectionHelperThatSupportsElement(element.getTaskName());
+        if (macroAntIntrospectionHelper != null) {
+
+            String getterName = "get" + namingManager.getClassNameFor(element.getTaskName());
+
+            UnknownElement parent = findParentForElement(macroAntIntrospectionHelper.getMacroDef().getNestedTask(), element.getTaskName());
+            if (parent == null)
+                return null;
+
+            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(getProject(), parent, parent.getTaskName(), getPkg(), getParentIntrospectionHelper());
+
+            return new TMethod(getterName, new ArrayList<>(), introspectionHelper.getElementTypeClassName());
+        }
+        return null;
     }
 
     @Override
@@ -83,5 +114,12 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public TMethod getAddChildMethod() {
         return null;
+    }
+
+    @Override
+    public MacroAntIntrospectionHelper getMacroIntrospectionHelperThatSupportsElement(String name) {
+        if (this.supportsNestedElement(name))
+            return this;
+        return super.getMacroIntrospectionHelperThatSupportsElement(name);
     }
 }
