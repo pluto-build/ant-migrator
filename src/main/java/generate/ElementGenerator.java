@@ -7,6 +7,7 @@ import generate.types.TParameter;
 import generate.types.TTypeName;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.UnknownElement;
 import org.apache.tools.ant.types.EnumeratedAttribute;
@@ -69,6 +70,11 @@ public class ElementGenerator {
         if (taskName == null)
             taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
+        if (ignoredMacroElements.contains(element.getTaskName())) {
+            if (element.getChildren() == null || element.getChildren().isEmpty())
+                return taskName;
+        }
+
         AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, generator.getPkg(), parentIntrospectionHelper);
 
         if (introspectionHelper.isAntCall()) {
@@ -105,6 +111,12 @@ public class ElementGenerator {
         if (introspectionHelper.isMacroInvocation())
             generator.printString(taskName + ".prepare();");
 
+        if (introspectionHelper.hasImplicitElement()) {
+            // We have an implicit element in a macro
+            generateImplicitElement(element, introspectionHelper);
+            return taskName;
+        }
+
         if (element.getChildren() != null) {
             for (UnknownElement child : element.getChildren()) {
                 generator.increaseIndentation(1);
@@ -132,6 +144,17 @@ public class ElementGenerator {
         }
 
         return taskName;
+    }
+
+    public void generateImplicitElement(UnknownElement element, AntIntrospectionHelper introspectionHelper) {
+        // Add the implicit element explicitely during translation. First find the right one...
+        String implicitName = namingManager.getNameFor(introspectionHelper.getImplicitElementName());
+        UnknownElement implicitElement = new UnknownElement(introspectionHelper.getImplicitElementName());
+        implicitElement.setTaskName(introspectionHelper.getImplicitElementName());
+        implicitElement.setRuntimeConfigurableWrapper(new RuntimeConfigurable(implicitElement, introspectionHelper.getImplicitElementName()));
+        for (UnknownElement child: element.getChildren())
+            implicitElement.addChild(child);
+        this.generateElement(introspectionHelper, implicitElement, implicitName);
     }
 
     public void generateText(UnknownElement element, String taskName) {

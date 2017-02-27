@@ -49,7 +49,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
         ArrayList<TParameter> parameters = new ArrayList<>();
         parameters.add(new TParameter("project", new TTypeName(Project.class.getName())));
         parameters.add(new TParameter("input", new TTypeName(namingManager.getClassNameFor(getProject().getName() + "Input"))));
-        return new TConstructor(new TTypeName(namingManager.getClassNameFor(getElement().getTaskName()+"Macro")), parameters, new TTypeName(getPkg()+".macros."+namingManager.getClassNameFor(getElement().getTaskName()+"Macro")));
+        return new TConstructor(new TTypeName(namingManager.getClassNameFor(getElement().getTaskName() + "Macro")), parameters, new TTypeName(getPkg() + ".macros." + namingManager.getClassNameFor(getElement().getTaskName() + "Macro")));
     }
 
     @Override
@@ -70,12 +70,29 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean supportsNestedElement(String name) {
-        return (getMacroDef().getElements().containsKey(name));
+    public boolean hasImplicitElement() {
+        return getMacroDef().getElements().values().stream().anyMatch(templateElement -> templateElement.isImplicit());
     }
 
-    public UnknownElement findParentForElement(UnknownElement element, String name) {
-        for (UnknownElement c: element.getChildren()) {
+    @Override
+    public String getImplicitElementName() {
+        return getMacroDef().getElements().values().stream().filter(templateElement -> templateElement.isImplicit()).findFirst().get().getName();
+    }
+
+    @Override
+    public boolean supportsNestedElement(String name) {
+        return (getMacroDef().getElements().containsKey(name)) || hasImplicitElement();
+    }
+
+    public UnknownElement findParentForElement(String name) {
+        MacroAntIntrospectionHelper macroAntIntrospectionHelper = getMacroIntrospectionHelperThatSupportsElement(name);
+        return findParentForElement(macroAntIntrospectionHelper.getMacroDef().getNestedTask(), name);
+    }
+
+    private UnknownElement findParentForElement(UnknownElement element, String name) {
+        if (element.getChildren() == null)
+            return null;
+        for (UnknownElement c : element.getChildren()) {
             if (c.getTaskName().equals(name))
                 return element;
             UnknownElement p = findParentForElement(c, name);
@@ -93,11 +110,9 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
         MacroAntIntrospectionHelper macroAntIntrospectionHelper = getMacroIntrospectionHelperThatSupportsElement(element.getTaskName());
         if (macroAntIntrospectionHelper != null) {
 
-            String getterName = "get" + namingManager.getClassNameFor(element.getTaskName());
-
-            UnknownElement parent = findParentForElement(macroAntIntrospectionHelper.getMacroDef().getNestedTask(), element.getTaskName());
-            if (parent == null)
-                return null;
+            String getterName;
+            UnknownElement parent = findParentForElement(element.getTaskName());
+            getterName = "get" + namingManager.getClassNameFor(element.getTaskName());
 
             AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(getProject(), parent, parent.getTaskName(), getPkg(), getParentIntrospectionHelper());
 

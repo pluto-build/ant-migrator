@@ -129,6 +129,8 @@ public class MacroGenerator extends JavaGenerator {
     }
 
     private UnknownElement findParentForElement(UnknownElement element,  String name) {
+        if (element.getChildren() == null)
+            return null;
         if (element.getChildren().stream().anyMatch(c -> c.getTaskName().equals(name))) {
             return element;
         } else
@@ -195,6 +197,9 @@ public class MacroGenerator extends JavaGenerator {
             UnknownElement sequential = macroDef.getChildren().stream().filter(e ->  e.getTaskName().equals("sequential")).findFirst().get();
             UnknownElement parent = findParentForElement(sequential, elementName);
 
+            if (parent == null)
+                throw new RuntimeException("Did not find <"+ elementName + "/> element in macrodef.");
+
             AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, parent, elementClassName, getPkg().replace(".macros",""), null);
             TTypeName name = introspectionHelper.getElementTypeClassName();
 
@@ -210,6 +215,8 @@ public class MacroGenerator extends JavaGenerator {
             this.printString("return " + taskName + ";");
 
             this.closeOneLevel();
+
+            // TODO: implict elements
         }
     }
 }

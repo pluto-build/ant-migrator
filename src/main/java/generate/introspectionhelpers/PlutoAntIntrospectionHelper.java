@@ -120,6 +120,15 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
         return new TMethod(method);
     }
 
+    @Override
+    public boolean hasImplicitElement() {
+        return false;
+    }
+
+    @Override
+    public String getImplicitElementName() {
+        return null;
+    }
 
 
     @Override

@@ -25,7 +25,7 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
         {
             MacroAntIntrospectionHelper macroAntIntrospectionHelper = getMacroIntrospectionHelperThatSupportsElement(getElement().getTaskName());
             if (macroAntIntrospectionHelper != null) {
-                UnknownElement parentElement = macroAntIntrospectionHelper.findParentForElement(macroAntIntrospectionHelper.getMacroDef().getNestedTask(), getElement().getTaskName());
+                UnknownElement parentElement = macroAntIntrospectionHelper.findParentForElement(getElement().getTaskName());
                 this.realElementIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(getProject(), parentElement, getName(), getPkg(), null);
             }
         }
@@ -69,6 +69,16 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public TMethod getCreatorMethod(UnknownElement element) {
         return getRealElementIntrospectionHelper().getCreatorMethod(element);
+    }
+
+    @Override
+    public boolean hasImplicitElement() {
+        return false;
+    }
+
+    @Override
+    public String getImplicitElementName() {
+        return null;
     }
 
 

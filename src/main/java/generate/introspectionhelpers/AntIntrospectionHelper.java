@@ -7,6 +7,7 @@ import generate.types.TTypeName;
 import org.apache.tools.ant.*;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -78,7 +79,7 @@ abstract public class AntIntrospectionHelper {
         final AntTypeDefinition definition = componentHelper.getDefinition(element.getTaskName());
         if ((definition != null && definition.getClass().getSimpleName().equals("MyAntTypeDefinition"))) {
             return new MacroAntIntrospectionHelper(project, element, name, pkg, parentIntrospectionHelper);
-        } else if (parentIntrospectionHelper != null && parentIntrospectionHelper.getMacroIntrospectionHelperThatSupportsElement(element.getTaskName()) != null) {
+        } else if (parentIntrospectionHelper != null && parentIntrospectionHelper.getFirstIntrospectionHelperThatSupportsElement(element.getTaskName()) instanceof MacroAntIntrospectionHelper) {
             return new MacroElementAntIntrospectionHelper(project, element, name, pkg, parentIntrospectionHelper);
         }
         return new PlutoAntIntrospectionHelper(project, element, name, pkg, parentIntrospectionHelper);
@@ -119,6 +120,8 @@ abstract public class AntIntrospectionHelper {
     }
 
     public Map<String, Object> getAttributeMap() {
+        if (getElement().getWrapper() == null)
+            return new HashMap<>();
         return getElement().getWrapper().getAttributeMap();
     }
 
@@ -173,4 +176,16 @@ abstract public class AntIntrospectionHelper {
         }
         return null;
     }
+
+    public AntIntrospectionHelper getFirstIntrospectionHelperThatSupportsElement(String name) {
+        if (this.supportsNestedElement(name))
+            return this;
+        AntIntrospectionHelper parentIntrospectionHelper = getParentIntrospectionHelper();
+        if (parentIntrospectionHelper != null)
+            return parentIntrospectionHelper.getFirstIntrospectionHelperThatSupportsElement(name);
+        return null;
+    }
+
+    public abstract boolean hasImplicitElement();
+    public abstract String getImplicitElementName();
 }
