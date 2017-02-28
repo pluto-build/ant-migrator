@@ -1,12 +1,14 @@
 package generate.introspectionhelpers;
 
-import generate.anthelpers.ReflectionHelpers;
+import generate.MigrationException;
 import generate.types.TConstructor;
 import generate.types.TMethod;
 import generate.types.TTypeName;
-import org.apache.tools.ant.*;
+import org.apache.tools.ant.AntTypeDefinition;
+import org.apache.tools.ant.ComponentHelper;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.UnknownElement;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -85,6 +87,11 @@ abstract public class AntIntrospectionHelper {
         return new PlutoAntIntrospectionHelper(project, element, name, pkg, parentIntrospectionHelper);
     }
 
+    /**
+     * Retrieves the AntTypeDefinition for the current element.
+     * May return null if not retrievable
+     * @return the AntTypeDefinition
+     */
     protected AntTypeDefinition getAntTypeDefinition() {
         if (antTypeDefinition != null)
             return antTypeDefinition;
@@ -92,6 +99,11 @@ abstract public class AntIntrospectionHelper {
         return antTypeDefinition;
     }
 
+    /**
+     * Get's the class corresponding to the current element.
+     * @throws MigrationException when class not found
+     * @return the class that the element corresponds to
+     */
     public Class<?> getElementTypeClass() {
         if (elementTypeClass != null)
             return elementTypeClass;
@@ -102,47 +114,100 @@ abstract public class AntIntrospectionHelper {
         }
         elementTypeClass = antTypeDefinition.getTypeClass(project);
 
+        if (elementTypeClass == null)
+            throw new MigrationException("Couldn't retrieve class for element <" + element.getTaskName() + ">");
+
         return elementTypeClass;
     }
 
     public TTypeName getElementTypeClassName() {
-        if (getElementTypeClass() == null)
-            return null;
         return new TTypeName(getElementTypeClass().getName());
     }
 
+    /**
+     * Determines if the current element is a macro invocation.
+     * @return
+     */
     public boolean isMacroInvocation() {
         return getAntTypeDefinition() != null && getAntTypeDefinition().getClass().getSimpleName().equals("MyAntTypeDefinition");
     }
 
+    /**
+     * Determines if the current element is a antcall.
+     * @return
+     */
     public boolean isAntCall() {
         return element.getTaskName().equals("antcall");
     }
 
+    /**
+     * Returns a map with all attributes in the current element or an empty map if there are none or there is no wrapper...
+     * @return
+     */
     public Map<String, Object> getAttributeMap() {
         if (getElement().getWrapper() == null)
             return new HashMap<>();
         return getElement().getWrapper().getAttributeMap();
     }
 
+    /**
+     * Retrieves the constructor for the current element.
+     * @return
+     */
     public abstract TConstructor getConstructor();
 
+    /**
+     * Determines if the current element has a project setter method.
+     * @return
+     */
     public abstract boolean hasProjectSetter();
 
+    /**
+     * Retrieves the setter method for a given attribute
+     * @param attr the name of the attribute for which the setter should be retrieved
+     * @return a TMethod if there is a setter
+     */
     public abstract TMethod getAttributeMethod(String attr);
 
+    /**
+     * Returns the class (type) which the setter expects as a parameter
+     * @param attr the name of the attribute for which the type should be retrieved
+     * @return
+     */
     public Class<?> getAttributeMethodType(String attr) {
         return getAttributeMethod(attr).getParameters().get(0).getType();
     }
 
+    /**
+     * Returns the TTypeName which the setter expects as a parameter
+     * @param attr the name of the attribute for which the type should be retrieved
+     * @return
+     */
     public TTypeName getAttributeMethodTypeName(String attr) {
         return getAttributeMethod(attr).getParameters().get(0).getTypeName();
     }
 
+    /**
+     * Queries if the current element supports a child with the given name
+     * @param name the name of the child
+     * @return true if the cild is supported
+     */
     public abstract boolean supportsNestedElement(String name);
 
+    /**
+     * Returns a creator method for a given child element.
+     * @param element the child element
+     * @return a TMethod for which is either:
+     *    1) a method that returns void and adds the child to the current element (takes 1 parameter)
+     *    2) a method that returns an instance of the child element and expects no parameters
+     *    3) null if there is on creator method
+     */
     public abstract TMethod getCreatorMethod(UnknownElement element);
 
+    /**
+     * Retrieves a constructor factory method for the current element based on {@link AntIntrospectionHelper#getCreatorMethod(UnknownElement)} of the parent.
+     * @return a factory method that returns an instance for the current element or null if there is none
+     */
     public TMethod getConstructorFactoryMethod() {
         if (getParentIntrospectionHelper() == null)
             return null;
@@ -152,6 +217,10 @@ abstract public class AntIntrospectionHelper {
         return nestedCreatorMethod;
     }
 
+    /**
+     * Retrieves a method to add the current element to its parent (based on {@link AntIntrospectionHelper#getCreatorMethod(UnknownElement)}).
+     * @return A method if the child can be added or null if there is none
+     */
     public TMethod getAddChildMethod() {
         if (getParentIntrospectionHelper() == null)
             return null;
@@ -161,6 +230,10 @@ abstract public class AntIntrospectionHelper {
         return nestedCreatorMethod;
     }
 
+    /**
+     * Retrieves the parent element
+     * @return the parent or null if there is none
+     */
     public UnknownElement getParent() {
         if (getParentIntrospectionHelper() != null)
             return getParentIntrospectionHelper().getElement();
@@ -186,6 +259,11 @@ abstract public class AntIntrospectionHelper {
         return null;
     }
 
+    /**
+     *
+     * @return
+     */
     public abstract boolean hasImplicitElement();
+
     public abstract String getImplicitElementName();
 }

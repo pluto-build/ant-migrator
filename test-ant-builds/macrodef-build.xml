@@ -48,4 +48,20 @@
         </zipmacro>
     </target>
 
+    <macrodef name="zipmacro2">
+        <element name="zfs2" implicit="yes"/>
+        <sequential>
+            <zip destfile="result.zip">
+                <zfs2/>
+            </zip>
+        </sequential>
+    </macrodef>
+
+    <target name="zip2">
+        <zipmacro2>
+            <zipfileset dir="src" prefix="src"/>
+            <zipfileset dir="target" prefix="target"/>
+        </zipmacro2>
+    </target>
+
 </project>
