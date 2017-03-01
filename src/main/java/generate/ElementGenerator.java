@@ -103,20 +103,31 @@ public class ElementGenerator {
 
         }
 
+        if (generateMacroCode(element, taskName, introspectionHelper)) return taskName;
+
+        generateChildren(element, taskName, introspectionHelper);
+
         generateAttributes(element, taskName, introspectionHelper);
 
         // Element might include text. Call addText method...
         generateText(element, taskName);
 
+        return taskName;
+    }
+
+    public boolean generateMacroCode(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
         if (introspectionHelper.isMacroInvocation())
             generator.printString(taskName + ".prepare();");
 
         if (introspectionHelper.hasImplicitElement()) {
             // We have an implicit element in a macro
             generateImplicitElement(element, introspectionHelper);
-            return taskName;
+            return true;
         }
+        return false;
+    }
 
+    public void generateChildren(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
         if (element.getChildren() != null) {
             for (UnknownElement child : element.getChildren()) {
                 generator.increaseIndentation(1);
@@ -142,8 +153,6 @@ public class ElementGenerator {
         if (introspectionHelper.getAddChildMethod() != null) {
             generator.printString(introspectionHelper.getParentIntrospectionHelper().getName() + "." + introspectionHelper.getAddChildMethod().getName() + "(" + taskName + ");");
         }
-
-        return taskName;
     }
 
     public void generateImplicitElement(UnknownElement element, AntIntrospectionHelper introspectionHelper) {
@@ -185,7 +194,7 @@ public class ElementGenerator {
             String argument = "\"" + escapedValue + "\"";
             if (argumentClass.getName().equals("boolean")) {
                 // We expect a boolean, use true or false as values without wrapping into a string.
-                argument = "Boolean.valueOf(\"" + escapedValue + "\")";
+                argument = "Project.toBoolean(\"" + escapedValue + "\")";
             } else if (java.io.File.class.equals(argumentClass)) {
                 argument = "project.resolveFile(\"" + escapedValue + "\")";
             } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
