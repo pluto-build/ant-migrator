@@ -5,10 +5,10 @@ import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.Execute;
 import utils.StringUtils;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by manuel on 13.12.16.
@@ -20,22 +20,27 @@ public class BuilderInputGenerator extends JavaGenerator {
     private PropertyResolver resolver;
     private NamingManager namingManager;
     private final ElementGenerator elementGenerator;
+    private final File buildParent;
 
-    public BuilderInputGenerator(String pkg, String name, Project project) {
+    private final List<String> PATH_PROPERTY_NAMES;
+
+    public BuilderInputGenerator(String pkg, String name, Project project, File buildParent) {
         super(pkg);
         this.namingManager = new NamingManager();
-        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name));
+        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name+"Input"));
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
+        this.buildParent = buildParent;
         this.elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
+        this.PATH_PROPERTY_NAMES = Arrays.asList("basedir", "ant.file." + name);
     }
 
     /**
      * @param name
      * @param includeEmpty set this to false, to omit empty variables in the output. This can result in wrong values, as empty variables can override environment variables...
      */
-    public BuilderInputGenerator(String pkg, String name, Project project, boolean includeEmpty) {
-        this(pkg, name, project);
+    public BuilderInputGenerator(String pkg, String name, Project project, File buildParent, boolean includeEmpty) {
+        this(pkg, name, project, buildParent);
         this.includeEmpty = includeEmpty;
     }
 
@@ -65,7 +70,13 @@ public class BuilderInputGenerator extends JavaGenerator {
                             k.startsWith(s) && Execute.getEnvironmentVariables().containsKey(k.substring(s.length())))) {
                         this.printString("case \"" + k + "\":", "");
                         this.increaseIndentation(1);
-                        this.printString("return " + resolver.getExpandedValue(StringUtils.javaPrint(v.toString())) + ";");
+                        if (PATH_PROPERTY_NAMES.contains(k)) {
+                            // Handle paths separately
+                            String path = makeRelative(v.toString());
+                            this.printString("return "+ resolver.getExpandedValue(StringUtils.javaPrint(path)) + ";");
+                        } else {
+                            this.printString("return " + resolver.getExpandedValue(StringUtils.javaPrint(v.toString())) + ";");
+                        }
                         this.closeOneLevel();
                     }
                 }
@@ -94,10 +105,10 @@ public class BuilderInputGenerator extends JavaGenerator {
                     "        return envValue;\n" +
                     "    }\n" +
                     "  }\n" +
-                    "  return \"\";");
+                    "  return System.getProperty(v);");
         } else {
             this.printString("default:\n" +
-                    "  return null;"
+                    "  return System.getProperty(v);"
             );
         }
         this.closeOneLevel(); // end switch
@@ -115,6 +126,17 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.generateEqualsHashcode();
 
         this.closeOneLevel(); // end class
+    }
+
+    public String makeRelative(String path) {
+        try {
+            if (path.startsWith(buildParent.getCanonicalPath())) {
+                path = path.replace(buildParent.getCanonicalPath(), ".");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return path;
     }
 
     private void generateClonableStructure() {

@@ -105,7 +105,7 @@ public class AntMigrator {
 
         NamingManager namingManager = new NamingManager();
 
-        BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName() + "Input", project);
+        BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName(), project, buildFile.getParentFile());
         files.put(namingManager.getClassNameFor(project.getName()) + "Input.java", builderInputGenerator.getPrettyPrint());
 
         String plutoBuildListener = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoBuildListener.java").toURI())));
