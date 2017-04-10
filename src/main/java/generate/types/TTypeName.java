@@ -33,4 +33,8 @@ public class TTypeName {
     public TTypeName(String name) {
         this.fullyQualifiedName = name;
     }
+
+    public TTypeName(Class<?> cls) {
+        this.fullyQualifiedName = cls.getName();
+    }
 }

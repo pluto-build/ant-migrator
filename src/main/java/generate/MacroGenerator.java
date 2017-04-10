@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by manuel on 21.02.17.
@@ -128,20 +129,18 @@ public class MacroGenerator extends JavaGenerator {
         this.closeOneLevel(); // end method
     }
 
-    private UnknownElement findParentForElement(UnknownElement element,  String name) {
+    private List<UnknownElement> findParentsForElement(UnknownElement element,  String name) {
+        List<UnknownElement> parents = new ArrayList<>();
         if (element.getChildren() == null)
-            return null;
+            return parents;
         if (element.getChildren().stream().anyMatch(c -> c.getTaskName().equals(name))) {
-            return element;
-        } else
-        {
-            for (UnknownElement c: element.getChildren()) {
-                UnknownElement res = findParentForElement(c, name);
-                if (res != null)
-                    return res;
-            }
+            parents.add(element);
         }
-        return null;
+        for (UnknownElement c: element.getChildren()) {
+            List<UnknownElement> res = findParentsForElement(c, name);
+            parents.addAll(res);
+        }
+        return parents;
     }
 
     List<String> definedElements = new ArrayList<>();
@@ -195,28 +194,83 @@ public class MacroGenerator extends JavaGenerator {
             String elementClassName = namingManager.getClassNameFor(elementName);
 
             UnknownElement sequential = macroDef.getChildren().stream().filter(e ->  e.getTaskName().equals("sequential")).findFirst().get();
-            UnknownElement parent = findParentForElement(sequential, elementName);
+            List<UnknownElement> parents = findParentsForElement(sequential, elementName);
 
-            if (parent == null)
+            if (parents.isEmpty())
                 throw new RuntimeException("Did not find <"+ elementName + "/> element in macrodef.");
 
-            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, parent, elementClassName, getPkg().replace(".macros",""), null);
-            TTypeName name = introspectionHelper.getElementTypeClassName();
+            for (UnknownElement parent: parents) {
+                String parentName = namingManager.getNameFor(StringUtils.decapitalize(parent.getTaskName()));
 
-            String taskName = namingManager.getNameFor(StringUtils.decapitalize(name.getShortName()));
+                childNames.put(parent, parentName);
+            }
 
-            childNames.put(parent, taskName);
-
-            this.addImport(name.getImportName());
+            /*this.addImport(name.getImportName());
             this.printString("private " + name.getShortName() + " " + taskName + " = null;");
             this.printString("public " + name.getShortName() + " get" + elementClassName + "() {" , "}");
             this.increaseIndentation(1);
 
             this.printString("return " + taskName + ";");
 
-            this.closeOneLevel();
+            this.closeOneLevel();*/
+
+            generateMacroElementClass(elementName, parents);
 
             // TODO: implict elements
         }
+    }
+
+    private void generateMacroElementClass(String elementName, List<UnknownElement> parents) {
+        String elementClassName = namingManager.getClassNameFor(elementName);
+        List<AntIntrospectionHelper> introspectionHelpers = parents.stream().map(parent -> AntIntrospectionHelper.getInstanceFor(project, parent, childNames.get(parent), getPkg().replace(".macros",""), null)).collect(Collectors.toList());
+        List<String> commonSupportedNestedElements = getCommonNestedElements(introspectionHelpers);
+        System.out.println(commonSupportedNestedElements);
+
+        this.printString("public class " + namingManager.getClassNameFor(elementName) + "{", "}");
+        this.increaseIndentation(1);
+
+        // Constructor
+        this.printString("public " + namingManager.getClassNameFor(elementName) + "{ }");
+
+        for (String nested: commonSupportedNestedElements) {
+            // Currently assuming same type!
+            TTypeName nestedType = introspectionHelpers.get(0).getNestedElementType(nested);
+            UnknownElement nestedElement = new UnknownElement(nested);
+            nestedElement.setTaskName(nested);
+
+            this.addImport(nestedType.getImportName());
+            this.printString("public void configure" + namingManager.getClassNameFor(nested) + "(Consumer<"+nestedType.getShortName()+"> lam) {", "}");
+            this.increaseIndentation(1);
+
+            for (UnknownElement parent: parents) {
+
+                String nestedName = namingManager.getNameFor(StringUtils.decapitalize(nested));
+                AntIntrospectionHelper parentIntrospectionHelper = introspectionHelpers.get(parents.indexOf(parent));
+                AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nested, getPkg(), parentIntrospectionHelper);
+                TTypeName name = introspectionHelper.getElementTypeClassName();
+
+                ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
+
+                elementGenerator.generateConstructor(introspectionHelper, nestedName);
+                this.printString("lam.execute("+nestedName+");");
+                elementGenerator.generateAddMethod(introspectionHelper, nestedName);
+            }
+
+            this.closeOneLevel(); // end configure
+        }
+
+        this.closeOneLevel(); // end class
+    }
+
+    public List<String> getCommonNestedElements(List<AntIntrospectionHelper> introspectionHelpers) {
+        assert(introspectionHelpers != null && introspectionHelpers.size() > 1);
+        List<AntIntrospectionHelper> helpers = new ArrayList<>();
+        helpers.addAll(introspectionHelpers);
+        List<String> commonSupportedNestedElements = helpers.get(0).getSupportedNestedElements();
+        helpers.remove(0);
+        for (AntIntrospectionHelper helper: helpers) {
+            commonSupportedNestedElements.retainAll(helper.getSupportedNestedElements());
+        }
+        return commonSupportedNestedElements;
     }
 }

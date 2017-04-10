@@ -10,6 +10,7 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -266,4 +267,8 @@ abstract public class AntIntrospectionHelper {
     public abstract boolean hasImplicitElement();
 
     public abstract String getImplicitElementName();
+
+    public abstract List<String> getSupportedNestedElements();
+
+    public abstract TTypeName getNestedElementType(String name);
 }

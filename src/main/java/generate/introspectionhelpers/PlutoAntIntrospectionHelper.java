@@ -6,8 +6,12 @@ import generate.types.TMethod;
 import generate.types.TTypeName;
 import org.apache.tools.ant.*;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by manuel on 23.02.17.
@@ -80,8 +84,12 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
 
     public IntrospectionHelper.Creator getElementCreator(UnknownElement e) {
         assert (getElement() != null);
-        final IntrospectionHelper.Creator elementCreator = introspectionHelper.getElementCreator(getProject(), "", null, e.getTaskName(), e);
-        return elementCreator;
+        try {
+            final IntrospectionHelper.Creator elementCreator = introspectionHelper.getElementCreator(getProject(), "", null, e.getTaskName(), e);
+            return elementCreator;
+        } catch (Exception ex) {
+            return null;
+        }
     }
 
     @Override
@@ -129,6 +137,16 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public String getImplicitElementName() {
         return null;
+    }
+
+    @Override
+    public List<String> getSupportedNestedElements() {
+        return Collections.list(introspectionHelper.getNestedElements());
+    }
+
+    @Override
+    public TTypeName getNestedElementType(String name) {
+        return new TTypeName(introspectionHelper.getElementType(name));
     }
 
 

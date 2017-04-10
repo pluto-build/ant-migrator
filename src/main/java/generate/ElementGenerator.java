@@ -150,6 +150,10 @@ public class ElementGenerator {
             }
         }
 
+        generateAddMethod(introspectionHelper, taskName);
+    }
+
+    public void generateAddMethod(AntIntrospectionHelper introspectionHelper, String taskName) {
         if (introspectionHelper.getAddChildMethod() != null) {
             generator.printString(introspectionHelper.getParentIntrospectionHelper().getName() + "." + introspectionHelper.getAddChildMethod().getName() + "(" + taskName + ");");
         }

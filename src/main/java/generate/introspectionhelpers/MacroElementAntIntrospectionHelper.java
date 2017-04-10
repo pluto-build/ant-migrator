@@ -3,10 +3,12 @@ package generate.introspectionhelpers;
 import generate.NamingManager;
 import generate.types.TConstructor;
 import generate.types.TMethod;
+import generate.types.TTypeName;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by manuel on 27.02.17.
@@ -78,6 +80,16 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public String getImplicitElementName() {
+        return null;
+    }
+
+    @Override
+    public List<String> getSupportedNestedElements() {
+        return null;
+    }
+
+    @Override
+    public TTypeName getNestedElementType(String name) {
         return null;
     }
 

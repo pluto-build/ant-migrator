@@ -11,6 +11,7 @@ import org.apache.tools.ant.taskdefs.MacroDef;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by manuel on 23.02.17.
@@ -77,6 +78,16 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public String getImplicitElementName() {
         return getMacroDef().getElements().values().stream().filter(templateElement -> templateElement.isImplicit()).findFirst().get().getName();
+    }
+
+    @Override
+    public List<String> getSupportedNestedElements() {
+        return null;
+    }
+
+    @Override
+    public TTypeName getNestedElementType(String name) {
+        return null;
     }
 
     @Override

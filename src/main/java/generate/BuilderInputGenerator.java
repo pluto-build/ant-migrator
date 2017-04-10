@@ -56,6 +56,26 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.generateClonableStructure();
         this.generatePropertySetter();
 
+        this.generateGetMethod();
+
+        this.generateConfigureProjectMethod();
+
+        this.printString("");
+        this.generateNullOrEmptyMethod();
+        this.generateEvalAsBooleanOrPropertyNameMethod();
+
+        //this.generateRequireMethods();
+
+        this.generateTestIfMethod();
+        this.generateTestUnlessMethod();
+
+        this.generateToStringMethod();
+        this.generateEqualsHashcode();
+
+        this.closeOneLevel(); // end class
+    }
+
+    private void generateGetMethod() {
         this.printString("public String get(String v) {", "}");
         this.increaseIndentation(1);
         this.printString("if (newProperties.containsKey(v))\n" +
@@ -113,19 +133,6 @@ public class BuilderInputGenerator extends JavaGenerator {
         }
         this.closeOneLevel(); // end switch
         this.closeOneLevel(); // end method
-
-        this.generateConfigureProjectMethod();
-
-        this.printString("");
-        this.generateNullOrEmptyMethod();
-        this.generateEvalAsBooleanOrPropertyNameMethod();
-        this.generateTestIfMethod();
-        this.generateTestUnlessMethod();
-
-        this.generateToStringMethod();
-        this.generateEqualsHashcode();
-
-        this.closeOneLevel(); // end class
     }
 
     public String makeRelative(String path) {
@@ -264,6 +271,47 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("return this.nullOrEmpty(v) || !this.evalAsBooleanOrPropertyName(v);");
 
         this.closeOneLevel(); // end method
+    }
+
+    private void generateRequireMethods() {
+        for (Target target: project.getTargets().values()) {
+            if (!target.getName().isEmpty())
+                generateRequireMethod(target);
+        }
+    }
+
+    private void generateRequireMethod(Target target) {
+        this.addImport("build.pluto.builder.Builder");
+        this.addImport("java.io.IOException");
+        this.printString("public " + name + " require"+namingManager.getClassNameFor(target.getName())+"Builder(Builder<"+name+","+name+"> builder) throws IOException {", "}");
+        this.increaseIndentation(1);
+
+        this.printString(name+" cinput = this.clone(\""+target.getName()+"\");");
+
+        boolean hasCondition = false;
+        if (target.getIf() != null && !target.getIf().isEmpty()) {
+            this.printString("if (testIf(\""+resolver.getExpandedValue(target.getIf())+"\")) {", "}");
+            this.increaseIndentation(1);
+
+            hasCondition = true;
+        }
+
+        if (target.getUnless() != null && !target.getUnless().isEmpty()) {
+            this.printString("if (testUnless(\""+resolver.getExpandedValue(target.getUnless())+"\")) {", "}");
+            this.increaseIndentation(1);
+
+            hasCondition = true;
+        }
+
+        // require the builder
+        this.printString("builder.requireBuild("+namingManager.getClassNameFor(target.getName())+"Builder.factory, cinput);");
+
+        if (hasCondition)
+            this.closeOneLevel();
+
+        this.printString("return cinput.clone(getBuilderName());");
+
+        this.closeOneLevel();
     }
 
     private void generateToStringMethod() {
