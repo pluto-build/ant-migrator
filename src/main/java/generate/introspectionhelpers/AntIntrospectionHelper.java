@@ -9,6 +9,7 @@ import org.apache.tools.ant.ComponentHelper;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,6 +132,10 @@ abstract public class AntIntrospectionHelper {
      */
     public boolean isMacroInvocation() {
         return getAntTypeDefinition() != null && getAntTypeDefinition().getClass().getSimpleName().equals("MyAntTypeDefinition");
+    }
+
+    public boolean isMacroInvocationChildElement() {
+        return false;
     }
 
     /**
@@ -271,4 +276,23 @@ abstract public class AntIntrospectionHelper {
     public abstract List<String> getSupportedNestedElements();
 
     public abstract TTypeName getNestedElementType(String name);
+
+
+    public List<UnknownElement> findParentsForNestedElement(String name) {
+        return AntIntrospectionHelper.findParentsForNestedElement(getElement(), name);
+    }
+
+    public static List<UnknownElement> findParentsForNestedElement(UnknownElement element,  String name) {
+        List<UnknownElement> parents = new ArrayList<>();
+        if (element.getChildren() == null)
+            return parents;
+        if (element.getChildren().stream().anyMatch(c -> c.getTaskName().equals(name))) {
+            parents.add(element);
+        }
+        for (UnknownElement c: element.getChildren()) {
+            List<UnknownElement> res = findParentsForNestedElement(c, name);
+            parents.addAll(res);
+        }
+        return parents;
+    }
 }

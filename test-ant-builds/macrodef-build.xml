@@ -1,6 +1,6 @@
 <project name="MacrodefTest" default="main" basedir=".">
 
-    <target name="main" depends="echo, echo2, zip" />
+    <target name="main" depends="echo, echo2, zip, zip2" />
 
     <macrodef name="echotest">
         <text name="text"/>
@@ -36,6 +36,9 @@
             <zip destfile="result.zip">
                 <zfs/>
             </zip>
+            <zip destfile="result2.zip">
+                <zfs/>
+            </zip>
         </sequential>
     </macrodef>
 
@@ -51,7 +54,7 @@
     <macrodef name="zipmacro2">
         <element name="zfs2" implicit="yes"/>
         <sequential>
-            <zip destfile="result.zip">
+            <zip destfile="result3.zip">
                 <zfs2/>
             </zip>
         </sequential>
@@ -63,5 +66,4 @@
             <zipfileset dir="target" prefix="target"/>
         </zipmacro2>
     </target>
-
 </project>

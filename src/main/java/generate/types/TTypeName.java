@@ -37,4 +37,11 @@ public class TTypeName {
     public TTypeName(Class<?> cls) {
         this.fullyQualifiedName = cls.getName();
     }
+
+    public TTypeName append(String clsName) {
+        return new TTypeName(this.fullyQualifiedName + "." + clsName);
+    }
+    public TTypeName appendNested(String clsName) {
+        return new TTypeName(this.fullyQualifiedName + "$" + clsName);
+    }
 }

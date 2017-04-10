@@ -112,6 +112,8 @@ public class AntMigrator {
         files.put("PlutoBuildListener.java", plutoBuildListener.replace("<pkg>", line.getOptionValue("pkg")));
         String plutoPropertyHelper = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoPropertyHelper.java").toURI())));
         files.put("PlutoPropertyHelper.java", plutoPropertyHelper.replace("<pkg>", line.getOptionValue("pkg")));
+        String consumer = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("Consumer.java").toURI())));
+        files.put("Consumer.java", consumer.replace("<pkg>", line.getOptionValue("pkg")));
 
         if (line.hasOption("m")) {
             BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), project.getDefaultTarget());

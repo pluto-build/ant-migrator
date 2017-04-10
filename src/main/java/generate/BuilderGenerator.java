@@ -112,7 +112,7 @@ public class BuilderGenerator extends JavaGenerator {
         }
 
         addImport("org.apache.tools.ant.Project");
-        printString("Project project = new Project();");
+        printString("final Project project = new Project();");
         printString("project.addBuildListener(new PlutoBuildListener());");
         printString("cinput.configureProject(project);");
         printString("PlutoPropertyHelper propertyHelper = PlutoPropertyHelper.getPropertyHelper(project);");
