@@ -5,6 +5,7 @@ import generate.types.TConstructor;
 import generate.types.TMethod;
 import generate.types.TParameter;
 import generate.types.TTypeName;
+import javafx.util.Pair;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.RuntimeConfigurable;
@@ -16,6 +17,7 @@ import utils.StringUtils;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +31,9 @@ public class ElementGenerator {
     private final NamingManager namingManager;
     private final Resolvable resolver;
     private List<String> ignoredMacroElements = new ArrayList<>();
-    private List<String> alreadyDefinedNames = new ArrayList<>();
+    private Map<UnknownElement, Pair<String, TTypeName>> constructedVariables = new HashMap<>();
+    private boolean localScopedVariables = true;
+    private boolean noConstructor = false;
 
     public List<String> getIgnoredMacroElements() {
         return ignoredMacroElements;
@@ -39,13 +43,17 @@ public class ElementGenerator {
         this.ignoredMacroElements = ignoredMacroElements;
     }
 
-    public List<String> getAlreadyDefinedNames() {
-        return alreadyDefinedNames;
+    public Map<UnknownElement, Pair<String, TTypeName>> getConstructedVariables() {
+        return constructedVariables;
+    }
+    public void setLocalScopedVariables(boolean localScopedVariables) {
+        this.localScopedVariables = localScopedVariables;
     }
 
-    public void setAlreadyDefinedNames(List<String> alreadyDefinedNames) {
-        this.alreadyDefinedNames = alreadyDefinedNames;
+    public void setNoConstructor(boolean noConstructor) {
+        this.noConstructor = noConstructor;
     }
+
 
     public NamingManager getNamingManager() {
         return namingManager;
@@ -91,7 +99,8 @@ public class ElementGenerator {
         if (elementTypeClassName == null)
             throw new RuntimeException("Could not get type definition for " + element.getTaskName());
 
-        generateConstructor(introspectionHelper, taskName);
+        if (!noConstructor)
+            generateConstructor(introspectionHelper, taskName);
 
         if (introspectionHelper.hasProjectSetter())
             generateProjectSetter(taskName);
@@ -298,7 +307,9 @@ public class ElementGenerator {
 
                 String taskClassName = elementTypeClassName.getShortName();
 
-                if (alreadyDefinedNames.contains(taskName))
+                constructedVariables.put(introspectionHelper.getElement(), new Pair<>(taskName, elementTypeClassName));
+
+                if (!localScopedVariables)
                     generator.printString(taskName + " = " + introspectionHelper.getParentIntrospectionHelper().getName() + "." + constructorFactoryMethod.getName() + "();");
                 else
                     generator.printString(taskClassName + " " + taskName + " = " + introspectionHelper.getParentIntrospectionHelper().getName() + "." + constructorFactoryMethod.getName() + "();");
@@ -316,7 +327,10 @@ public class ElementGenerator {
                         else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
                     }
                     generator.addImport(constructor.getDeclaringClassTypeName().getImportName());
-                    if (alreadyDefinedNames.contains(taskName))
+
+                    constructedVariables.put(introspectionHelper.getElement(), new Pair<>(taskName, constructor.getDeclaringClassTypeName()));
+
+                    if (!localScopedVariables)
                         generator.printString(taskName + " = new " + constructor.formatUse(params) + ";");
                     else
                         generator.printString(constructor.getDeclaringClassTypeName().getShortName() + " " + taskName + " = new " + constructor.formatUse(params) + ";");

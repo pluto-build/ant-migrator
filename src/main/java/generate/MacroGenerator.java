@@ -3,15 +3,13 @@ package generate;
 import generate.introspectionhelpers.AntIntrospectionHelper;
 import generate.introspectionhelpers.MacroAntIntrospectionHelper;
 import generate.types.TTypeName;
+import javafx.util.Pair;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 import org.jetbrains.annotations.NotNull;
 import utils.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -73,13 +71,16 @@ public class MacroGenerator extends JavaGenerator {
         this.generateProject();
 
         for (UnknownElement child : this.macroDef.getChildren()) {
-            generateElement(child);
+            prepareElement(child);
         }
 
         this.generatePrepareMethod();
 
-        this.generateExecuteMethod();
+        for (UnknownElement child : this.macroDef.getChildren()) {
+            generateElement(child);
+        }
 
+        this.generateExecuteMethod();
 
         this.closeOneLevel(); // end class
     }
@@ -100,24 +101,12 @@ public class MacroGenerator extends JavaGenerator {
     }
 
     HashMap<UnknownElement, String> childNames = new HashMap<>();
+    List<String> definedElements = new ArrayList<>();
 
     private void generatePrepareMethod() {
         // Get the sequential element
         UnknownElement sequential = getSequential();
 
-        // Generate of the rest of toplevel definitions:
-        for (UnknownElement child : sequential.getChildren()) {
-            String childName;
-            if (childNames.containsKey(child)) {
-                childName = childNames.get(child);
-            } else {
-                childName = namingManager.getNameFor(StringUtils.decapitalize(child.getTaskName()));
-                childNames.put(child, childName);
-            }
-
-            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, child, childName, basePkg, null);
-            this.printString("private " + introspectionHelper.getElementTypeClassName().getShortName() + " " + childName + " = null;");
-        }
 
         this.printString("public void prepare() {", "}");
         this.increaseIndentation(1);
@@ -126,13 +115,22 @@ public class MacroGenerator extends JavaGenerator {
 
         ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
         elementGenerator.setIgnoredMacroElements(definedElements);
-        elementGenerator.setAlreadyDefinedNames(new ArrayList(childNames.values()));
+        elementGenerator.setLocalScopedVariables(false);
 
         for (UnknownElement child : sequential.getChildren()) {
-            childNames.put(child, elementGenerator.generateElement(null, child, childNames.get(child)));
+            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, child, childNames.get(child), getPkg(), parentIntrospectionHelper);
+            elementGenerator.generateConstructor(el);
         }
 
+
+
         this.closeOneLevel(); // end method
+
+        for (Map.Entry<UnknownElement, Pair<String, TTypeName>> entry : elementGenerator.getConstructedVariables().entrySet()) {
+            childNames.put(entry.getKey(), entry.getValue().getKey());
+            this.addImport(entry.getValue().getValue().getImportName());
+            this.printString("private " + entry.getValue().getValue().getShortName() + " " + entry.getValue().getKey() + " = null;");
+        }
     }
 
     private void generateExecuteMethod() {
@@ -142,6 +140,15 @@ public class MacroGenerator extends JavaGenerator {
         // Get the sequential element
         UnknownElement sequential = getSequential();
 
+        ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
+        elementGenerator.setIgnoredMacroElements(definedElements);
+        elementGenerator.setLocalScopedVariables(false);
+        elementGenerator.setNoConstructor(true);
+
+        for (UnknownElement child : sequential.getChildren()) {
+            childNames.put(child, elementGenerator.generateElement(null, child, childNames.get(child)));
+        }
+
         for (UnknownElement child : sequential.getChildren()) {
             this.printString(childNames.get(child) + ".execute();");
         }
@@ -149,8 +156,43 @@ public class MacroGenerator extends JavaGenerator {
         this.closeOneLevel(); // end method
     }
 
+    private void prepareElement(UnknownElement element) {
+        if (element.getTaskName().equals("text")) {
+            String def = "null";
+            if (element.getWrapper().getAttributeMap().containsKey("default")) {
+                def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
+            }
+            String textName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
+            macroPropertyResolver.addAttribute(textName);
+        }
+        if (element.getTaskName().equals("attribute")) {
+            String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
 
-    List<String> definedElements = new ArrayList<>();
+            // TODO: probably fill these first to enable proper expansion
+            // Remark: Probably not, as https://ant.apache.org/manual/Tasks/macrodef.html notes that order is important and expansion might not happen otherwise...
+            macroPropertyResolver.addAttribute(attributeName);
+        }
+        if (element.getTaskName().equals("element")) {
+            String elementName = element.getWrapper().getAttributeMap().get("name").toString();
+            definedElements.add(elementName);
+
+            String elementClassName = namingManager.getClassNameFor(elementName);
+
+            UnknownElement sequential = getSequential();
+            List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedElement(sequential, elementName);
+
+            if (parents.isEmpty())
+                throw new RuntimeException("Did not find <" + elementName + "/> element in macrodef.");
+
+            for (UnknownElement parent : parents) {
+                if (!childNames.containsKey(parent)) {
+                    String parentName = namingManager.getNameFor(StringUtils.decapitalize(parent.getTaskName()));
+
+                    childNames.put(parent, parentName);
+                }
+            }
+        }
+    }
 
     private void generateElement(UnknownElement element) {
         if (element.getTaskName().equals("text")) {
@@ -159,7 +201,6 @@ public class MacroGenerator extends JavaGenerator {
                 def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
             }
             String textName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
-            macroPropertyResolver.addAttribute(textName);
             this.printString("String " + textName + " = " + def + ";");
 
             this.printString("public void addText(String " + textName + ") {\n" +
@@ -179,10 +220,6 @@ public class MacroGenerator extends JavaGenerator {
             }
             String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
 
-            // TODO: probably fill these first to enable proper expansion
-            // Remark: Probably not, as https://ant.apache.org/manual/Tasks/macrodef.html notes that order is important and expansion might not happen otherwise...
-            macroPropertyResolver.addAttribute(attributeName);
-
             this.printString("String " + attributeName + " = " + def + ";");
 
             this.printString("public void set" + StringUtils.capitalize(attributeName) + "(String " + attributeName + ") {\n" +
@@ -197,7 +234,6 @@ public class MacroGenerator extends JavaGenerator {
         }
         if (element.getTaskName().equals("element")) {
             String elementName = element.getWrapper().getAttributeMap().get("name").toString();
-            definedElements.add(elementName);
             String elementClassName = namingManager.getClassNameFor(elementName);
 
             UnknownElement sequential = getSequential();
@@ -205,21 +241,6 @@ public class MacroGenerator extends JavaGenerator {
 
             if (parents.isEmpty())
                 throw new RuntimeException("Did not find <" + elementName + "/> element in macrodef.");
-
-            for (UnknownElement parent : parents) {
-                String parentName = namingManager.getNameFor(StringUtils.decapitalize(parent.getTaskName()));
-
-                childNames.put(parent, parentName);
-            }
-
-            /*this.addImport(name.getImportName());
-            this.printString("private " + name.getShortName() + " " + taskName + " = null;");
-            this.printString("public " + name.getShortName() + " get" + elementClassName + "() {" , "}");
-            this.increaseIndentation(1);
-
-            this.printString("return " + taskName + ";");
-
-            this.closeOneLevel();*/
 
             generateMacroElementClass(elementName, parents);
 
@@ -270,7 +291,6 @@ public class MacroGenerator extends JavaGenerator {
                 TTypeName name = introspectionHelper.getElementTypeClassName();
 
                 ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
-                elementGenerator.setAlreadyDefinedNames(new ArrayList(childNames.values()));
 
                 elementGenerator.generateConstructor(introspectionHelper, nestedName);
                 this.printString("lam.execute(" + nestedName + ");");
