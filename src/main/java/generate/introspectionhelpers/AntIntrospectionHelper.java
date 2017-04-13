@@ -202,7 +202,6 @@ abstract public class AntIntrospectionHelper {
 
     /**
      * Returns a creator method for a given child element.
-     * @param element the child element
      * @return a TMethod for which is either:
      *    1) a method that returns void and adds the child to the current element (takes 1 parameter)
      *    2) a method that returns an instance of the child element and expects no parameters
@@ -294,5 +293,19 @@ abstract public class AntIntrospectionHelper {
             parents.addAll(res);
         }
         return parents;
+    }
+
+    public static UnknownElement findParentForNestedElement(UnknownElement root,  UnknownElement element) {
+        if (root.getChildren() == null)
+            return null;
+        if (root.getChildren().stream().anyMatch(c -> c.equals(element))) {
+            return root;
+        }
+        for (UnknownElement c: root.getChildren()) {
+            UnknownElement res = findParentForNestedElement(c, element);
+            if (res != null)
+                return res;
+        }
+        return null;
     }
 }

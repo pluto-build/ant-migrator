@@ -106,7 +106,13 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public Class<?> getElementTypeClass() {
-        if (getParentIntrospectionHelper() != null && getParentIntrospectionHelper() instanceof  PlutoAntIntrospectionHelper) {
+        try {
+            if (getParentIntrospectionHelper() != null && getParentIntrospectionHelper().getNestedElementType(getElement().getTaskName()) != null)
+                return Class.forName(getParentIntrospectionHelper().getNestedElementType(getElement().getTaskName()).getFullyQualifiedName());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        /*if (getParentIntrospectionHelper() != null && getParentIntrospectionHelper() instanceof  PlutoAntIntrospectionHelper) {
             // Try to find element class by looking into parent
             IntrospectionHelper.Creator creator = ((PlutoAntIntrospectionHelper) getParentIntrospectionHelper()).getElementCreator(getElement());
             Method creatorMethod = ReflectionHelpers.getNestedCreatorMethodFor(creator);
@@ -116,7 +122,7 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
             } else
                 elementTypeClass = ReflectionHelpers.getClassFor(creatorMethod.getAnnotatedReturnType().getType().getTypeName());
             return elementTypeClass;
-        }
+        }*/
         return super.getElementTypeClass();
     }
 

@@ -113,18 +113,16 @@ public class ElementGenerator {
         // Element might include text. Call addText method...
         generateText(element, taskName);
 
-        // Close lambda
-        if (introspectionHelper.getParentIntrospectionHelper()!= null && introspectionHelper.getParentIntrospectionHelper().isMacroInvocationChildElement()) {
-            generator.closeOneLevel();
-            generator.closeOneLevel();
-        }
+        generateMacroInvocationSpecificCode(introspectionHelper);
 
         return taskName;
     }
 
-    public void generateMacroInvocationSpecificCode(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
-        if (introspectionHelper.isMacroInvocation()) {
-
+    public void generateMacroInvocationSpecificCode(AntIntrospectionHelper introspectionHelper) {
+        // Close lambda
+        if (introspectionHelper.getParentIntrospectionHelper()!= null && introspectionHelper.getParentIntrospectionHelper().isMacroInvocationChildElement()) {
+            generator.closeOneLevel();
+            generator.closeOneLevel();
         }
     }
 
@@ -147,7 +145,8 @@ public class ElementGenerator {
                 if (introspectionHelper.supportsNestedElement(child.getTaskName())) {
                     generateElement(introspectionHelper, child, null);
                 } else {
-                    if (!(TaskContainer.class.isAssignableFrom(introspectionHelper.getElementTypeClass()))) {
+                    Class<?> elementTypeClass = introspectionHelper.getElementTypeClass();
+                    if (elementTypeClass == null || !(TaskContainer.class.isAssignableFrom(elementTypeClass))) {
                         // Ignore macro child elements at definition...
                         if (!getIgnoredMacroElements().contains(child.getTaskName()))
                             throw new RuntimeException("Didn't support nested element: " + child.getTaskName());

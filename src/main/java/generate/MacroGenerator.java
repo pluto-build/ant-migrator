@@ -1,9 +1,11 @@
 package generate;
 
 import generate.introspectionhelpers.AntIntrospectionHelper;
+import generate.introspectionhelpers.MacroAntIntrospectionHelper;
 import generate.types.TTypeName;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
+import org.jetbrains.annotations.NotNull;
 import utils.StringUtils;
 
 import java.util.ArrayList;
@@ -25,11 +27,19 @@ public class MacroGenerator extends JavaGenerator {
     private final String name;
     private final String inputName;
     private final String basePkg;
+    private final MacroAntIntrospectionHelper introspectionHelper;
 
     public String getName() {
         return name;
     }
 
+    public String getProjectName() {
+        return namingManager.getClassNameFor(StringUtils.capitalize(project.getName()));
+    }
+
+    public String getInputName() {
+        return getProjectName() + "Input";
+    }
 
     public MacroGenerator(String pkg, Project project, NamingManager namingManager, Resolvable resolver, UnknownElement macroDef) {
         super(pkg + ".macros");
@@ -43,9 +53,14 @@ public class MacroGenerator extends JavaGenerator {
         // The unknown element has to be a macro definition
         assert (this.macroDef.getTaskName().equals("macrodef"));
 
-        String definedName = this.macroDef.getWrapper().getAttributeMap().get("name").toString() + "Macro";
-        this.name = namingManager.getClassNameFor(definedName);
+        String macroDefinitionName = this.macroDef.getWrapper().getAttributeMap().get("name").toString();
+        String javaName = macroDefinitionName + "Macro";
+        this.name = namingManager.getClassNameFor(javaName);
         this.inputName = namingManager.getClassNameFor(project.getName() + "Input");
+
+        UnknownElement macroCallElement = new UnknownElement(macroDefinitionName);
+        macroCallElement.setTaskName(macroDefinitionName);
+        introspectionHelper = (MacroAntIntrospectionHelper)AntIntrospectionHelper.getInstanceFor(project, macroCallElement, macroDefinitionName, getPkg(), null);
     }
 
     @Override
@@ -88,7 +103,7 @@ public class MacroGenerator extends JavaGenerator {
 
     private void generatePrepareMethod() {
         // Get the sequential element
-        UnknownElement sequential = macroDef.getChildren().stream().filter(element -> element.getTaskName().equals("sequential")).findFirst().get();
+        UnknownElement sequential = getSequential();
 
         // Generate of the rest of toplevel definitions:
         for (UnknownElement child : sequential.getChildren()) {
@@ -100,12 +115,14 @@ public class MacroGenerator extends JavaGenerator {
                 childNames.put(child, childName);
             }
 
-            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, child, childName, getPkg().replace(".macros", ""), null);
+            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, child, childName, basePkg, null);
             this.printString("private " + introspectionHelper.getElementTypeClassName().getShortName() + " " + childName + " = null;");
         }
 
         this.printString("public void prepare() {", "}");
         this.increaseIndentation(1);
+
+        this.printString(this.getInputName() + " cinput = input.clone();");
 
         ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
         elementGenerator.setIgnoredMacroElements(definedElements);
@@ -123,7 +140,7 @@ public class MacroGenerator extends JavaGenerator {
         this.increaseIndentation(1);
 
         // Get the sequential element
-        UnknownElement sequential = macroDef.getChildren().stream().filter(element -> element.getTaskName().equals("sequential")).findFirst().get();
+        UnknownElement sequential = getSequential();
 
         for (UnknownElement child : sequential.getChildren()) {
             this.printString(childNames.get(child) + ".execute();");
@@ -183,7 +200,7 @@ public class MacroGenerator extends JavaGenerator {
             definedElements.add(elementName);
             String elementClassName = namingManager.getClassNameFor(elementName);
 
-            UnknownElement sequential = macroDef.getChildren().stream().filter(e -> e.getTaskName().equals("sequential")).findFirst().get();
+            UnknownElement sequential = getSequential();
             List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedElement(sequential, elementName);
 
             if (parents.isEmpty())
@@ -212,8 +229,21 @@ public class MacroGenerator extends JavaGenerator {
         }
     }
 
+    @NotNull
+    private UnknownElement getSequential() {
+        return macroDef.getChildren().stream().filter(e -> e.getTaskName().equals("sequential")).findFirst().get();
+    }
+
     private void generateMacroElementClass(String elementName, List<UnknownElement> parents) {
-        List<AntIntrospectionHelper> introspectionHelpers = parents.stream().map(parent -> AntIntrospectionHelper.getInstanceFor(project, parent, childNames.get(parent), getPkg().replace(".macros", ""), null)).collect(Collectors.toList());
+        List<AntIntrospectionHelper> introspectionHelpers = parents.stream().map(parent -> {
+            UnknownElement parentParent = AntIntrospectionHelper.findParentForNestedElement(this.macroDef, parent);
+            AntIntrospectionHelper parentIntrospectionHelper;
+            if (parentParent.equals(getSequential()))
+                parentIntrospectionHelper = introspectionHelper;
+            else
+                parentIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(project, parentParent, parentParent.getTaskName(),getPkg(), null);
+            return AntIntrospectionHelper.getInstanceFor(project, parent, childNames.get(parent), basePkg, parentIntrospectionHelper);
+        }).collect(Collectors.toList());
         List<String> commonSupportedNestedElements = getCommonNestedElements(introspectionHelpers);
         this.printString("public class " + namingManager.getClassNameFor(elementName) + "{", "}");
         this.increaseIndentation(1);
@@ -228,22 +258,26 @@ public class MacroGenerator extends JavaGenerator {
             nestedElement.setTaskName(nested);
 
             this.addImport(nestedType.getImportName());
-            this.addImport(getPkg().substring(0, getPkg().lastIndexOf(".")) + ".Consumer");
-            this.printString("public void configure" + namingManager.getClassNameFor(nested) + "(Consumer<" + nestedType.getShortName() + "> lam) {", "}");
+            this.addImport(basePkg + ".Consumer");
+            this.printString("public void configure" + namingManager.getClassNameFor(nested) + "(final Consumer<" + nestedType.getShortName() + "> lam) {", "}");
             this.increaseIndentation(1);
 
             for (UnknownElement parent : parents) {
-
+                System.out.println(nested + ":" + parent.getTaskName());
                 String nestedName = namingManager.getNameFor(StringUtils.decapitalize(nested));
                 AntIntrospectionHelper parentIntrospectionHelper = introspectionHelpers.get(parents.indexOf(parent));
                 AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nested, getPkg(), parentIntrospectionHelper);
                 TTypeName name = introspectionHelper.getElementTypeClassName();
 
                 ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
+                elementGenerator.setAlreadyDefinedNames(new ArrayList(childNames.values()));
 
                 elementGenerator.generateConstructor(introspectionHelper, nestedName);
                 this.printString("lam.execute(" + nestedName + ");");
                 elementGenerator.generateAddMethod(introspectionHelper, nestedName);
+
+                //?
+                elementGenerator.generateMacroInvocationSpecificCode(introspectionHelper);
             }
 
             this.closeOneLevel(); // end configure
@@ -253,7 +287,7 @@ public class MacroGenerator extends JavaGenerator {
     }
 
     public List<String> getCommonNestedElements(List<AntIntrospectionHelper> introspectionHelpers) {
-        assert (introspectionHelpers != null && introspectionHelpers.size() > 1);
+        assert (introspectionHelpers != null && introspectionHelpers.size() >= 1);
         List<AntIntrospectionHelper> helpers = new ArrayList<>();
         helpers.addAll(introspectionHelpers);
         List<String> commonSupportedNestedElements = helpers.get(0).getSupportedNestedElements();

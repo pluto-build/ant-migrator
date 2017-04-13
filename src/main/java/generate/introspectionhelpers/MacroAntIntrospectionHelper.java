@@ -5,10 +5,7 @@ import generate.types.TConstructor;
 import generate.types.TMethod;
 import generate.types.TParameter;
 import generate.types.TTypeName;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.Target;
-import org.apache.tools.ant.Task;
-import org.apache.tools.ant.UnknownElement;
+import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MacroDef;
 
 import java.lang.reflect.Field;
@@ -100,16 +97,21 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public boolean supportsNestedElement(String name) {
-        return getSupportedNestedElements().contains(name) || hasImplicitElement();
+        // TODO Implicit element...
+        return getSupportedNestedElements().contains(name);// || hasImplicitElement();
     }
 
     @Override
     public TTypeName getElementTypeClassName() {
-        return new TTypeName(getPkg() + ".macros." + namingManager.getClassNameFor(getElement().getTaskName()) + "Macro");
+        if (!getPkg().endsWith(".macros"))
+            return new TTypeName(getPkg() + ".macros." + namingManager.getClassNameFor(getElement().getTaskName()) + "Macro");
+        else
+            return new TTypeName(getPkg() + "." + namingManager.getClassNameFor(getElement().getTaskName()) + "Macro");
     }
 
     @Override
     public TMethod getCreatorMethod(UnknownElement element) {
+        assert(element != null);
         if (!this.supportsNestedElement(element.getTaskName()))
             return null;
 

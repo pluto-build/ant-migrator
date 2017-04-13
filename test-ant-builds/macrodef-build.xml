@@ -1,6 +1,6 @@
 <project name="MacrodefTest" default="main" basedir=".">
 
-    <target name="main" depends="echo, echo2, zip, zip2" />
+    <target name="main" depends="echo, echo2, zip, checksums" />
 
     <macrodef name="echotest">
         <text name="text"/>
@@ -33,10 +33,10 @@
      <macrodef name="zipmacro">
         <element name="zfs"/>
         <sequential>
-            <zip destfile="result.zip">
+            <zip destfile="out/result.zip">
                 <zfs/>
             </zip>
-            <zip destfile="result2.zip">
+            <zip destfile="out/result2.zip">
                 <zfs/>
             </zip>
         </sequential>
@@ -51,10 +51,10 @@
         </zipmacro>
     </target>
 
-    <macrodef name="zipmacro2">
+    <!--<macrodef name="zipmacro2">
         <element name="zfs2" implicit="yes"/>
         <sequential>
-            <zip destfile="result3.zip">
+            <zip destfile="out/result3.zip">
                 <zfs2/>
             </zip>
         </sequential>
@@ -65,5 +65,72 @@
             <zipfileset dir="src" prefix="src"/>
             <zipfileset dir="target" prefix="target"/>
         </zipmacro2>
+    </target>-->
+
+    <!-- <macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
+        <element name="resources" implicit="true"/>
+        <sequential>
+            <checksum algorithm="md5">
+                <resources/>
+            </checksum>
+            <checksum algorithm="sha1">
+                <resources/>
+            </checksum>
+        </sequential>
+    </macrodef>
+    <macrodef name="checksums">
+        <element name="resources" implicit="true"/>
+        <sequential>
+            <checksums-mvn>
+                <resources/>
+            </checksums-mvn>
+            <checksum fileext=".sha512" algorithm="sha-512">
+                <resources/>
+            </checksum>
+        </sequential>
+    </macrodef>-->
+    
+    <macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
+        <element name="resourcesmvn"/>
+        <sequential>
+            <checksum algorithm="md5">
+                <resourcesmvn/>
+            </checksum>
+            <checksum algorithm="sha1">
+                <resourcesmvn/>
+            </checksum>
+        </sequential>
+    </macrodef>
+    <macrodef name="checksums">
+        <element name="resources"/>
+        <sequential>
+            <checksums-mvn>
+            	<resourcesmvn>
+                	<resources/>
+                </resourcesmvn>
+            </checksums-mvn>
+            <checksum fileext=".sha512" algorithm="sha-512">
+                <resources/>
+            </checksum>
+        </sequential>
+    </macrodef>
+
+    <target name="checksums">
+        <checksums>
+        	<resources>
+				<fileset dir="out/">
+					<exclude name="**/*.asc"/>
+					<exclude name="**/*.md5"/>
+					<exclude name="**/*.sha1"/>
+					<exclude name="**/*.sha512"/>
+				</fileset>
+				<fileset dir="out/">
+					<exclude name="**/*.asc"/>
+					<exclude name="**/*.md5"/>
+					<exclude name="**/*.sha1"/>
+					<exclude name="**/*.sha512"/>
+				</fileset>
+            </resources>
+        </checksums>
     </target>
 </project>

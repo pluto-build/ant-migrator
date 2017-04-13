@@ -4,10 +4,7 @@ import generate.NamingManager;
 import generate.types.TConstructor;
 import generate.types.TMethod;
 import generate.types.TTypeName;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.Target;
-import org.apache.tools.ant.Task;
-import org.apache.tools.ant.UnknownElement;
+import org.apache.tools.ant.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,12 +25,12 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
     protected MacroElementAntIntrospectionHelper(Project project, UnknownElement element, String name, String pkg, AntIntrospectionHelper parentIntrospectionHelper) {
         super(project, element, name, pkg, parentIntrospectionHelper);
         this.namingManager = new NamingManager();
-        this.macroAntIntrospectionHelper = (MacroAntIntrospectionHelper)parentIntrospectionHelper.getFirstIntrospectionHelperThatSupportsElement(element.getTaskName());
+        this.macroAntIntrospectionHelper = parentIntrospectionHelper.getMacroIntrospectionHelperThatSupportsElement(element.getTaskName());
     }
 
     @Override
     public TTypeName getElementTypeClassName() {
-        return macroAntIntrospectionHelper.getNestedElementType(getElement().getTaskName());
+        return getParentIntrospectionHelper().getFirstIntrospectionHelperThatSupportsElement(getElement().getTaskName()).getNestedElementType(getElement().getTaskName());
     }
 
     @Override
@@ -57,7 +54,7 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public boolean supportsNestedElement(String name) {
         // TODO
-        return getCommonNestedElements().contains(name);
+        return getSupportedNestedElements().contains(name);
         //return getRealElementIntrospectionHelper().supportsNestedElement(name);
     }
 
@@ -81,13 +78,17 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public List<String> getSupportedNestedElements() {
         // TODO
-        return null;
+        return getCommonNestedElements();
     }
 
     @Override
     public TTypeName getNestedElementType(String name) {
+        List<AntIntrospectionHelper> parentAntIntroSpectionHelpers = getParentAntIntrospectionHelpers();
+        assert(parentAntIntroSpectionHelpers.size() > 0);
+
+        return parentAntIntroSpectionHelpers.get(0).getNestedElementType(name);
         // TODO
-        return null;
+        //return null;
     }
 
     @Override
@@ -124,12 +125,25 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     public List<String> getCommonNestedElements() {
-        String macroElement = getElement().getTaskName();
-        UnknownElement sequential = getSequentialElement();
-        List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedElement(sequential, macroElement);
 
-        List<AntIntrospectionHelper> introspectionHelpers = parents.stream().map(parent -> AntIntrospectionHelper.getInstanceFor(getProject(), parent, macroElement, getPkg().replace(".macros",""), null)).collect(Collectors.toList());
+        List<AntIntrospectionHelper> introspectionHelpers = getParentAntIntrospectionHelpers();
 
         return getCommonNestedElements(introspectionHelpers);
+    }
+
+    private List<AntIntrospectionHelper> getParentAntIntrospectionHelpers() {
+        UnknownElement sequential = getSequentialElement();
+        String macroElement = getElement().getTaskName();
+        List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedElement(sequential, macroElement);
+
+        return parents.stream().map(parent -> {
+            UnknownElement parentParent = AntIntrospectionHelper.findParentForNestedElement(this.getMacroDefElement(), parent);
+            AntIntrospectionHelper parentIntrospectionHelper;
+            if (parentParent.equals(this.getSequentialElement()))
+                parentIntrospectionHelper = macroAntIntrospectionHelper;
+            else
+                parentIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(getProject(), parentParent, parentParent.getTaskName(),getPkg(), null);
+            return AntIntrospectionHelper.getInstanceFor(getProject(), parent, parent.getTaskName(), getPkg().replace(".macros", ""), parentIntrospectionHelper);
+        }).collect(Collectors.toList());
     }
 }
