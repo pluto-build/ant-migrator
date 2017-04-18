@@ -116,13 +116,12 @@ public class MacroGenerator extends JavaGenerator {
         ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
         elementGenerator.setIgnoredMacroElements(definedElements);
         elementGenerator.setLocalScopedVariables(false);
+        elementGenerator.setOnlyConstructors(true);
 
         for (UnknownElement child : sequential.getChildren()) {
-            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, child, childNames.get(child), getPkg(), parentIntrospectionHelper);
-            elementGenerator.generateConstructor(el);
+            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, child, childNames.get(child), getPkg(), null);
+            elementGenerator.generateElement(null, child, null);
         }
-
-
 
         this.closeOneLevel(); // end method
 

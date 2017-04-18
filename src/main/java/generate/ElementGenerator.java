@@ -12,7 +12,6 @@ import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.UnknownElement;
 import org.apache.tools.ant.types.EnumeratedAttribute;
-import sun.reflect.generics.reflectiveObjects.LazyReflectiveObjectGenerator;
 import utils.StringUtils;
 
 import java.lang.reflect.Constructor;
@@ -34,6 +33,7 @@ public class ElementGenerator {
     private Map<UnknownElement, Pair<String, TTypeName>> constructedVariables = new HashMap<>();
     private boolean localScopedVariables = true;
     private boolean noConstructor = false;
+    private boolean onlyConstructors = false;
 
     public List<String> getIgnoredMacroElements() {
         return ignoredMacroElements;
@@ -54,6 +54,9 @@ public class ElementGenerator {
         this.noConstructor = noConstructor;
     }
 
+    public void setOnlyConstructors(boolean onlyConstructors) {
+        this.onlyConstructors = onlyConstructors;
+    }
 
     public NamingManager getNamingManager() {
         return namingManager;
@@ -86,13 +89,15 @@ public class ElementGenerator {
 
         AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, generator.getPkg(), parentIntrospectionHelper);
 
-        if (introspectionHelper.isAntCall()) {
-            // Deal with antcalls
+        if (!onlyConstructors) {
+            if (introspectionHelper.isAntCall()) {
+                // Deal with antcalls
 
-            generateAntCall(introspectionHelper);
+                generateAntCall(introspectionHelper);
 
 
-            return taskName;
+                return taskName;
+            }
         }
 
         TTypeName elementTypeClassName = introspectionHelper.getElementTypeClassName();
@@ -102,27 +107,31 @@ public class ElementGenerator {
         if (!noConstructor)
             generateConstructor(introspectionHelper, taskName);
 
-        if (introspectionHelper.hasProjectSetter())
-            generateProjectSetter(taskName);
+        if (!onlyConstructors) {
+            if (introspectionHelper.hasProjectSetter())
+                generateProjectSetter(taskName);
 
-        try {
-            // Just for debugging purposes right now
-            // TODO: Remove in release
-            element.maybeConfigure();
-        } catch (Throwable t) {
+            try {
+                // Just for debugging purposes right now
+                // TODO: Remove in release
+                element.maybeConfigure();
+            } catch (Throwable t) {
 
+            }
         }
 
         if (generateMacroCode(element, taskName, introspectionHelper)) return taskName;
 
         generateChildren(element, taskName, introspectionHelper);
 
-        generateAttributes(element, taskName, introspectionHelper);
+        if (!onlyConstructors) {
+            generateAttributes(element, taskName, introspectionHelper);
 
-        // Element might include text. Call addText method...
-        generateText(element, taskName);
+            // Element might include text. Call addText method...
+            generateText(element, taskName);
 
-        generateMacroInvocationSpecificCode(introspectionHelper);
+            generateMacroInvocationSpecificCode(introspectionHelper);
+        }
 
         return taskName;
     }
@@ -136,8 +145,10 @@ public class ElementGenerator {
     }
 
     public boolean generateMacroCode(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
-        if (introspectionHelper.isMacroInvocation())
-            generator.printString(taskName + ".prepare();");
+        if (!noConstructor) {
+            if (introspectionHelper.isMacroInvocation())
+                generator.printString(taskName + ".prepare();");
+        }
 
         if (introspectionHelper.hasImplicitElement()) {
             // We have an implicit element in a macro
