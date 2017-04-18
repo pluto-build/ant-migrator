@@ -120,7 +120,7 @@ public class MacroGenerator extends JavaGenerator {
 
         for (UnknownElement child : sequential.getChildren()) {
             AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, child, childNames.get(child), getPkg(), null);
-            elementGenerator.generateElement(null, child, null);
+            elementGenerator.generateElement(null, child, childNames.get(child));
         }
 
         this.closeOneLevel(); // end method
