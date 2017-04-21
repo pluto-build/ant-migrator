@@ -79,6 +79,8 @@ public class ElementGenerator {
 
     public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName) {
 
+        System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
+
         if (taskName == null)
             taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
@@ -120,9 +122,9 @@ public class ElementGenerator {
             }
         }
 
-        if (generateMacroCode(element, taskName, introspectionHelper)) return taskName;
-
-        generateChildren(element, taskName, introspectionHelper);
+        if (!generateMacroCode(element, taskName, introspectionHelper)) {
+            generateChildren(element, taskName, introspectionHelper);
+        }
 
         if (!onlyConstructors) {
             generateAttributes(element, taskName, introspectionHelper);

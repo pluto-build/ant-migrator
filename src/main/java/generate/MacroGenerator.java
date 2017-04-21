@@ -5,6 +5,7 @@ import generate.introspectionhelpers.MacroAntIntrospectionHelper;
 import generate.types.TTypeName;
 import javafx.util.Pair;
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.UnknownElement;
 import org.jetbrains.annotations.NotNull;
 import utils.StringUtils;
@@ -251,20 +252,12 @@ public class MacroGenerator extends JavaGenerator {
 
     @NotNull
     private UnknownElement getSequential() {
-        return macroDef.getChildren().stream().filter(e -> e.getTaskName().equals("sequential")).findFirst().get();
+        return introspectionHelper.getSequentialElement();
     }
 
     private void generateMacroElementClass(String elementName, List<UnknownElement> parents) {
-        List<AntIntrospectionHelper> introspectionHelpers = parents.stream().map(parent -> {
-            UnknownElement parentParent = AntIntrospectionHelper.findParentForNestedElement(this.macroDef, parent);
-            AntIntrospectionHelper parentIntrospectionHelper;
-            if (parentParent.equals(getSequential()))
-                parentIntrospectionHelper = introspectionHelper;
-            else
-                parentIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(project, parentParent, parentParent.getTaskName(),getPkg(), null);
-            return AntIntrospectionHelper.getInstanceFor(project, parent, childNames.get(parent), basePkg, parentIntrospectionHelper);
-        }).collect(Collectors.toList());
-        List<String> commonSupportedNestedElements = getCommonNestedElements(introspectionHelpers);
+        List<AntIntrospectionHelper> introspectionHelpers = introspectionHelper.getParentAntIntrospectionHelpers(elementName);
+        List<String> commonSupportedNestedElements = MacroAntIntrospectionHelper.getCommonNestedElements(introspectionHelpers);
         this.printString("public class " + namingManager.getClassNameFor(elementName) + "{", "}");
         this.increaseIndentation(1);
 
@@ -286,7 +279,10 @@ public class MacroGenerator extends JavaGenerator {
                 System.out.println(nested + ":" + parent.getTaskName());
                 String nestedName = namingManager.getNameFor(StringUtils.decapitalize(nested));
                 AntIntrospectionHelper parentIntrospectionHelper = introspectionHelpers.get(parents.indexOf(parent));
-                AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nested, getPkg(), parentIntrospectionHelper);
+                // Very hacky...
+                // We know better names than getParentAntIntrospectionHelpers can provide...
+                parentIntrospectionHelper.setName(childNames.get(parent));
+                AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nestedName, getPkg(), parentIntrospectionHelper);
                 TTypeName name = introspectionHelper.getElementTypeClassName();
 
                 ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
@@ -303,17 +299,5 @@ public class MacroGenerator extends JavaGenerator {
         }
 
         this.closeOneLevel(); // end class
-    }
-
-    public List<String> getCommonNestedElements(List<AntIntrospectionHelper> introspectionHelpers) {
-        assert (introspectionHelpers != null && introspectionHelpers.size() >= 1);
-        List<AntIntrospectionHelper> helpers = new ArrayList<>();
-        helpers.addAll(introspectionHelpers);
-        List<String> commonSupportedNestedElements = helpers.get(0).getSupportedNestedElements();
-        helpers.remove(0);
-        for (AntIntrospectionHelper helper : helpers) {
-            commonSupportedNestedElements.retainAll(helper.getSupportedNestedElements());
-        }
-        return commonSupportedNestedElements;
     }
 }

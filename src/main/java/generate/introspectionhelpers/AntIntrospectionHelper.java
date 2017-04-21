@@ -20,7 +20,7 @@ import java.util.Map;
 abstract public class AntIntrospectionHelper {
 
     private final Project project;
-    private final String name;
+    private String name;
     private final String pkg;
     private final UnknownElement element;
     private final AntIntrospectionHelper parentIntrospectionHelper;
@@ -55,6 +55,10 @@ abstract public class AntIntrospectionHelper {
 
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getPkg() {
