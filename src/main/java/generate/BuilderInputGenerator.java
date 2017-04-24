@@ -21,26 +21,28 @@ public class BuilderInputGenerator extends JavaGenerator {
     private NamingManager namingManager;
     private final ElementGenerator elementGenerator;
     private final File buildParent;
+    private final boolean continueOnError;
 
     private final List<String> PATH_PROPERTY_NAMES;
 
-    public BuilderInputGenerator(String pkg, String name, Project project, File buildParent) {
+    public BuilderInputGenerator(String pkg, String name, Project project, File buildParent, boolean continueOnError) {
         super(pkg);
         this.namingManager = new NamingManager();
         this.name = namingManager.getClassNameFor(StringUtils.capitalize(name+"Input"));
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
         this.buildParent = buildParent;
-        this.elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
+        this.elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError);
         this.PATH_PROPERTY_NAMES = Arrays.asList("basedir", "ant.file." + name);
+        this.continueOnError = continueOnError;
     }
 
     /**
      * @param name
      * @param includeEmpty set this to false, to omit empty variables in the output. This can result in wrong values, as empty variables can override environment variables...
      */
-    public BuilderInputGenerator(String pkg, String name, Project project, File buildParent, boolean includeEmpty) {
-        this(pkg, name, project, buildParent);
+    public BuilderInputGenerator(String pkg, String name, Project project, File buildParent, boolean includeEmpty, boolean continueOnError) {
+        this(pkg, name, project, buildParent, continueOnError);
         this.includeEmpty = includeEmpty;
     }
 

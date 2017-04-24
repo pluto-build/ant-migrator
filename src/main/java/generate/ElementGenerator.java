@@ -34,6 +34,7 @@ public class ElementGenerator {
     private boolean localScopedVariables = true;
     private boolean noConstructor = false;
     private boolean onlyConstructors = false;
+    private final boolean continueOnErrors;
 
     public List<String> getIgnoredMacroElements() {
         return ignoredMacroElements;
@@ -70,71 +71,84 @@ public class ElementGenerator {
         return getProjectName() + "Input";
     }
 
-    public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, Resolvable resolver) {
+    public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, Resolvable resolver, boolean continueOnErrors) {
         this.generator = generator;
         this.project = project;
         this.namingManager = namingManager;
         this.resolver = resolver;
+        this.continueOnErrors = continueOnErrors;
     }
 
     public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName) {
-
-        System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
-
-        if (taskName == null)
-            taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
-
-        if (ignoredMacroElements.contains(element.getTaskName())) {
-            if (element.getChildren() == null || element.getChildren().isEmpty())
+        try {
+            // macros were already migrated...
+            if (element.getTaskName().equals("macrodef"))
                 return taskName;
-        }
 
-        AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, generator.getPkg(), parentIntrospectionHelper);
+            System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
 
-        if (!onlyConstructors) {
-            if (introspectionHelper.isAntCall()) {
-                // Deal with antcalls
+            if (taskName == null)
+                taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
 
-                generateAntCall(introspectionHelper);
-
-
-                return taskName;
+            if (ignoredMacroElements.contains(element.getTaskName())) {
+                if (element.getChildren() == null || element.getChildren().isEmpty())
+                    return taskName;
             }
-        }
 
-        TTypeName elementTypeClassName = introspectionHelper.getElementTypeClassName();
-        if (elementTypeClassName == null)
-            throw new RuntimeException("Could not get type definition for " + element.getTaskName());
+            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, generator.getPkg(), parentIntrospectionHelper);
 
-        if (!noConstructor)
-            generateConstructor(introspectionHelper, taskName);
+            if (!onlyConstructors) {
+                if (introspectionHelper.isAntCall()) {
+                    // Deal with antcalls
 
-        if (!onlyConstructors) {
-            if (introspectionHelper.hasProjectSetter())
-                generateProjectSetter(taskName);
+                    generateAntCall(introspectionHelper);
 
-            try {
-                // Just for debugging purposes right now
-                // TODO: Remove in release
-                element.maybeConfigure();
-            } catch (Throwable t) {
 
+                    return taskName;
+                }
             }
+
+            TTypeName elementTypeClassName = introspectionHelper.getElementTypeClassName();
+            if (elementTypeClassName == null)
+                throw new RuntimeException("Could not get type definition for " + element.getTaskName());
+
+            if (!noConstructor)
+                generateConstructor(introspectionHelper, taskName);
+
+            if (!onlyConstructors) {
+                if (introspectionHelper.hasProjectSetter())
+                    generateProjectSetter(taskName);
+
+                try {
+                    // Just for debugging purposes right now
+                    // TODO: Remove in release
+                    element.maybeConfigure();
+                } catch (Throwable t) {
+
+                }
+            }
+
+            if (!generateMacroCode(element, taskName, introspectionHelper)) {
+                generateChildren(element, taskName, introspectionHelper);
+            }
+
+            if (!onlyConstructors) {
+                generateAttributes(element, taskName, introspectionHelper);
+
+                // Element might include text. Call addText method...
+                generateText(element, taskName);
+
+                generateMacroInvocationSpecificCode(introspectionHelper);
+            }
+        } catch (Exception e) {
+            if (!continueOnErrors)
+                throw e;
+            System.err.println("Failed generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
+            System.err.println(e);
+            generator.printString("// TODO: Error while migrating " + element.getTaskName() + " at " + element.getLocation().toString());
+            if (element.getChildren() != null)
+                generator.printString("// all children will also not be generated...");
         }
-
-        if (!generateMacroCode(element, taskName, introspectionHelper)) {
-            generateChildren(element, taskName, introspectionHelper);
-        }
-
-        if (!onlyConstructors) {
-            generateAttributes(element, taskName, introspectionHelper);
-
-            // Element might include text. Call addText method...
-            generateText(element, taskName);
-
-            generateMacroInvocationSpecificCode(introspectionHelper);
-        }
-
         return taskName;
     }
 

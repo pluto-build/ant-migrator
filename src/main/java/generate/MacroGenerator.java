@@ -27,6 +27,7 @@ public class MacroGenerator extends JavaGenerator {
     private final String inputName;
     private final String basePkg;
     private final MacroAntIntrospectionHelper introspectionHelper;
+    private final boolean continueOnError;
 
     public String getName() {
         return name;
@@ -40,7 +41,7 @@ public class MacroGenerator extends JavaGenerator {
         return getProjectName() + "Input";
     }
 
-    public MacroGenerator(String pkg, Project project, NamingManager namingManager, Resolvable resolver, UnknownElement macroDef) {
+    public MacroGenerator(String pkg, Project project, NamingManager namingManager, Resolvable resolver, UnknownElement macroDef, boolean continueOnError) {
         super(pkg + ".macros");
         this.basePkg = pkg;
         this.project = project;
@@ -48,6 +49,7 @@ public class MacroGenerator extends JavaGenerator {
         this.resolver = resolver;
         this.macroPropertyResolver = new MacroPropertyResolver(resolver);
         this.macroDef = macroDef;
+        this.continueOnError = continueOnError;
 
         // The unknown element has to be a macro definition
         assert (this.macroDef.getTaskName().equals("macrodef"));
@@ -66,24 +68,33 @@ public class MacroGenerator extends JavaGenerator {
     public void generatePrettyPrint() {
         super.generatePrettyPrint();
 
-        this.printString("public class " + this.name + " {", "}");
-        this.increaseIndentation(1);
+        try {
+            this.printString("public class " + this.name + " {", "}");
+            this.increaseIndentation(1);
 
-        this.generateProject();
+            this.generateProject();
 
-        for (UnknownElement child : this.macroDef.getChildren()) {
-            prepareElement(child);
+            for (UnknownElement child : this.macroDef.getChildren()) {
+                prepareElement(child);
+            }
+
+            this.generatePrepareMethod();
+
+            for (UnknownElement child : this.macroDef.getChildren()) {
+                generateElement(child);
+            }
+
+            this.generateExecuteMethod();
+
+            this.closeOneLevel(); // end class
+        } catch (Exception e) {
+            if (!continueOnError)
+                throw e;
+
+            System.err.println("Failed to migrate macro: " + this.name);
+            e.printStackTrace();
+            this.printString("// TODO: Failed to migrate macro...");
         }
-
-        this.generatePrepareMethod();
-
-        for (UnknownElement child : this.macroDef.getChildren()) {
-            generateElement(child);
-        }
-
-        this.generateExecuteMethod();
-
-        this.closeOneLevel(); // end class
     }
 
     private void generateProject() {
@@ -114,7 +125,7 @@ public class MacroGenerator extends JavaGenerator {
 
         this.printString(this.getInputName() + " cinput = input.clone();");
 
-        ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
+        ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver, continueOnError);
         elementGenerator.setIgnoredMacroElements(definedElements);
         elementGenerator.setLocalScopedVariables(false);
         elementGenerator.setOnlyConstructors(true);
@@ -140,7 +151,7 @@ public class MacroGenerator extends JavaGenerator {
         // Get the sequential element
         UnknownElement sequential = getSequential();
 
-        ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver);
+        ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver, continueOnError);
         elementGenerator.setIgnoredMacroElements(definedElements);
         elementGenerator.setLocalScopedVariables(false);
         elementGenerator.setNoConstructor(true);
@@ -285,7 +296,7 @@ public class MacroGenerator extends JavaGenerator {
                 AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nestedName, getPkg(), parentIntrospectionHelper);
                 TTypeName name = introspectionHelper.getElementTypeClassName();
 
-                ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver);
+                ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError);
 
                 elementGenerator.generateConstructor(introspectionHelper, nestedName);
                 this.printString("lam.execute(" + nestedName + ");");

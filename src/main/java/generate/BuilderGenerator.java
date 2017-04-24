@@ -24,6 +24,7 @@ public class BuilderGenerator extends JavaGenerator {
     private final NamingManager namingManager = new NamingManager();
     private final PropertyResolver resolver;
     private final ElementGenerator elementGenerator;
+    private final boolean continueOnError;
 
 
     //<editor-fold desc="Getters and Setters" defaultstate="collapsed">
@@ -69,14 +70,15 @@ public class BuilderGenerator extends JavaGenerator {
 
     //</editor-fold>
 
-    public BuilderGenerator(String pkg, Project project, Target target, Boolean useFileDependencyDiscovery) {
+    public BuilderGenerator(String pkg, Project project, Target target, Boolean useFileDependencyDiscovery, boolean continueOnError) {
         super(pkg);
         this.name = getNamingManager().getClassNameFor(StringUtils.capitalize(target.getName() + "Builder"));
         this.project = project;
         this.target = target;
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
         this.resolver = new PropertyResolver(project, "cinput");
-        this.elementGenerator = new ElementGenerator(this, project, getNamingManager(), resolver);
+        this.elementGenerator = new ElementGenerator(this, project, getNamingManager(), resolver, continueOnError);
+        this.continueOnError = continueOnError;
     }
 
     private void generateBuildMethod() {
@@ -125,7 +127,7 @@ public class BuilderGenerator extends JavaGenerator {
                 String taskName = getElementGenerator().generateElement(null, element, null);
 
                 // Antcalls are resolved directly to builder calls. No calling of execute...
-                if (!element.getTaskName().equals("antcall"))
+                if (taskName != null && !element.getTaskName().equals("antcall"))
                     this.printString(taskName + ".execute();");
             } else {
                 // All tasks should also be UnknownElements. If not, fail the conversion

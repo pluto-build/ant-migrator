@@ -49,6 +49,10 @@ public class AntMigrator {
                 .longOpt("main")
                 .desc("Generate a main class")
                 .build());
+        options.addOption(Option.builder("c")
+                .longOpt("continueOnError")
+                .desc("Continue building on (certain) errors.")
+                .build());
 
         CommandLineParser parser = new DefaultParser();
         CommandLine line;
@@ -81,31 +85,23 @@ public class AntMigrator {
         Map<String, String> files = new HashMap<>();
 
         // Deal with all macros first, as evaluated macros are needed for the rest of the migration...
-        for (Target target: project.getTargets().values()) {
-            for (Task task: target.getTasks()) {
-                if (task.getTaskName().equals("macrodef")) {
-                    // We have a macro. Use a MacroGenerator to generate a class for it
-                    NamingManager namingManager = new NamingManager();
-                    PropertyResolver resolver = new PropertyResolver(project, "input");
-                    // Exceute to add to the type table
-                    task.perform();
-                    MacroGenerator macroGenerator = new MacroGenerator(line.getOptionValue("pkg"), project, namingManager, resolver, (UnknownElement)task);
-                    files.put("macros/" + macroGenerator.getName() + ".java", macroGenerator.getPrettyPrint());
-                }
+        for (Target target : project.getTargets().values()) {
+            for (Task task : target.getTasks()) {
+                generateMacro((UnknownElement) task, project, files, line);
             }
         }
 
         for (Target target : project.getTargets().values()) {
             if (!target.getName().isEmpty()) {
                 NamingManager namingManager = new NamingManager();
-                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), project, target, !line.hasOption("noFD"));
+                BuilderGenerator generator = new BuilderGenerator(line.getOptionValue("pkg"), project, target, !line.hasOption("noFD"), line.hasOption("c"));
                 files.put(namingManager.getClassNameFor(StringUtils.capitalize(target.getName())) + "Builder.java", generator.getPrettyPrint());
             }
         }
 
         NamingManager namingManager = new NamingManager();
 
-        BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName(), project, buildFile.getParentFile());
+        BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName(), project, buildFile.getParentFile(), line.hasOption("c"));
         files.put(namingManager.getClassNameFor(project.getName()) + "Input.java", builderInputGenerator.getPrettyPrint());
 
         String plutoBuildListener = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoBuildListener.java").toURI())));
@@ -128,6 +124,24 @@ public class AntMigrator {
                 System.out.println("------------------------");
                 System.out.println(entry.getValue());
                 System.out.println();
+            }
+        }
+    }
+
+    private static void generateMacro(UnknownElement element, Project project, Map<String, String> files, CommandLine line) {
+        if (element.getTaskName().equals("macrodef")) {
+            // We have a macro. Use a MacroGenerator to generate a class for it
+            NamingManager namingManager = new NamingManager();
+            PropertyResolver resolver = new PropertyResolver(project, "input");
+            // Exceute to add to the type table
+            element.perform();
+            MacroGenerator macroGenerator = new MacroGenerator(line.getOptionValue("pkg"), project, namingManager, resolver, element, line.hasOption("c"));
+            files.put("macros/" + macroGenerator.getName() + ".java", macroGenerator.getPrettyPrint());
+        } else {
+            if (element.getChildren() != null) {
+                for (UnknownElement c : element.getChildren()) {
+                    generateMacro(c, project, files, line);
+                }
             }
         }
     }
