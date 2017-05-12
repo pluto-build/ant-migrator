@@ -91,6 +91,11 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
+    public boolean hasInitMethod() {
+        return false;
+    }
+
+    @Override
     public boolean isMacroInvocationChildElement() {
         return true;
     }

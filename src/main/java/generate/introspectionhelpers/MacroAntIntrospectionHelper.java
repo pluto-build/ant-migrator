@@ -163,6 +163,11 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
+    public boolean hasInitMethod() {
+        return false;
+    }
+
+    @Override
     public boolean supportsNestedElement(String name) {
         // TODO Implicit element...
         return getSupportedNestedElements().contains(name);// || hasImplicitElement();

@@ -85,7 +85,7 @@ public class ElementGenerator {
             if (element.getTaskName().equals("macrodef"))
                 return taskName;
 
-            System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
+            //System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
 
             if (taskName == null)
                 taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
@@ -119,6 +119,9 @@ public class ElementGenerator {
                 if (introspectionHelper.hasProjectSetter())
                     generateProjectSetter(taskName);
 
+                if (introspectionHelper.hasInitMethod())
+                    generator.printString(taskName + ".init();");
+
                 try {
                     // Just for debugging purposes right now
                     // TODO: Remove in release
@@ -126,10 +129,6 @@ public class ElementGenerator {
                 } catch (Throwable t) {
 
                 }
-            }
-
-            if (!generateMacroCode(element, taskName, introspectionHelper)) {
-                generateChildren(element, taskName, introspectionHelper);
             }
 
             if (!onlyConstructors) {
@@ -140,11 +139,15 @@ public class ElementGenerator {
 
                 generateMacroInvocationSpecificCode(introspectionHelper);
             }
+
+            if (!generateMacroCode(element, taskName, introspectionHelper)) {
+                generateChildren(element, taskName, introspectionHelper);
+            }
         } catch (Exception e) {
             if (!continueOnErrors)
                 throw e;
             System.err.println("Failed generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
-            System.err.println(e);
+            e.printStackTrace();
             generator.printString("// TODO: Error while migrating " + element.getTaskName() + " at " + element.getLocation().toString());
             if (element.getChildren() != null)
                 generator.printString("// all children will also not be generated...");
@@ -161,11 +164,6 @@ public class ElementGenerator {
     }
 
     public boolean generateMacroCode(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
-        if (!noConstructor) {
-            if (introspectionHelper.isMacroInvocation())
-                generator.printString(taskName + ".prepare();");
-        }
-
         if (introspectionHelper.hasImplicitElement()) {
             // We have an implicit element in a macro
             generateImplicitElement(element, introspectionHelper);

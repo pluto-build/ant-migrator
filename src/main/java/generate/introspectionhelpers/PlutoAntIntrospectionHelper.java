@@ -155,6 +155,11 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
         return new TTypeName(introspectionHelper.getElementType(name));
     }
 
+    @Override
+    public boolean hasInitMethod() {
+        return Task.class.isAssignableFrom(this.getElementTypeClass());
+    }
+
 
     @Override
     public TMethod getAttributeMethod(String attr) {

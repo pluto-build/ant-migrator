@@ -26,7 +26,7 @@
 
     <target name="echo2">
         <prefixecho prefix="This is a test" postfix="!">
-            Let's do this!
+            Let's do this
         </prefixecho>
     </target>
 

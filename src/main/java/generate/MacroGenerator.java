@@ -72,13 +72,11 @@ public class MacroGenerator extends JavaGenerator {
             this.printString("public class " + this.name + " {", "}");
             this.increaseIndentation(1);
 
-            this.generateProject();
-
             for (UnknownElement child : this.macroDef.getChildren()) {
                 prepareElement(child);
             }
 
-            this.generatePrepareMethod();
+            this.generateProject();
 
             for (UnknownElement child : this.macroDef.getChildren()) {
                 generateElement(child);
@@ -108,20 +106,13 @@ public class MacroGenerator extends JavaGenerator {
 
         this.printString("public " + getName() + "(Project project, " + inputName + " input) {\n" +
                 "  this.project = project;\n" +
-                "  this.input = input;\n" +
+                "  this.input = input;",
                 "}");
-    }
+        this.increaseIndentation(1);
 
-    HashMap<UnknownElement, String> childNames = new HashMap<>();
-    List<String> definedElements = new ArrayList<>();
-
-    private void generatePrepareMethod() {
         // Get the sequential element
         UnknownElement sequential = getSequential();
 
-
-        this.printString("public void prepare() {", "}");
-        this.increaseIndentation(1);
 
         this.printString(this.getInputName() + " cinput = input.clone();");
 
@@ -131,8 +122,10 @@ public class MacroGenerator extends JavaGenerator {
         elementGenerator.setOnlyConstructors(true);
 
         for (UnknownElement child : sequential.getChildren()) {
-            AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, child, childNames.get(child), getPkg(), null);
-            elementGenerator.generateElement(null, child, childNames.get(child));
+            if (!definedElements.contains(child.getTaskName())) {
+                AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, child, childNames.get(child), getPkg(), null);
+                elementGenerator.generateElement(null, child, childNames.get(child));
+            }
         }
 
         this.closeOneLevel(); // end method
@@ -143,6 +136,9 @@ public class MacroGenerator extends JavaGenerator {
             this.printString("private " + entry.getValue().getValue().getShortName() + " " + entry.getValue().getKey() + " = null;");
         }
     }
+
+    HashMap<UnknownElement, String> childNames = new HashMap<>();
+    List<String> definedElements = new ArrayList<>();
 
     private void generateExecuteMethod() {
         this.printString("public void execute() {", "}");

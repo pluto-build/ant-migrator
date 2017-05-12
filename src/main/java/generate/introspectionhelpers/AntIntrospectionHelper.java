@@ -285,6 +285,8 @@ abstract public class AntIntrospectionHelper {
         return AntIntrospectionHelper.findParentsForNestedElement(getElement(), name);
     }
 
+    public abstract boolean hasInitMethod();
+
     public static List<UnknownElement> findParentsForNestedElement(UnknownElement element,  String name) {
         List<UnknownElement> parents = new ArrayList<>();
         if (element.getChildren() == null)
