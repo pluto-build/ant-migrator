@@ -136,12 +136,14 @@ public class ElementGenerator {
 
                 // Element might include text. Call addText method...
                 generateText(element, taskName);
-
-                generateMacroInvocationSpecificCode(introspectionHelper);
             }
 
             if (!generateMacroCode(element, taskName, introspectionHelper)) {
                 generateChildren(element, taskName, introspectionHelper);
+            }
+
+            if (!onlyConstructors) {
+                generateMacroInvocationSpecificCode(introspectionHelper);
             }
         } catch (Exception e) {
             if (!continueOnErrors)

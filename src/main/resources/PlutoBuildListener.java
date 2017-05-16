@@ -39,7 +39,7 @@ public class PlutoBuildListener implements BuildListener {
     @Override
     public void messageLogged(BuildEvent event) {
         // TODO: Might rework this to adapt internal logging priority to let pluto pick the detail of logging...
-        if (event.getPriority() <= Project.MSG_WARN)
+        if (event.getPriority() <= Project.MSG_INFO)
             Log.log.log(event.getMessage(), Log.ALWAYS);
     }
 }

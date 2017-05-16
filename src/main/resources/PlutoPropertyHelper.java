@@ -14,14 +14,14 @@ public class PlutoPropertyHelper extends PropertyHelper {
         add(new PropertyHelper.PropertySetter() {
             @Override
             public boolean setNew(String property, Object value, PropertyHelper propertyHelper) {
-                Log.log.log("New property " + property + " was set to " + value.toString(), Log.ALWAYS);
+                Log.log.log("New property " + property + " was set to " + value.toString(), Log.DETAIL);
                 propertyInteractor.setProperty(property, String.valueOf(value));
                 return true;
             }
 
             @Override
             public boolean set(String property, Object value, PropertyHelper propertyHelper) {
-                Log.log.log("Property " + property + " was set to " + value.toString(), Log.ALWAYS);
+                Log.log.log("Property " + property + " was set to " + value.toString(), Log.DETAIL);
                 propertyInteractor.setProperty(property, String.valueOf(value));
                 return true;
             }
@@ -29,7 +29,7 @@ public class PlutoPropertyHelper extends PropertyHelper {
         add(new PropertyEvaluator() {
             @Override
             public Object evaluate(String property, PropertyHelper propertyHelper) {
-                Log.log.log("Property " + property + " was retrieved...", Log.ALWAYS);
+                Log.log.log("Property " + property + " was retrieved...", Log.DETAIL);
                 return propertyInteractor.get(property);
             }
         });
