@@ -1,5 +1,6 @@
 package generate;
 
+import generate.anthelpers.ReflectionHelpers;
 import generate.introspectionhelpers.AntIntrospectionHelper;
 import generate.types.TConstructor;
 import generate.types.TMethod;
@@ -80,12 +81,20 @@ public class ElementGenerator {
     }
 
     public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName) {
+        return generateElement(parentIntrospectionHelper, element, taskName, false);
+    }
+
+    public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName, boolean implicitInserted) {
         try {
+            //System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
+
+            // Search for implicit elements and insert them explicitly...
+            if (!implicitInserted)
+                insertImplicitElements(element, parentIntrospectionHelper);
+
             // macros were already migrated...
             if (element.getTaskName().equals("macrodef"))
                 return taskName;
-
-            //System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
 
             if (taskName == null)
                 taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
@@ -100,9 +109,7 @@ public class ElementGenerator {
             if (!onlyConstructors) {
                 if (introspectionHelper.isAntCall()) {
                     // Deal with antcalls
-
                     generateAntCall(introspectionHelper);
-
 
                     return taskName;
                 }
@@ -138,9 +145,7 @@ public class ElementGenerator {
                 generateText(element, taskName);
             }
 
-            if (!generateMacroCode(element, taskName, introspectionHelper)) {
-                generateChildren(element, taskName, introspectionHelper);
-            }
+            generateChildren(element, taskName, introspectionHelper);
 
             if (!onlyConstructors) {
                 generateMacroInvocationSpecificCode(introspectionHelper);
@@ -151,10 +156,36 @@ public class ElementGenerator {
             System.err.println("Failed generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
             e.printStackTrace();
             generator.printString("// TODO: Error while migrating " + element.getTaskName() + " at " + element.getLocation().toString());
-            if (element.getChildren() != null)
+            if (element.getChildren() != null) {
                 generator.printString("// all children will also not be generated...");
+                for (UnknownElement c: element.getChildren()) {
+                    System.err.println("-->  Failed generating element: " + c.getTaskName() + " at " + c.getLocation().toString());
+                }
+            }
         }
         return taskName;
+    }
+
+    public void insertImplicitElements(UnknownElement element, AntIntrospectionHelper parentIntrospectionHelper) {
+        AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, element.getTaskName(), generator.getPkg(), parentIntrospectionHelper);
+
+        if (introspectionHelper.hasImplicitElement()
+                // TODO: Check if this checks are necessary, or if they can be discarded...
+                //&& element.getChildren() != null && !element.getChildren().get(0).getTaskName().equals(introspectionHelper.getImplicitElementName())
+                ) {
+            System.out.println("Inserting implicit element " + introspectionHelper.getImplicitElementName() + " into " + element.getTaskName() + " at " + element.getLocation());
+            UnknownElement implicitElement = new UnknownElement(introspectionHelper.getImplicitElementName());
+            implicitElement.setTaskName(introspectionHelper.getImplicitElementName());
+            implicitElement.setRuntimeConfigurableWrapper(new RuntimeConfigurable(implicitElement, introspectionHelper.getImplicitElementName()));
+            implicitElement.setLocation(element.getLocation());
+            for (UnknownElement child: element.getChildren()) {
+                insertImplicitElements(child, introspectionHelper);
+                implicitElement.addChild(child);
+            }
+
+            ReflectionHelpers.clearChildrenFor(element);
+            element.addChild(implicitElement);
+        }
     }
 
     public void generateMacroInvocationSpecificCode(AntIntrospectionHelper introspectionHelper) {
@@ -165,21 +196,12 @@ public class ElementGenerator {
         }
     }
 
-    public boolean generateMacroCode(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
-        if (introspectionHelper.hasImplicitElement()) {
-            // We have an implicit element in a macro
-            generateImplicitElement(element, introspectionHelper);
-            return true;
-        }
-        return false;
-    }
-
     public void generateChildren(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {
         if (element.getChildren() != null) {
             for (UnknownElement child : element.getChildren()) {
                 generator.increaseIndentation(1);
                 if (introspectionHelper.supportsNestedElement(child.getTaskName())) {
-                    generateElement(introspectionHelper, child, null);
+                    generateElement(introspectionHelper, child, null, true);
                 } else {
                     Class<?> elementTypeClass = introspectionHelper.getElementTypeClass();
                     if (elementTypeClass == null || !(TaskContainer.class.isAssignableFrom(elementTypeClass))) {
@@ -189,7 +211,7 @@ public class ElementGenerator {
                     } else {
                         // a task container - anything could happen - just add the
                         // child to the container
-                        String childName = generateElement(introspectionHelper, child, null);
+                        String childName = generateElement(introspectionHelper, child, null, true);
                         generator.printString(taskName + ".addTask(" + childName + ");");
                     }
 
@@ -205,17 +227,6 @@ public class ElementGenerator {
         if (introspectionHelper.getAddChildMethod() != null) {
             generator.printString(introspectionHelper.getParentIntrospectionHelper().getName() + "." + introspectionHelper.getAddChildMethod().getName() + "(" + taskName + ");");
         }
-    }
-
-    public void generateImplicitElement(UnknownElement element, AntIntrospectionHelper introspectionHelper) {
-        // Add the implicit element explicitely during translation. First find the right one...
-        String implicitName = namingManager.getNameFor(introspectionHelper.getImplicitElementName());
-        UnknownElement implicitElement = new UnknownElement(introspectionHelper.getImplicitElementName());
-        implicitElement.setTaskName(introspectionHelper.getImplicitElementName());
-        implicitElement.setRuntimeConfigurableWrapper(new RuntimeConfigurable(implicitElement, introspectionHelper.getImplicitElementName()));
-        for (UnknownElement child: element.getChildren())
-            implicitElement.addChild(child);
-        this.generateElement(introspectionHelper, implicitElement, implicitName);
     }
 
     public void generateText(UnknownElement element, String taskName) {
@@ -345,7 +356,7 @@ public class ElementGenerator {
                     throw new RuntimeException("We didn't have a constructor for " + taskName);
                 } else {
                     ArrayList<String> params = new ArrayList<>();
-                    // TODO: This is very fragile and wrong
+                    // TODO: This is very fragile and possibly wrong
                     for (TParameter parameter : constructor.getParameters()) {
                         if (parameter.getTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.Project"))
                             params.add("project");

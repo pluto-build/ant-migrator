@@ -4,6 +4,7 @@ import com.sun.tools.internal.jxc.ap.Const;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.tools.ant.IntrospectionHelper;
 import org.apache.tools.ant.Target;
+import org.apache.tools.ant.UnknownElement;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -96,5 +97,17 @@ public class ReflectionHelpers {
 
         }
         return null;
+    }
+
+    public static void clearChildrenFor(UnknownElement element) {
+        try {
+            Field field = UnknownElement.class.getDeclaredField("children");
+            field.setAccessible(true);
+            field.set(element, null);
+        } catch (NoSuchFieldException e) {
+            //e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            //e.printStackTrace();
+        }
     }
 }

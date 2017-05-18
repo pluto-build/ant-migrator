@@ -153,7 +153,8 @@ public class MacroGenerator extends JavaGenerator {
         elementGenerator.setNoConstructor(true);
 
         for (UnknownElement child : sequential.getChildren()) {
-            childNames.put(child, elementGenerator.generateElement(null, child, childNames.get(child)));
+            // Implicits were already inserted above, do NOT repeat here!
+            childNames.put(child, elementGenerator.generateElement(null, child, childNames.get(child), true));
         }
 
         for (UnknownElement child : sequential.getChildren()) {
@@ -283,7 +284,7 @@ public class MacroGenerator extends JavaGenerator {
             this.increaseIndentation(1);
 
             for (UnknownElement parent : parents) {
-                System.out.println(nested + ":" + parent.getTaskName());
+                //System.out.println(nested + ":" + parent.getTaskName());
                 String nestedName = namingManager.getNameFor(StringUtils.decapitalize(nested));
                 AntIntrospectionHelper parentIntrospectionHelper = introspectionHelpers.get(parents.indexOf(parent));
                 // Very hacky...

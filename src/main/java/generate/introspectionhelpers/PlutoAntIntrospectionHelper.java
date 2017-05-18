@@ -110,7 +110,8 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
             if (getParentIntrospectionHelper() != null && getParentIntrospectionHelper().getNestedElementType(getElement().getTaskName()) != null)
                 return Class.forName(getParentIntrospectionHelper().getNestedElementType(getElement().getTaskName()).getFullyQualifiedName());
         } catch (Exception e) {
-            e.printStackTrace();
+            // TODO: Deal with this more correctly
+            //e.printStackTrace();
         }
         /*if (getParentIntrospectionHelper() != null && getParentIntrospectionHelper() instanceof  PlutoAntIntrospectionHelper) {
             // Try to find element class by looking into parent

@@ -1,6 +1,6 @@
 <project name="MacrodefTest" default="main" basedir=".">
 
-    <target name="main" depends="echo, echo2, zip, checksums" />
+    <target name="main" depends="echo, echo2, zip, zip2, checksums" />
 
     <macrodef name="echotest">
         <text name="text"/>
@@ -51,7 +51,7 @@
         </zipmacro>
     </target>
 
-    <!--<macrodef name="zipmacro2">
+    <macrodef name="zipmacro2">
         <element name="zfs2" implicit="yes"/>
         <sequential>
             <zip destfile="out/result3.zip">
@@ -65,9 +65,9 @@
             <zipfileset dir="src" prefix="src"/>
             <zipfileset dir="target" prefix="target"/>
         </zipmacro2>
-    </target>-->
+    </target>
 
-    <macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
+    <!--<macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
         <element name="resourcesmvn"/>
         <sequential>
             <checksum algorithm="md5">
@@ -103,9 +103,9 @@
 			    </fileset>
             </resources>
         </checksums>
-    </target>
+    </target>-->
     
-    <!--<macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
+    <macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
         <element name="resourcesmvn" implicit="true"/>
         <sequential>
             <checksum algorithm="md5">
@@ -137,5 +137,5 @@
 				<exclude name="**/*.sha512"/>
 			</fileset>
         </checksums>
-    </target>-->
+    </target>
 </project>
