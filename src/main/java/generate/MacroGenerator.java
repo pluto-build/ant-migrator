@@ -71,6 +71,7 @@ public class MacroGenerator extends JavaGenerator {
         super.generatePrettyPrint();
 
         try {
+            log.trace("Generating macro: " + this.getName());
             this.printString("public class " + this.name + " {", "}");
             this.increaseIndentation(1);
 
@@ -203,6 +204,7 @@ public class MacroGenerator extends JavaGenerator {
                 def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
             }
             String textName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
+            log.trace("Generating macro text element: " + textName);
             this.printString("String " + textName + " = " + def + ";");
 
             this.printString("public void addText(String " + textName + ") {\n" +
@@ -222,6 +224,8 @@ public class MacroGenerator extends JavaGenerator {
             }
             String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
 
+            log.trace("Generating macro attribute: " + attributeName);
+
             this.printString("String " + attributeName + " = " + def + ";");
 
             this.printString("public void set" + StringUtils.capitalize(attributeName) + "(String " + attributeName + ") {\n" +
@@ -236,7 +240,8 @@ public class MacroGenerator extends JavaGenerator {
         }
         if (element.getTaskName().equals("element")) {
             String elementName = element.getWrapper().getAttributeMap().get("name").toString();
-            String elementClassName = namingManager.getClassNameFor(elementName);
+
+            log.trace("Generating macro child element: " + elementName);
 
             UnknownElement sequential = getSequential();
             List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedMacroElement(sequential, elementName);
@@ -247,8 +252,6 @@ public class MacroGenerator extends JavaGenerator {
             generateMacroElementClass(elementName, parents);
 
             this.printString("public " + namingManager.getClassNameFor(elementName) + " get" + namingManager.getClassNameFor(elementName) + "() { return new " + namingManager.getClassNameFor(elementName) + "(); }");
-
-            // TODO: implict elements
         }
     }
 
