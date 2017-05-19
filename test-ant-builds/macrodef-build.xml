@@ -90,6 +90,31 @@
                 <resources/>
             </checksum>
         </sequential>
+    </macrodef>-->
+
+    <!--<macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
+        <element name="resources"/>
+        <sequential>
+            <checksum algorithm="md5">
+                <resources/>
+            </checksum>
+            <checksum algorithm="sha1">
+                <resources/>
+            </checksum>
+        </sequential>
+    </macrodef>
+    <macrodef name="checksums">
+        <element name="resources"/>
+        <sequential>
+            <checksums-mvn>
+                <resources>
+                    <resources/>
+                </resources>
+            </checksums-mvn>
+            <checksum fileext=".sha512" algorithm="sha-512">
+                <resources/>
+            </checksum>
+        </sequential>
     </macrodef>
 
     <target name="checksums">
@@ -106,13 +131,13 @@
     </target>-->
     
     <macrodef name="checksums-mvn" description="only md5 and sha1 are needed for the maven directory structure">
-        <element name="resourcesmvn" implicit="true"/>
+        <element name="resources" implicit="true"/>
         <sequential>
             <checksum algorithm="md5">
-                <resourcesmvn/>
+                <resources/>
             </checksum>
             <checksum algorithm="sha1">
-                <resourcesmvn/>
+                <resources/>
             </checksum>
         </sequential>
     </macrodef>

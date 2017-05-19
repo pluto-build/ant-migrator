@@ -2,6 +2,8 @@ import generate.*;
 import generate.anthelpers.LauncherHelpers;
 import generate.anthelpers.NoExpansionPropertyHelper;
 import org.apache.commons.cli.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.*;
 import utils.StringUtils;
 
@@ -16,6 +18,8 @@ import java.util.*;
  * Created by manuel on 31.01.17.
  */
 public class AntMigrator {
+    private static Log log = LogFactory.getLog(AntMigrator.class);
+
     public static void main(String[] args) throws Exception {
         Options options = new Options();
         options.addOption(Option.builder("h")
@@ -65,7 +69,7 @@ public class AntMigrator {
                 formatter.printHelp("ant2pluto", options);
             }
         } catch (ParseException exp) {
-            System.out.println("Unexpected exception:" + exp.getMessage());
+            log.fatal("Unexpected exception.", exp);
             HelpFormatter formatter = new HelpFormatter();
             formatter.printHelp("ant2pluto", options);
             return;
@@ -154,7 +158,7 @@ public class AntMigrator {
         Files.createDirectories(macrosDir);
 
         Path file = dir.resolve(StringUtils.capitalize(name));
-        System.out.println("Writing: " + file);
+        log.info("Writing: " + file);
         Files.write(file, content.getBytes());
     }
 }

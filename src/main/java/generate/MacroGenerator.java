@@ -4,6 +4,8 @@ import generate.introspectionhelpers.AntIntrospectionHelper;
 import generate.introspectionhelpers.MacroAntIntrospectionHelper;
 import generate.types.TTypeName;
 import javafx.util.Pair;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +17,8 @@ import java.util.*;
  * Created by manuel on 21.02.17.
  */
 public class MacroGenerator extends JavaGenerator {
+
+    private Log log = LogFactory.getLog(MacroGenerator.class);
 
     private final Project project;
     private final NamingManager namingManager;
@@ -87,8 +91,7 @@ public class MacroGenerator extends JavaGenerator {
             if (!continueOnError)
                 throw e;
 
-            System.err.println("Failed to migrate macro: " + this.name);
-            e.printStackTrace();
+            log.error("Failed to migrate macro: " + this.name, e);
             this.printString("// TODO: Failed to migrate macro...");
         }
     }

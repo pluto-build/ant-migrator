@@ -8,6 +8,8 @@ import generate.types.TParameter;
 import generate.types.TTypeName;
 import javafx.util.Pair;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.TaskContainer;
@@ -25,6 +27,8 @@ import java.util.Map;
  * Created by manuel on 16.02.17.
  */
 public class ElementGenerator {
+
+    private Log log = LogFactory.getLog(ElementGenerator.class);
 
     private final JavaGenerator generator;
     private final Project project;
@@ -86,7 +90,7 @@ public class ElementGenerator {
 
     public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName, boolean implicitInserted) {
         try {
-            //System.out.println("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
+            log.trace("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
 
             // Search for implicit elements and insert them explicitly...
             if (!implicitInserted)
@@ -153,13 +157,12 @@ public class ElementGenerator {
         } catch (Exception e) {
             if (!continueOnErrors)
                 throw e;
-            System.err.println("Failed generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
-            e.printStackTrace();
+            log.error("Failed generating element: " + element.getTaskName() + " at " + element.getLocation().toString(), e);
             generator.printString("// TODO: Error while migrating " + element.getTaskName() + " at " + element.getLocation().toString());
             if (element.getChildren() != null) {
                 generator.printString("// all children will also not be generated...");
                 for (UnknownElement c: element.getChildren()) {
-                    System.err.println("-->  Failed generating element: " + c.getTaskName() + " at " + c.getLocation().toString());
+                    log.error("-->  Failed generating child: " + c.getTaskName() + " at " + c.getLocation().toString());
                     generator.printString("//  -->  Failed generating element: " + c.getTaskName() + " at " + c.getLocation().toString());
                 }
             }
@@ -171,7 +174,8 @@ public class ElementGenerator {
         AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, element.getTaskName(), generator.getPkg(), parentIntrospectionHelper);
 
         if (introspectionHelper.hasImplicitElement()) {
-            System.out.println("Inserting implicit element " + introspectionHelper.getImplicitElementName() + " into " + element.getTaskName() + " at " + element.getLocation());
+
+            log.debug("Inserting implicit element " + introspectionHelper.getImplicitElementName() + " into " + element.getTaskName() + " at " + element.getLocation());
             UnknownElement implicitElement = new UnknownElement(introspectionHelper.getImplicitElementName());
             implicitElement.setTaskName(introspectionHelper.getImplicitElementName());
             implicitElement.setRuntimeConfigurableWrapper(new RuntimeConfigurable(implicitElement, introspectionHelper.getImplicitElementName()));
