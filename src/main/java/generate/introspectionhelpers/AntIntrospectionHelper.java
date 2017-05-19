@@ -252,8 +252,9 @@ abstract public class AntIntrospectionHelper {
     public MacroAntIntrospectionHelper getMacroIntrospectionHelperThatSupportsElement(String name) {
         MacroAntIntrospectionHelper parentMacroIntroSpectionHelper = getParentMacroAntIntrospectionHelper();
         while (parentMacroIntroSpectionHelper != null) {
-            if (parentMacroIntroSpectionHelper.supportsNestedElement(name))
+            if (parentMacroIntroSpectionHelper.supportsNestedElement(name)) {
                 return parentMacroIntroSpectionHelper;
+            }
             parentMacroIntroSpectionHelper = parentMacroIntroSpectionHelper.getParentMacroAntIntrospectionHelper();
         }
         return null;
@@ -281,34 +282,35 @@ abstract public class AntIntrospectionHelper {
     public abstract TTypeName getNestedElementType(String name);
 
 
-    public List<UnknownElement> findParentsForNestedElement(String name) {
-        return AntIntrospectionHelper.findParentsForNestedElement(getElement(), name);
+    public List<UnknownElement> findParentsForNestedMacroElement(String name) {
+        return AntIntrospectionHelper.findParentsForNestedMacroElement(getElement(), name);
     }
 
     public abstract boolean hasInitMethod();
 
-    public static List<UnknownElement> findParentsForNestedElement(UnknownElement element,  String name) {
+    public static List<UnknownElement> findParentsForNestedMacroElement(UnknownElement element, String name) {
         List<UnknownElement> parents = new ArrayList<>();
         if (element.getChildren() == null)
             return parents;
-        if (element.getChildren().stream().anyMatch(c -> c.getTaskName().equals(name))) {
+        // Important to check for no children! Otherwise we might find parents for other elements that are NOT macro placeholders!
+        if (element.getChildren().stream().anyMatch(c -> c.getTaskName().equals(name) && (c.getChildren() == null || c.getChildren().size() == 0))) {
             parents.add(element);
         }
         for (UnknownElement c: element.getChildren()) {
-            List<UnknownElement> res = findParentsForNestedElement(c, name);
+            List<UnknownElement> res = findParentsForNestedMacroElement(c, name);
             parents.addAll(res);
         }
         return parents;
     }
 
-    public static UnknownElement findParentForNestedElement(UnknownElement root,  UnknownElement element) {
+    public static UnknownElement findParentForNestedMacroElement(UnknownElement root, UnknownElement element) {
         if (root.getChildren() == null)
             return null;
         if (root.getChildren().stream().anyMatch(c -> c.equals(element))) {
             return root;
         }
         for (UnknownElement c: root.getChildren()) {
-            UnknownElement res = findParentForNestedElement(c, element);
+            UnknownElement res = findParentForNestedMacroElement(c, element);
             if (res != null)
                 return res;
         }

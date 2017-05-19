@@ -5,13 +5,11 @@ import generate.introspectionhelpers.MacroAntIntrospectionHelper;
 import generate.types.TTypeName;
 import javafx.util.Pair;
 import org.apache.tools.ant.Project;
-import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.UnknownElement;
 import org.jetbrains.annotations.NotNull;
 import utils.StringUtils;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by manuel on 21.02.17.
@@ -187,7 +185,7 @@ public class MacroGenerator extends JavaGenerator {
             String elementClassName = namingManager.getClassNameFor(elementName);
 
             UnknownElement sequential = getSequential();
-            List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedElement(sequential, elementName);
+            List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedMacroElement(sequential, elementName);
 
             if (parents.isEmpty())
                 throw new RuntimeException("Did not find <" + elementName + "/> element in macrodef.");
@@ -245,7 +243,7 @@ public class MacroGenerator extends JavaGenerator {
             String elementClassName = namingManager.getClassNameFor(elementName);
 
             UnknownElement sequential = getSequential();
-            List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedElement(sequential, elementName);
+            List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedMacroElement(sequential, elementName);
 
             if (parents.isEmpty())
                 throw new RuntimeException("Did not find <" + elementName + "/> element in macrodef.");

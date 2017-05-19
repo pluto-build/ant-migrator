@@ -6,12 +6,10 @@ import generate.types.TMethod;
 import generate.types.TParameter;
 import generate.types.TTypeName;
 import org.apache.tools.ant.*;
-import org.apache.tools.ant.taskdefs.Ant;
 import org.apache.tools.ant.taskdefs.MacroDef;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -104,10 +102,10 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
     public List<AntIntrospectionHelper> getParentAntIntrospectionHelpers(String macroElement) {
         UnknownElement sequential = getSequentialElement();
-        List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedElement(sequential, macroElement);
+        List<UnknownElement> parents = AntIntrospectionHelper.findParentsForNestedMacroElement(sequential, macroElement);
 
         return parents.stream().map(parent -> {
-            UnknownElement parentParent = AntIntrospectionHelper.findParentForNestedElement(this.getMacroDefElement(), parent);
+            UnknownElement parentParent = AntIntrospectionHelper.findParentForNestedMacroElement(this.getMacroDefElement(), parent);
             AntIntrospectionHelper parentIntrospectionHelper;
             if (parentParent.equals(this.getSequentialElement())) {
                 if (this.hasImplicitElement())
@@ -169,7 +167,6 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public boolean supportsNestedElement(String name) {
-        // TODO Implicit element...
         return getSupportedNestedElements().contains(name);// || hasImplicitElement();
     }
 
@@ -209,8 +206,9 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public MacroAntIntrospectionHelper getMacroIntrospectionHelperThatSupportsElement(String name) {
-        if (this.supportsNestedElement(name))
+        if (this.supportsNestedElement(name)) {
             return this;
+        }
         return super.getMacroIntrospectionHelperThatSupportsElement(name);
     }
 }
