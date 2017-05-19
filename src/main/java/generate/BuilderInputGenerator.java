@@ -203,7 +203,7 @@ public class BuilderInputGenerator extends JavaGenerator {
 
                     // This should have already been done by AntMigrator.java
                 } else if (!child.getTaskName().equals("property")) {
-                    System.out.println("Encountered toplevel definition " + child.getTaskName() + " that didn't have an id. Don't know how to deal with that (yet).");
+                    System.err.println("Encountered toplevel definition \"" + child.getTaskName() + "\" that didn't have an id. Don't know how to deal with that (yet).");
                 }
             }
         }

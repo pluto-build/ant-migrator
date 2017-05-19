@@ -121,21 +121,18 @@ public class MacroGenerator extends JavaGenerator {
 
         for (UnknownElement child : sequential.getChildren()) {
             if (!definedElements.contains(child.getTaskName())) {
-                AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, child, childNames.get(child), getPkg(), null);
-                elementGenerator.generateElement(null, child, childNames.get(child));
+                elementGenerator.generateElement(null, child, null);
             }
         }
 
         this.closeOneLevel(); // end method
 
         for (Map.Entry<UnknownElement, Pair<String, TTypeName>> entry : elementGenerator.getConstructedVariables().entrySet()) {
-            childNames.put(entry.getKey(), entry.getValue().getKey());
             this.addImport(entry.getValue().getValue().getImportName());
             this.printString("private " + entry.getValue().getValue().getShortName() + " " + entry.getValue().getKey() + " = null;");
         }
     }
 
-    HashMap<UnknownElement, String> childNames = new HashMap<>();
     List<String> definedElements = new ArrayList<>();
 
     private void generateExecuteMethod() {
@@ -152,11 +149,11 @@ public class MacroGenerator extends JavaGenerator {
 
         for (UnknownElement child : sequential.getChildren()) {
             // Implicits were already inserted above, do NOT repeat here!
-            childNames.put(child, elementGenerator.generateElement(null, child, childNames.get(child), true));
+            elementGenerator.generateElement(null, child, null, true);
         }
 
         for (UnknownElement child : sequential.getChildren()) {
-            this.printString(childNames.get(child) + ".execute();");
+            this.printString(namingManager.getNameFor(child) + ".execute();");
         }
 
         this.closeOneLevel(); // end method
@@ -191,11 +188,7 @@ public class MacroGenerator extends JavaGenerator {
                 throw new RuntimeException("Did not find <" + elementName + "/> element in macrodef.");
 
             for (UnknownElement parent : parents) {
-                if (!childNames.containsKey(parent)) {
-                    String parentName = namingManager.getNameFor(StringUtils.decapitalize(parent.getTaskName()));
-
-                    childNames.put(parent, parentName);
-                }
+                namingManager.getNameFor(parent);
             }
         }
     }
@@ -287,7 +280,7 @@ public class MacroGenerator extends JavaGenerator {
                 AntIntrospectionHelper parentIntrospectionHelper = introspectionHelpers.get(parents.indexOf(parent));
                 // Very hacky...
                 // We know better names than getParentAntIntrospectionHelpers can provide...
-                parentIntrospectionHelper.setName(childNames.get(parent));
+                parentIntrospectionHelper.setName(namingManager.getNameFor(parent));
                 AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nestedName, getPkg(), parentIntrospectionHelper);
                 TTypeName name = introspectionHelper.getElementTypeClassName();
 

@@ -84,15 +84,15 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     public UnknownElement getMacroDefElement() {
-        Target topTarget = getProject().getTargets().get("");
-        UnknownElement macroDefElement = null;
-        for (Task task: topTarget.getTasks()) {
-            UnknownElement uTask = (UnknownElement)task;
-            if (uTask.getTaskName().equals("macrodef") && uTask.getWrapper().getAttributeMap().get("name").equals(this.getElement().getTaskName())) {
-                macroDefElement = uTask;
+        for (Target target: getProject().getTargets().values()) {
+            for (Task task : target.getTasks()) {
+                UnknownElement uTask = (UnknownElement) task;
+                if (uTask.getTaskName().equals("macrodef") && uTask.getWrapper().getAttributeMap().get("name").equals(this.getElement().getTaskName())) {
+                    return uTask;
+                }
             }
         }
-        return macroDefElement;
+        return null;
     }
 
 

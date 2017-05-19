@@ -1,5 +1,6 @@
 package generate;
 
+import org.apache.tools.ant.UnknownElement;
 import utils.StringUtils;
 
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.Map;
 public class NamingManager {
 
     private Map<String, Integer> nameMap = new HashMap<>();
+    private Map<UnknownElement, String> elementMap = new HashMap<>();
 
     public String getNameFor(String prefix) {
         prefix = prefix.replace(".", "_").replace("-", "_").trim();
@@ -21,6 +23,14 @@ public class NamingManager {
 
         nameMap.put(prefix, old + 1);
         return prefix + (old + 1);
+    }
+
+    public String getNameFor(UnknownElement element) {
+        if (!elementMap.containsKey(element)) {
+            elementMap.put(element, getNameFor(StringUtils.decapitalize(element.getTaskName())));
+        }
+
+        return elementMap.get(element);
     }
 
     public String getClassNameFor(String name) {

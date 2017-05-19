@@ -97,7 +97,7 @@ public class ElementGenerator {
                 return taskName;
 
             if (taskName == null)
-                taskName = getNamingManager().getNameFor(StringUtils.decapitalize(element.getTaskName()));
+                taskName = getNamingManager().getNameFor(element);
 
             if (ignoredMacroElements.contains(element.getTaskName())) {
                 if (element.getChildren() == null || element.getChildren().isEmpty())
@@ -160,6 +160,7 @@ public class ElementGenerator {
                 generator.printString("// all children will also not be generated...");
                 for (UnknownElement c: element.getChildren()) {
                     System.err.println("-->  Failed generating element: " + c.getTaskName() + " at " + c.getLocation().toString());
+                    generator.printString("//  -->  Failed generating element: " + c.getTaskName() + " at " + c.getLocation().toString());
                 }
             }
         }
@@ -169,10 +170,7 @@ public class ElementGenerator {
     public void insertImplicitElements(UnknownElement element, AntIntrospectionHelper parentIntrospectionHelper) {
         AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, element.getTaskName(), generator.getPkg(), parentIntrospectionHelper);
 
-        if (introspectionHelper.hasImplicitElement()
-                // TODO: Check if this checks are necessary, or if they can be discarded...
-                //&& element.getChildren() != null && !element.getChildren().get(0).getTaskName().equals(introspectionHelper.getImplicitElementName())
-                ) {
+        if (introspectionHelper.hasImplicitElement()) {
             System.out.println("Inserting implicit element " + introspectionHelper.getImplicitElementName() + " into " + element.getTaskName() + " at " + element.getLocation());
             UnknownElement implicitElement = new UnknownElement(introspectionHelper.getImplicitElementName());
             implicitElement.setTaskName(introspectionHelper.getImplicitElementName());
