@@ -330,11 +330,11 @@ public class ElementGenerator {
             String elementName = namingManager.getClassNameFor(introspectionHelper.getElement().getTaskName());
 
             generator.addImport(elementTypeClassName.getImportName());
-            generator.printString(parentName+".configure"+elementName+"(new Consumer<"+elementTypeClassName.getShortName()+">() {", "});");
+            generator.printString(parentName+".configure"+elementName+"(new BiConsumer<"+elementTypeClassName.getShortName()+", "+getInputName()+">() {", "});");
             generator.increaseIndentation(1);
 
             generator.printString("@Override");
-            generator.printString("public void execute("+elementTypeClassName.getShortName()+" "+taskName+") {", "}");
+            generator.printString("public void execute("+elementTypeClassName.getShortName()+" "+taskName+", " + getInputName() + " cinput) {", "}");
             generator.increaseIndentation(1);
         } else {
             TMethod constructorFactoryMethod = introspectionHelper.getConstructorFactoryMethod();

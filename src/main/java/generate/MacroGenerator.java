@@ -276,8 +276,8 @@ public class MacroGenerator extends JavaGenerator {
             nestedElement.setTaskName(nested);
 
             this.addImport(nestedType.getImportName());
-            this.addImport(basePkg + ".Consumer");
-            this.printString("public void configure" + namingManager.getClassNameFor(nested) + "(final Consumer<" + nestedType.getShortName() + "> lam) {", "}");
+            this.addImport(basePkg + ".BiConsumer");
+            this.printString("public void configure" + namingManager.getClassNameFor(nested) + "(final BiConsumer<" + nestedType.getShortName() + ", "+ getInputName() +"> lam) {", "}");
             this.increaseIndentation(1);
 
             for (UnknownElement parent : parents) {
@@ -293,7 +293,7 @@ public class MacroGenerator extends JavaGenerator {
                 ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError);
 
                 elementGenerator.generateConstructor(introspectionHelper, nestedName);
-                this.printString("lam.execute(" + nestedName + ");");
+                this.printString("lam.execute(" + nestedName + ", input);");
                 elementGenerator.generateAddMethod(introspectionHelper, nestedName);
 
                 //?

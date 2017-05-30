@@ -1,6 +1,8 @@
 package generate;
 
 import generate.anthelpers.ReflectionHelpers;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.Execute;
 import utils.StringUtils;
@@ -14,6 +16,8 @@ import java.util.*;
  * Created by manuel on 13.12.16.
  */
 public class BuilderInputGenerator extends JavaGenerator {
+    private Log log = LogFactory.getLog(BuilderInputGenerator.class);
+
     private final String name;
     private final Project project;
     private boolean includeEmpty = true;
@@ -203,7 +207,7 @@ public class BuilderInputGenerator extends JavaGenerator {
 
                     // This should have already been done by AntMigrator.java
                 } else if (!child.getTaskName().equals("property")) {
-                    System.err.println("Encountered toplevel definition \"" + child.getTaskName() + "\" that didn't have an id. Don't know how to deal with that (yet).");
+                    log.warn("Encountered toplevel definition \"" + child.getTaskName() + "\" that didn't have an id. Don't know how to deal with that (yet).");
                 }
             }
         }
