@@ -14,12 +14,10 @@ import org.junit.Test;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
-import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.jar.JarFile;
 
 import static org.junit.Assert.assertEquals;
 
@@ -78,7 +76,6 @@ public class CommonsIOCorrectnessTest {
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
         String absoluteClassPath = makeAbsolute(classPath);
 
-        System.out.println(absoluteClassPath);
         String readCompileArgs = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_compile_args.txt").toURI())));
         readCompileArgs = substituteVars(readCompileArgs, new String[] {"<classpath>"}, new String[]{absoluteClassPath});
         String[] compilerArgs = readCompileArgs.split(" ");
@@ -143,13 +140,13 @@ public class CommonsIOCorrectnessTest {
 
     private static String makeAbsolute(String classPath) {
         String[] classPathElements = classPath.split(":");
-        String absoluteClassPath = "";
+        StringBuilder absoluteClassPath = new StringBuilder();
         for (String cpe: classPathElements) {
             File cpeFile = new File(cpe.replaceFirst("^~",System.getProperty("user.home")));
-            absoluteClassPath += cpeFile.getAbsolutePath() + ":";
+            absoluteClassPath.append(cpeFile.getAbsolutePath()).append(":");
         }
-        if (absoluteClassPath.endsWith(":"))
+        if (absoluteClassPath.toString().endsWith(":"))
             return absoluteClassPath.substring(0, absoluteClassPath.length()-1);
-        return absoluteClassPath;
+        return absoluteClassPath.toString();
     }
 }
