@@ -1,5 +1,7 @@
 package antplutomigrator.correctness.commonsio;
 
+import antplutomigrator.correctness.comparison.ComparisonException;
+import antplutomigrator.correctness.comparison.DirectoryComparer;
 import antplutomigrator.runner.AntMigrator;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.progress.ProgressMonitor;
@@ -12,9 +14,14 @@ import org.junit.Test;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 import java.io.File;
+import java.lang.reflect.Array;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.jar.JarFile;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by manuel on 01.06.17.
@@ -78,17 +85,50 @@ public class CommonsIOCorrectnessTest {
         compiler.run(null, null, null, compilerArgs);
 
         System.out.println("Running ant...");
+        long start = System.currentTimeMillis();
         String readAntCommand = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI())));
         Process antProcess = new ProcessBuilder().directory(antSrcDir).command(readAntCommand).inheritIO().start();
-        antProcess.waitFor();
+        assertEquals(0, antProcess.waitFor());
+        System.out.println("Took " + (System.currentTimeMillis()-start) + "ms.");
 
         System.out.println("Running pluto...");
         String plutoRunCommand = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_run_command.txt").toURI())));
         plutoRunCommand = substituteVars(plutoRunCommand, new String[] {"<classpath>"}, new String[]{absoluteClassPath});
         Process plutoProcess = new ProcessBuilder().directory(plutoSrcDir).command(plutoRunCommand.split(" ")).inheritIO().start();
-        plutoProcess.waitFor();
+        assertEquals(0, plutoProcess.waitFor());
 
-        System.out.println("");
+        System.out.println("Comparing...");
+        DirectoryComparer directoryComparer = new DirectoryComparer(Arrays.asList(new File(antSrcDir, "target"), new File(plutoSrcDir, "target")));
+        directoryComparer.compare(((f1, f2) -> {
+            if (f1.getName().endsWith("jar")) {
+                File tempDir = FileUtils.getTempDirectory();
+                File f1Tmp = new File(tempDir, "f1");
+                File f2Tmp = new File(tempDir, "f2");
+                ZipFile f1z = new ZipFile(f1);
+                f1z.setRunInThread(true);
+                f1z.extractAll(f1Tmp.getAbsolutePath());
+                while (f1z.getProgressMonitor().getState() == ProgressMonitor.STATE_BUSY)
+                    Thread.sleep(10);
+                ZipFile f2z = new ZipFile(f2);
+                f2z.setRunInThread(true);
+                f2z.extractAll(f2Tmp.getAbsolutePath());
+                while (f2z.getProgressMonitor().getState() == ProgressMonitor.STATE_BUSY)
+                    Thread.sleep(10);
+
+                DirectoryComparer directoryComparer1 = new DirectoryComparer(Arrays.asList(f1Tmp, f2Tmp));
+                try {
+                    directoryComparer1.compare((f11, f21) -> false);
+                } catch (ComparisonException e) {
+                    return false;
+                } finally {
+                    FileUtils.deleteDirectory(f1Tmp);
+                    FileUtils.deleteDirectory(f2Tmp);
+                }
+                return true;
+            }
+            return false;
+        }
+        ));
     }
 
     private static String substituteVars(String str, String[] vars, String[] repl) {
