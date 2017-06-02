@@ -101,6 +101,7 @@ public class CommonsIOCorrectnessTest {
         DirectoryComparer directoryComparer = new DirectoryComparer(Arrays.asList(new File(antSrcDir, "target"), new File(plutoSrcDir, "target")));
         directoryComparer.compare(((f1, f2) -> {
             if (f1.getName().endsWith("jar")) {
+                System.err.println("Found differently hashed jars. Doing deep diff. ("+ f1 + " ≠ " + f2 + ")");
                 File tempDir = FileUtils.getTempDirectory();
                 File f1Tmp = new File(tempDir, "f1");
                 File f2Tmp = new File(tempDir, "f2");
@@ -117,6 +118,7 @@ public class CommonsIOCorrectnessTest {
 
                 DirectoryComparer directoryComparer1 = new DirectoryComparer(Arrays.asList(f1Tmp, f2Tmp));
                 try {
+                    // We don't supported nested jar differences here...
                     directoryComparer1.compare((f11, f21) -> false);
                 } catch (ComparisonException e) {
                     return false;

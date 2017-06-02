@@ -44,12 +44,6 @@ public class DirectoryComparer {
                     throw new ComparisonException("Could not find file " + c.getName() + " in " + f2.getAbsolutePath(), f1, f2);
                 compare(c, c2s[0], fileMismatch);
             }
-            for (File c: f2.listFiles()) {
-                File[] c1s = f1.listFiles((f,  n) -> n.equals(c.getName()));
-                if (c1s == null || c1s.length == 0)
-                    throw new ComparisonException("Could not find file " + c.getName() + " in " + f1.getAbsolutePath(), f1, f2);
-                compare(c1s[0], c, fileMismatch);
-            }
         } else {
             assert !f2.isDirectory();
 
