@@ -1,1 +1,1 @@
--d testdata/antplutomigrator/correctness/commonsio/pluto/target -sourcepath testdata/antplutomigrator/correctness/commonsio/pluto/ testdata/antplutomigrator/correctness/commonsio/pluto/build/pluto/commonsio/CommonsIO.java -cp <classpath>
+-d <target> -sourcepath <source> <file> -cp <classpath>
