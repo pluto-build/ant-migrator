@@ -1,5 +1,6 @@
 package antplutomigrator.generate;
 
+import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Target;
 import org.apache.tools.ant.Task;
@@ -127,8 +128,15 @@ public class BuilderGenerator extends JavaGenerator {
                 String taskName = getElementGenerator().generateElement(null, element, null);
 
                 // Antcalls are resolved directly to builder calls. No calling of execute...
-                if (taskName != null && !element.getTaskName().equals("antcall"))
-                    this.printString(taskName + ".execute();");
+                if (taskName != null && !element.getTaskName().equals("antcall")) {
+                    try {
+                        AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, getPkg(), null);
+                        if (introspectionHelper.hasInitAndExecuteMethod())
+                            this.printString(taskName + ".execute();");
+                    } catch (Exception e) {
+                        // TODO:
+                    }
+                }
             } else {
                 // All tasks should also be UnknownElements. If not, fail the conversion
                 throw new RuntimeException("Didn't know how to handle " + t.toString());

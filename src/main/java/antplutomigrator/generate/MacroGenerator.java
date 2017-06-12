@@ -140,6 +140,7 @@ public class MacroGenerator extends JavaGenerator {
     List<String> definedElements = new ArrayList<>();
 
     private void generateExecuteMethod() {
+        this.printString("@Override");
         this.printString("public void execute() {", "}");
         this.increaseIndentation(1);
 
@@ -263,7 +264,8 @@ public class MacroGenerator extends JavaGenerator {
     private void generateMacroElementClass(String elementName, List<UnknownElement> parents) {
         List<AntIntrospectionHelper> introspectionHelpers = introspectionHelper.getParentAntIntrospectionHelpers(elementName);
         List<String> commonSupportedNestedElements = MacroAntIntrospectionHelper.getCommonNestedElements(introspectionHelpers);
-        this.printString("public class " + namingManager.getClassNameFor(elementName) + "{", "}");
+        this.addImport("org.apache.tools.ant.Task");
+        this.printString("public class " + namingManager.getClassNameFor(elementName) + " extends Task {", "}");
         this.increaseIndentation(1);
 
         // Constructor

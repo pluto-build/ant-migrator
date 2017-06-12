@@ -286,7 +286,7 @@ abstract public class AntIntrospectionHelper {
         return AntIntrospectionHelper.findParentsForNestedMacroElement(getElement(), name);
     }
 
-    public abstract boolean hasInitMethod();
+    public abstract boolean hasInitAndExecuteMethod();
 
     public static List<UnknownElement> findParentsForNestedMacroElement(UnknownElement element, String name) {
         List<UnknownElement> parents = new ArrayList<>();

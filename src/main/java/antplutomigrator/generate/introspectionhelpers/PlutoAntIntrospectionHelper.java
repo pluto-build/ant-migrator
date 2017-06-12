@@ -155,10 +155,9 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean hasInitMethod() {
+    public boolean hasInitAndExecuteMethod() {
         return Task.class.isAssignableFrom(this.getElementTypeClass());
     }
-
 
     @Override
     public TMethod getAttributeMethod(String attr) {

@@ -130,7 +130,7 @@ public class ElementGenerator {
                 if (introspectionHelper.hasProjectSetter())
                     generateProjectSetter(taskName);
 
-                if (introspectionHelper.hasInitMethod())
+                if (introspectionHelper.hasInitAndExecuteMethod())
                     generator.printString(taskName + ".init();");
 
                 try {

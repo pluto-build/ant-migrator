@@ -89,7 +89,7 @@ public class MacroElementAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean hasInitMethod() {
+    public boolean hasInitAndExecuteMethod() {
         return false;
     }
 
