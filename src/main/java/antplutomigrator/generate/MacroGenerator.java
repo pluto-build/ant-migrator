@@ -72,7 +72,8 @@ public class MacroGenerator extends JavaGenerator {
 
         try {
             log.trace("Generating macro: " + this.getName());
-            this.printString("public class " + this.name + " {", "}");
+            this.addImport("org.apache.tools.ant.Task");
+            this.printString("public class " + this.name + " extends Task {", "}");
             this.increaseIndentation(1);
 
             for (UnknownElement child : this.macroDef.getChildren()) {
@@ -264,8 +265,7 @@ public class MacroGenerator extends JavaGenerator {
     private void generateMacroElementClass(String elementName, List<UnknownElement> parents) {
         List<AntIntrospectionHelper> introspectionHelpers = introspectionHelper.getParentAntIntrospectionHelpers(elementName);
         List<String> commonSupportedNestedElements = MacroAntIntrospectionHelper.getCommonNestedElements(introspectionHelpers);
-        this.addImport("org.apache.tools.ant.Task");
-        this.printString("public class " + namingManager.getClassNameFor(elementName) + " extends Task {", "}");
+        this.printString("public class " + namingManager.getClassNameFor(elementName) + " {", "}");
         this.increaseIndentation(1);
 
         // Constructor
