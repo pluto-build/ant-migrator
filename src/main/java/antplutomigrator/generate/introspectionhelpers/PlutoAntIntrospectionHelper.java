@@ -155,8 +155,21 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean hasInitAndExecuteMethod() {
-        return Task.class.isAssignableFrom(this.getElementTypeClass());
+    public boolean hasInitMethod() {
+        try {
+            return this.getElementTypeClass().getMethod("init") != null;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean hasExecuteMethod() {
+        try {
+            return this.getElementTypeClass().getMethod("execute") != null;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
     }
 
     @Override

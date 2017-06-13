@@ -131,7 +131,7 @@ public class BuilderGenerator extends JavaGenerator {
                 if (taskName != null && !element.getTaskName().equals("antcall")) {
                     try {
                         AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, getPkg(), null);
-                        if (introspectionHelper.hasInitAndExecuteMethod())
+                        if (introspectionHelper.hasExecuteMethod())
                             this.printString(taskName + ".execute();");
                     } catch (Exception e) {
                         // TODO:
