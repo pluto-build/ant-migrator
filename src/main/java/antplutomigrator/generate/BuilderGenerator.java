@@ -1,6 +1,8 @@
 package antplutomigrator.generate;
 
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Target;
 import org.apache.tools.ant.Task;
@@ -15,6 +17,8 @@ import java.util.List;
  * Created by manuel on 29.11.16.
  */
 public class BuilderGenerator extends JavaGenerator {
+    private final Log log = LogFactory.getLog(BuilderGenerator.class);
+
     private final String name;
 
     private final Project project;
@@ -134,7 +138,8 @@ public class BuilderGenerator extends JavaGenerator {
                         if (introspectionHelper.hasExecuteMethod())
                             this.printString(taskName + ".execute();");
                     } catch (Exception e) {
-                        // TODO:
+                        // TODO: Why does this occur sometimes?!?
+                        log.error("Couldn't create introspectionHelper for " + taskName + " this should never happen...", e);
                     }
                 }
             } else {

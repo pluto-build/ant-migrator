@@ -5,6 +5,8 @@ import antplutomigrator.generate.types.TConstructor;
 import antplutomigrator.generate.types.TMethod;
 import antplutomigrator.generate.types.TParameter;
 import antplutomigrator.generate.types.TTypeName;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.*;
 import org.apache.tools.ant.taskdefs.MacroDef;
 
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
  * Created by manuel on 23.02.17.
  */
 public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
+    private final Log log = LogFactory.getLog(MacroAntIntrospectionHelper.class);
 
     private MacroDef macroDef;
     private final NamingManager namingManager;
@@ -35,12 +38,8 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
             Field field = myAntTypeDefinitionClass.getDeclaredField("macroDef");
             field.setAccessible(true);
             macroDef = (MacroDef) field.get(getAntTypeDefinition());
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            log.debug("getMacroDef threw Exception", e);
         }
         return macroDef;
     }
@@ -139,16 +138,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public List<String> getSupportedNestedElements() {
         ArrayList<String> res = new ArrayList<>();
-
         res.addAll(getMacroDef().getElements().keySet());
-
-        // Add implicit elements if possible:
-        /*if (hasImplicitElement()) {
-            UnknownElement implicitChild = new UnknownElement(getImplicitElementName());
-            implicitChild.setTaskName(getImplicitElementName());
-            res.addAll(this.getCommonNestedElements(implicitChild));
-        } else {
-        }*/
 
         return res;
     }
@@ -172,7 +162,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public boolean supportsNestedElement(String name) {
-        return getSupportedNestedElements().contains(name);// || hasImplicitElement();
+        return getSupportedNestedElements().contains(name);
     }
 
     @Override
@@ -191,7 +181,6 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
         MacroAntIntrospectionHelper macroAntIntrospectionHelper = getMacroIntrospectionHelperThatSupportsElement(element.getTaskName());
         if (macroAntIntrospectionHelper != null) {
-
             String getterName = "get" + namingManager.getClassNameFor(element.getTaskName());
 
             return new TMethod(getterName, new ArrayList<>(), macroAntIntrospectionHelper.getElementTypeClassName().appendNested(namingManager.getClassNameFor(element.getTaskName())));
