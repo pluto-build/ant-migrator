@@ -1,7 +1,8 @@
-package antplutomigrator.correctness.utils;
+package antplutomigrator.correctness.utils.tasks;
 
 import antplutomigrator.correctness.comparison.ComparisonException;
 import antplutomigrator.correctness.comparison.DirectoryComparer;
+import antplutomigrator.correctness.utils.TestTask;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.progress.ProgressMonitor;
 import org.apache.commons.io.FileUtils;

@@ -1,5 +1,6 @@
-package antplutomigrator.correctness.utils;
+package antplutomigrator.correctness.utils.tasks;
 
+import antplutomigrator.correctness.utils.TestTask;
 import org.apache.commons.codec.digest.DigestUtils;
 
 import java.io.File;

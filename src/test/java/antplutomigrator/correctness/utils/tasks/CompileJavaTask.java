@@ -1,5 +1,6 @@
-package antplutomigrator.correctness.utils;
+package antplutomigrator.correctness.utils.tasks;
 
+import antplutomigrator.correctness.utils.TestTask;
 import org.apache.tools.ant.util.JavaEnvUtils;
 
 import javax.tools.JavaCompiler;

@@ -1,5 +1,6 @@
-package antplutomigrator.correctness.utils;
+package antplutomigrator.correctness.utils.tasks;
 
+import antplutomigrator.correctness.utils.TestTask;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.progress.ProgressMonitor;
 

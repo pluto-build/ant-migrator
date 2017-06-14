@@ -1,5 +1,6 @@
-package antplutomigrator.correctness.utils;
+package antplutomigrator.correctness.utils.tasks;
 
+import antplutomigrator.correctness.utils.TestTask;
 import antplutomigrator.runner.AntMigrator;
 
 import java.io.File;
