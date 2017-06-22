@@ -44,7 +44,8 @@ public class DirectoryComparer {
 
     public void compare(File f1, File f2) throws ComparisonException, IOException {
         if (f1.isDirectory()) {
-            assert f2.isDirectory();
+            if (!f2.isDirectory())
+                throw new ComparisonException("Mismatch found: " + f2.getAbsolutePath() + " is not a directory!", f1, f2);
 
             for (File c : f1.listFiles()) {
                 File[] c2s = f2.listFiles((f, n) -> n.equals(c.getName()));
@@ -53,7 +54,8 @@ public class DirectoryComparer {
                 compare(c, c2s[0]);
             }
         } else {
-            assert !f2.isDirectory();
+            if (f2.isDirectory())
+                throw new ComparisonException("Mismatch found: " + f1.getAbsolutePath() + " is a directory!", f1, f2);
 
             boolean comparisonResult = false;
             for (FileComparer fileComparer : fileComparers) {
