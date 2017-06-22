@@ -19,16 +19,16 @@ public class NamingManagerTest {
 
     @Test
     public void testRenamingDot() {
-        assertEquals("some_test", namingManager.getClassNameFor("some.test"));
+        assertEquals("Some_test", namingManager.getClassNameFor("some.test"));
     }
 
     @Test
     public void testRenamingSpace1() {
-        assertEquals("someTest", namingManager.getClassNameFor("some test"));
+        assertEquals("SomeTest", namingManager.getClassNameFor("some test"));
     }
 
     @Test
     public void testRenamingSpace2() {
-        assertEquals("someMoreTests", namingManager.getClassNameFor(" some more tests "));
+        assertEquals("SomeMoreTests", namingManager.getClassNameFor(" some more tests "));
     }
 }
