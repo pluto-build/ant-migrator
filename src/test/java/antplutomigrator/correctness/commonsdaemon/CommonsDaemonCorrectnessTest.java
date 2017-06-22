@@ -1,8 +1,6 @@
 package antplutomigrator.correctness.commonsdaemon;
 
-import antplutomigrator.correctness.comparison.FileComparer;
-import antplutomigrator.correctness.comparison.MD5FileComparer;
-import antplutomigrator.correctness.comparison.UnzipFileComparer;
+import antplutomigrator.correctness.comparison.*;
 import antplutomigrator.correctness.utils.TaskExecutor;
 import antplutomigrator.correctness.utils.tasks.*;
 import org.apache.commons.logging.Log;
@@ -14,6 +12,7 @@ import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
 /**
  * Created by manuel on 01.06.17.
@@ -73,6 +72,7 @@ public class CommonsDaemonCorrectnessTest {
                 return false;
             }
         });
+        distComparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new JavaDocDateIgnoredLineComparer())));
         taskExecutor.addTask(distComparerTask);
 
         taskExecutor.executeTasks();

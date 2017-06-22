@@ -25,6 +25,7 @@ public class DirectoryComparer {
 
     public DirectoryComparer() {
         fileComparers = new ArrayList<>();
+        this.addFileComparer(new MD5FileComparer());
     }
 
     public DirectoryComparer(List<FileComparer> fileComparers) {
