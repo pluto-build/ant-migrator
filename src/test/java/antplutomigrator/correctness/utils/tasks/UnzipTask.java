@@ -30,6 +30,6 @@ public class UnzipTask extends TestTask {
         zipFile.setRunInThread(true);
         zipFile.extractAll(destDir.getAbsolutePath());
         while (zipFile.getProgressMonitor().getState() == ProgressMonitor.STATE_BUSY)
-            Thread.sleep(10);
+            Thread.sleep(1);
     }
 }

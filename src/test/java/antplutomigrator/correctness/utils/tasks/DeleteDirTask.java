@@ -12,7 +12,7 @@ public class DeleteDirTask extends TestTask {
     private final File dir;
 
     public DeleteDirTask(File dir) {
-        assert dir.isDirectory();
+        assert !dir.exists() || dir.isDirectory();
         this.dir = dir;
     }
 

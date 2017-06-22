@@ -1,8 +1,5 @@
-package antplutomigrator.correctness.utils.tasks;
+package antplutomigrator.correctness.comparison;
 
-import antplutomigrator.correctness.comparison.ComparisonException;
-import antplutomigrator.correctness.comparison.DirectoryComparer;
-import antplutomigrator.correctness.utils.TestTask;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.progress.ProgressMonitor;
 import org.apache.commons.io.FileUtils;
@@ -11,28 +8,20 @@ import java.io.File;
 import java.util.Arrays;
 
 /**
- * Created by manuel on 08.06.17.
+ * Created by manuel on 22.06.17.
  */
-public class SimpleComparerTask extends TestTask {
-    private final File src1;
-    private final File src2;
+public class UnzipFileComparer implements FileComparer {
 
-    public SimpleComparerTask(File src1, File src2) {
-        this.src1 = src1;
-        this.src2 = src2;
+    private final DirectoryComparer baseComparer;
+
+    public UnzipFileComparer(DirectoryComparer baseComparer) {
+        this.baseComparer = baseComparer;
     }
 
     @Override
-    public String getDescription() {
-        return "Comparing " + src1 + " and " + src2;
-    }
-
-    @Override
-    public void execute() throws Exception {
-        DirectoryComparer directoryComparer = new DirectoryComparer(Arrays.asList(src1, src2));
-        directoryComparer.compare(((f1, f2) -> {
-            if (f1.getName().endsWith("jar")) {
-                System.err.println("Found differently hashed jars. Doing deep diff. ("+ f1 + " ≠ " + f2 + ")");
+    public boolean filesAreEqual(File f1, File f2) {
+        if (f1.getName().endsWith("jar") || f1.getName().endsWith("zip")) {
+            try {
                 File tempDir = FileUtils.getTempDirectory();
                 File f1Tmp = new File(tempDir, "f1");
                 File f2Tmp = new File(tempDir, "f2");
@@ -47,10 +36,8 @@ public class SimpleComparerTask extends TestTask {
                 while (f2z.getProgressMonitor().getState() == ProgressMonitor.STATE_BUSY)
                     Thread.sleep(10);
 
-                DirectoryComparer directoryComparer1 = new DirectoryComparer(Arrays.asList(f1Tmp, f2Tmp));
                 try {
-                    // We don't supported nested jar differences here...
-                    directoryComparer1.compare((f11, f21) -> false);
+                    baseComparer.compare(Arrays.asList(f1Tmp, f2Tmp));
                 } catch (ComparisonException e) {
                     return false;
                 } finally {
@@ -58,9 +45,10 @@ public class SimpleComparerTask extends TestTask {
                     FileUtils.deleteDirectory(f2Tmp);
                 }
                 return true;
+            } catch (Exception e) {
+                return false;
             }
-            return false;
         }
-        ));
+        return false;
     }
 }
