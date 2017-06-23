@@ -17,6 +17,10 @@ public class NoExpansionPropertyHelper extends PropertyHelper {
         return value;
     }
 
+    public Object reallyParseProperties(String value) throws BuildException {
+        return super.parseProperties(value);
+    }
+
     /**
      * Factory method to create a property processor.
      * Users can provide their own or replace it using "ant.PropertyHelper"

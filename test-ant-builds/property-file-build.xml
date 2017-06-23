@@ -1,0 +1,12 @@
+<!--
+  -bf test-ant-builds/property-file-build.xml -noFD -pkg build.pluto.plutoanttester.propertyfiletest -od ./test-ant-builds/property-file-build/ -m
+-->
+<project name="PropertyTest" default="PropertyEcho" basedir=".">
+
+    <property file="${basedir}/my.properties" />
+
+    <target name="PropertyEcho">
+        <echo message="${thisProperty}"/>
+    </target>
+
+</project>

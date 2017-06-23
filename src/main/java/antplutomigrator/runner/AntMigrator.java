@@ -2,6 +2,7 @@ package antplutomigrator.runner;
 
 import antplutomigrator.generate.*;
 import antplutomigrator.generate.anthelpers.NoExpansionPropertyHelper;
+import javafx.beans.property.Property;
 import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -84,8 +85,30 @@ public class AntMigrator {
         Project project = new Project();
         File buildFile = new File(line.getOptionValue("bf"));
         project.init();
-        NoExpansionPropertyHelper.getPropertyHelper(project);
+        /* Doing this here breaks certain build files, as unexpanded properties might already be used to initialize other / remaining properties
+            e.g. <property file="${basedir}/my.properties"/>
+            Not doing this would already resolve all properties which is also undesirable...
+        */
+        NoExpansionPropertyHelper propertyHelper = NoExpansionPropertyHelper.getPropertyHelper(project);
         ProjectHelper.configureProject(project, buildFile);
+
+        // Introduce this workaround to "reexceute" the necessary properties...
+        Target defaultTarget = project.getTargets().get("");
+        for (Task task: defaultTarget.getTasks()) {
+            if (task instanceof UnknownElement) {
+                UnknownElement element = (UnknownElement) task;
+                // TODO: Similar workarounds for url and resource
+                if (element.getTaskName().equals("property") && element.getWrapper().getAttributeMap().containsKey("file")) {
+                    String propertyFile = element.getWrapper().getAttributeMap().get("file").toString();
+                    log.debug("found property file: " + propertyFile);
+                    element.getWrapper().removeAttribute("file");
+                    element.getWrapper().setAttribute("file", propertyHelper.reallyParseProperties(propertyFile));
+                    element.maybeConfigure();
+                    element.execute();
+                }
+            }
+        }
+
 
         Map<String, String> files = new HashMap<>();
 
