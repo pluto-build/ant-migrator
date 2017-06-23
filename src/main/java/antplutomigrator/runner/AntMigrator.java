@@ -59,6 +59,7 @@ public class AntMigrator {
                 .longOpt("continueOnError")
                 .desc("Continue building on (certain) errors.")
                 .build());
+        // TODO: Add option to change executed target(s) in main class...
 
         CommandLineParser parser = new DefaultParser();
         CommandLine line;
@@ -76,12 +77,7 @@ public class AntMigrator {
             formatter.printHelp("ant2pluto", options);
             return;
         }
-
-        List<String> libs = new ArrayList<>();
-        libs.add("/usr/local/Cellar/ant/1.9.7/libexec/lib");
-        libs.add("/Users/manuel/.m2/repository/junit/junit/4.12/");
-        //LauncherHelpers.prepareClassLoader(null, libs);
-
+        
         Project project = new Project();
         File buildFile = new File(line.getOptionValue("bf"));
         project.init();
@@ -93,6 +89,7 @@ public class AntMigrator {
         ProjectHelper.configureProject(project, buildFile);
 
         // Introduce this workaround to "reexceute" the necessary properties...
+        // TODO: Maybe reexecute and reset every UnknownElement? To be more generally correct?
         Target defaultTarget = project.getTargets().get("");
         for (Task task: defaultTarget.getTasks()) {
             if (task instanceof UnknownElement) {
