@@ -9,6 +9,7 @@
     <property environment="env"/>
 
     <target name="PropertyEcho">
+        <echo message="${user.home}"/>
         <echo message="${testProperty} ${testRec2}"/>
         <echo message="${env.PATH}"/>
     </target>

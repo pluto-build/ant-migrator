@@ -9,6 +9,10 @@
             <zipfileset dir="." prefix="sub"/>
             <zipfileset dir="." prefix="sub2"/>
         </zip>
+        <zip destfile="manual.zip">
+            <zipfileset dir="htdocs/manual" prefix="docs/user-guide"/>
+            <zipgroupfileset dir="." includes="examples*.zip"/>
+        </zip>
     </target>
 
 </project>
