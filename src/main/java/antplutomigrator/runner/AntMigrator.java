@@ -97,14 +97,16 @@ public class AntMigrator {
         for (Task task: defaultTarget.getTasks()) {
             if (task instanceof UnknownElement) {
                 UnknownElement element = (UnknownElement) task;
-                // TODO: Similar workarounds for url and resource
-                if (element.getTaskName().equals("property") && element.getWrapper().getAttributeMap().containsKey("file")) {
-                    String propertyFile = element.getWrapper().getAttributeMap().get("file").toString();
-                    log.debug("found property file: " + propertyFile);
-                    element.getWrapper().removeAttribute("file");
-                    element.getWrapper().setAttribute("file", propertyHelper.reallyParseProperties(propertyFile));
-                    element.maybeConfigure();
-                    element.execute();
+                String[] types = new String[] {"file", "url", "resource"};
+                for (String type: types) {
+                    if (element.getTaskName().equals("property") && element.getWrapper().getAttributeMap().containsKey(type)) {
+                        String propertyFile = element.getWrapper().getAttributeMap().get(type).toString();
+                        log.debug("found property "+type+": " + propertyFile);
+                        element.getWrapper().removeAttribute(type);
+                        element.getWrapper().setAttribute(type, propertyHelper.reallyParseProperties(propertyFile));
+                        element.maybeConfigure();
+                        element.execute();
+                    }
                 }
             }
         }
