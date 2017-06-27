@@ -130,6 +130,19 @@ public class MacroGenerator extends JavaGenerator {
             }
         }
 
+        // Initialize defaults for attributes
+        for (UnknownElement element : this.macroDef.getChildren()) {
+            if (element.getTaskName().equals("attribute")) {
+                String def = "null";
+                if (element.getWrapper().getAttributeMap().containsKey("default")) {
+                    def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
+                }
+                String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
+
+                this.printString(attributeName + " = " + def + ";");
+            }
+        }
+
         this.closeOneLevel(); // end method
 
         for (Map.Entry<UnknownElement, Pair<String, TTypeName>> entry : elementGenerator.getConstructedVariables().entrySet()) {
@@ -220,15 +233,11 @@ public class MacroGenerator extends JavaGenerator {
             // TODO: optional, trim, description
         }
         if (element.getTaskName().equals("attribute")) {
-            String def = "null";
-            if (element.getWrapper().getAttributeMap().containsKey("default")) {
-                def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
-            }
             String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
 
             log.trace("Generating macro attribute: " + attributeName);
 
-            this.printString("String " + attributeName + " = " + def + ";");
+            this.printString("String " + attributeName + ";");
 
             this.printString("public void set" + StringUtils.capitalize(attributeName) + "(String " + attributeName + ") {\n" +
                     "  this." + attributeName + " = " + attributeName + ";\n" +
