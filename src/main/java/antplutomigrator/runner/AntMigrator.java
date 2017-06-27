@@ -77,7 +77,7 @@ public class AntMigrator {
             formatter.printHelp("ant2pluto", options);
             return;
         }
-        
+
         Project project = new Project();
         File buildFile = new File(line.getOptionValue("bf"));
         project.init();
