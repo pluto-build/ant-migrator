@@ -299,7 +299,7 @@ public class MacroGenerator extends JavaGenerator {
                 // We know better names than getParentAntIntrospectionHelpers can provide...
                 parentIntrospectionHelper.setName(namingManager.getNameFor(parent));
                 AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nestedName, getPkg(), parentIntrospectionHelper);
-                TTypeName name = introspectionHelper.getElementTypeClassName();
+                //TTypeName name = introspectionHelper.getElementTypeClassName();
 
                 ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError);
 
