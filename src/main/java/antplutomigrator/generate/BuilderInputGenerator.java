@@ -193,25 +193,39 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("project.setBasedir(this.get(\"basedir\"));");
 
         Target mainTarget = this.project.getTargets().get("");
-        List<Object> children = ReflectionHelpers.getChildrenFor(mainTarget);
+        List<Object> children = new ArrayList<>();
+
+        for (Target t: this.project.getTargets().values()) {
+            children.addAll(ReflectionHelpers.getChildrenFor(t));
+        }
 
         for (Object o : children) {
             if (o instanceof UnknownElement) {
                 UnknownElement child = (UnknownElement) o;
 
-                if (child.getWrapper().getAttributeMap().containsKey("id")) {
-                    String childName = elementGenerator.generateElement(null, child, null);
-                } else if (child.getTaskName().equals("macrodef")) {
-                    // Deal with macros. First do macrodef execution to make them available everywhere
-
-                    // This should have already been done by antplutomigrator.runner.AntMigrator.java
-                } else if (!child.getTaskName().equals("property")) {
-                    log.warn("Encountered toplevel definition \"" + child.getTaskName() + "\" that didn't have an id. Don't know how to deal with that (yet).");
-                }
+                generateConfigureProjectElement(child);
             }
         }
 
         this.closeOneLevel();
+    }
+
+    private void generateConfigureProjectElement(UnknownElement element) {
+        if (element.getWrapper().getAttributeMap().containsKey("id")) {
+            String childName = elementGenerator.generateElement(null, element, null);
+        } else if (element.getTaskName().equals("macrodef")) {
+            // Deal with macros. First do macrodef execution to make them available everywhere
+
+            // This should have already been done by antplutomigrator.runner.AntMigrator.java
+        } else if (!element.getTaskName().equals("property") && (element.getTask() != null && element.getTask().getTaskName().equals(""))) {
+            log.warn("Encountered toplevel definition \"" + element.getTaskName() + "\" that didn't have an id. Don't know how to deal with that (yet).");
+        }
+
+        if (element.getChildren() != null) {
+            for (UnknownElement child : element.getChildren()) {
+                generateConfigureProjectElement(child);
+            }
+        }
     }
 
     private void generateNullOrEmptyMethod() {
