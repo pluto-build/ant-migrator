@@ -73,7 +73,7 @@ public class ElementGenerator {
     }
 
     public String getInputName() {
-        return getProjectName() + "Input";
+        return getProjectName() + "Context";
     }
 
     public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, Resolvable resolver, boolean continueOnErrors) {
@@ -317,7 +317,7 @@ public class ElementGenerator {
     public void generateAntCall(AntIntrospectionHelper introspectionHelper) {
         String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(introspectionHelper.getAttributeMap().get("target").toString()));
         //generator.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-        generator.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone(\""+depName+"\"));");
+        generator.printString("ccontext = requireBuild(" + depName + "Builder.factory, ccontext.clone(\""+depName+"\"));");
 
         // TODO: Deal with children of antcall (params)
     }
@@ -334,7 +334,7 @@ public class ElementGenerator {
             generator.increaseIndentation(1);
 
             generator.printString("@Override");
-            generator.printString("public void execute("+elementTypeClassName.getShortName()+" "+taskName+", " + getInputName() + " cinput) {", "}");
+            generator.printString("public void execute("+elementTypeClassName.getShortName()+" "+taskName+", " + getInputName() + " ccontext) {", "}");
             generator.increaseIndentation(1);
         } else {
             TMethod constructorFactoryMethod = introspectionHelper.getConstructorFactoryMethod();
@@ -362,8 +362,8 @@ public class ElementGenerator {
                     for (TParameter parameter : constructor.getParameters()) {
                         if (parameter.getTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.Project"))
                             params.add("project");
-                        else if (parameter.getName().equals("input"))
-                            params.add("cinput.clone(\"" + taskName + "\")");
+                        else if (parameter.getName().equals("context"))
+                            params.add("ccontext.clone(\"" + taskName + "\")");
                         else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
                     }
                     generator.addImport(constructor.getDeclaringClassTypeName().getImportName());

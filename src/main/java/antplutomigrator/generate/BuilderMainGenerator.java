@@ -26,14 +26,16 @@ public class BuilderMainGenerator extends Generator {
         this.printString("package " + pkg + ";");
         this.printString("import build.pluto.builder.BuildManagers;");
         this.printString("import build.pluto.builder.BuildRequest;");
+        this.printString("import org.sugarj.common.Log;");
 
         this.printString("public class "+ name +" {", "}");
         this.increaseIndentation(1);
 
         this.printString("public static void main(String[] args) throws Throwable {", "}");
         this.increaseIndentation(1);
-        this.printString(StringUtils.capitalize(name) + "Input input = new " + StringUtils.capitalize(name) + "Input(\""+StringUtils.capitalize(defTarget)+"\");");
-        this.printString("BuildManagers.build(new BuildRequest<>("+StringUtils.capitalize(defTarget)+"Builder.factory, input));");
+        this.printString("Log.log.setLoggingLevel(Log.ALWAYS);");
+        this.printString(StringUtils.capitalize(name) + "Context context = new " + StringUtils.capitalize(name) + "Context(\""+StringUtils.capitalize(defTarget)+"\");");
+        this.printString("BuildManagers.build(new BuildRequest<>("+StringUtils.capitalize(defTarget)+"Builder.factory, context));");
 
         this.closeOneLevel();
         this.closeOneLevel();

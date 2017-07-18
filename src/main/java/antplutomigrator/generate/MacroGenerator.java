@@ -26,7 +26,6 @@ public class MacroGenerator extends JavaGenerator {
     private final MacroPropertyResolver macroPropertyResolver;
     private final UnknownElement macroDef;
     private final String name;
-    private final String inputName;
     private final String basePkg;
     private final MacroAntIntrospectionHelper introspectionHelper;
     private final boolean continueOnError;
@@ -40,7 +39,7 @@ public class MacroGenerator extends JavaGenerator {
     }
 
     public String getInputName() {
-        return getProjectName() + "Input";
+        return namingManager.getClassNameFor(getProjectName() + "Context");
     }
 
     public MacroGenerator(String pkg, Project project, NamingManager namingManager, Resolvable resolver, UnknownElement macroDef, boolean continueOnError) {
@@ -59,7 +58,6 @@ public class MacroGenerator extends JavaGenerator {
         String macroDefinitionName = this.macroDef.getWrapper().getAttributeMap().get("name").toString();
         String javaName = macroDefinitionName + "Macro";
         this.name = namingManager.getClassNameFor(javaName);
-        this.inputName = namingManager.getClassNameFor(project.getName() + "Input");
 
         UnknownElement macroCallElement = new UnknownElement(macroDefinitionName);
         macroCallElement.setTaskName(macroDefinitionName);
@@ -100,16 +98,16 @@ public class MacroGenerator extends JavaGenerator {
 
     private void generateProject() {
         this.addImport("org.apache.tools.ant.Project");
-        this.addImport(basePkg + "." + inputName);
+        this.addImport(basePkg + "." + getInputName());
         this.printString("final Project project;");
-        this.printString("final " + inputName + " input;");
+        this.printString("final " + getInputName() + " context;");
         this.printString("public Project getProject() {\n" +
                 "  return this.project;\n" +
                 "}");
 
-        this.printString("public " + getName() + "(Project project, " + inputName + " input) {\n" +
+        this.printString("public " + getName() + "(Project project, " + getInputName() + " context) {\n" +
                 "  this.project = project;\n" +
-                "  this.input = input;",
+                "  this.context = context;",
                 "}");
         this.increaseIndentation(1);
 
@@ -117,7 +115,7 @@ public class MacroGenerator extends JavaGenerator {
         UnknownElement sequential = getSequential();
 
 
-        this.printString(this.getInputName() + " cinput = input.clone();");
+        this.printString(this.getInputName() + " ccontext = context.clone();");
 
         ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver, continueOnError);
         elementGenerator.setIgnoredMacroElements(definedElements);
@@ -304,7 +302,7 @@ public class MacroGenerator extends JavaGenerator {
                 ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError);
 
                 elementGenerator.generateConstructor(introspectionHelper, nestedName);
-                this.printString("lam.execute(" + nestedName + ", input);");
+                this.printString("lam.execute(" + nestedName + ", context);");
                 elementGenerator.generateAddMethod(introspectionHelper, nestedName);
 
                 //?

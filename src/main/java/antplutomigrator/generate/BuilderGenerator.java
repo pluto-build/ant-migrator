@@ -62,7 +62,7 @@ public class BuilderGenerator extends JavaGenerator {
     }
 
     public String getInputName() {
-        return getProjectName() + "Input";
+        return getProjectName() + "Context";
     }
 
     public NamingManager getNamingManager() {
@@ -81,17 +81,17 @@ public class BuilderGenerator extends JavaGenerator {
         this.project = project;
         this.target = target;
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
-        this.resolver = new PropertyResolver(project, "cinput");
+        this.resolver = new PropertyResolver(project, "ccontext");
         this.elementGenerator = new ElementGenerator(this, project, getNamingManager(), resolver, continueOnError);
         this.continueOnError = continueOnError;
     }
 
     private void generateBuildMethod() {
         this.printString("@Override\n" +
-                "protected "+getInputName()+" build(" + this.getInputName() + " input) throws Exception {", "}");
+                "protected "+getInputName()+" build(" + this.getInputName() + " context) throws Exception {", "}");
         this.increaseIndentation(1);
 
-        this.printString(this.getInputName() + " cinput = input.clone();");
+        this.printString(this.getInputName() + " ccontext = context.clone();");
 
         for (String fileDep : getDependentFiles()) {
             this.printString("require(new File(\"" + fileDep + "\"));");
@@ -100,30 +100,30 @@ public class BuilderGenerator extends JavaGenerator {
         for (String dep : getDependentBuilders()) {
             String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(dep));
             //this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            this.printString("cinput = requireBuild(" + depName + "Builder.factory, cinput.clone(\""+depName+"\"));");
+            this.printString("ccontext = requireBuild(" + depName + "Builder.factory, ccontext.clone(\""+depName+"\"));");
             //this.printString("cinput = cinput.require"+depName+"Builder(this);");
         }
 
         // Check for if and unless conditions:
         if (target.getIf() != null) {
-            this.printString("if (!cinput.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
+            this.printString("if (!ccontext.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
             this.increaseIndentation(1);
-            this.printString("return cinput.clone(cinput.getBuilderName());");
+            this.printString("return ccontext.clone(ccontext.getBuilderName());");
             this.closeOneLevel();
         }
         if (target.getUnless() != null) {
-            this.printString("if (!cinput.testUnless(\"" + resolver.getExpandedValue(target.getUnless()) + "\")) {", "}");
+            this.printString("if (!ccontext.testUnless(\"" + resolver.getExpandedValue(target.getUnless()) + "\")) {", "}");
             this.increaseIndentation(1);
-            this.printString("return cinput.clone(cinput.getBuilderName());");
+            this.printString("return ccontext.clone(ccontext.getBuilderName());");
             this.closeOneLevel();
         }
 
         addImport("org.apache.tools.ant.Project");
         printString("final Project project = new Project();");
         printString("project.addBuildListener(new PlutoBuildListener());");
-        printString("cinput.configureProject(project);");
+        printString("ccontext.configureProject(project);");
         printString("PlutoPropertyHelper propertyHelper = PlutoPropertyHelper.getPropertyHelper(project);");
-        printString("propertyHelper.setPropertyInteractor(cinput);");
+        printString("propertyHelper.setPropertyInteractor(ccontext);");
         for (Task t : target.getTasks()) {
             if (t instanceof UnknownElement) {
                 UnknownElement element = (UnknownElement) t;
@@ -148,7 +148,7 @@ public class BuilderGenerator extends JavaGenerator {
             }
         }
 
-        this.printString("return cinput.clone(input.getBuilderName());");
+        this.printString("return ccontext.clone(context.getBuilderName());");
         this.closeOneLevel();
     }
 
@@ -156,22 +156,22 @@ public class BuilderGenerator extends JavaGenerator {
     private void generateClass() {
         this.addImport("build.pluto.builder.Builder");
         this.addImport("build.pluto.output.None");
-        this.printString("public class " + getName() + " extends Builder<" + this.getProjectName() + "Input, " + this.getProjectName() + "Input> {", "}");
+        this.printString("public class " + getName() + " extends Builder<" + this.getProjectName() + "Context, " + this.getProjectName() + "Context> {", "}");
         this.increaseIndentation(1);
         this.addImport("build.pluto.builder.factory.BuilderFactory");
         this.addImport("build.pluto.builder.factory.BuilderFactoryFactory");
-        this.printString("public static BuilderFactory<" + this.getProjectName() + "Input, " + this.getProjectName() + "Input, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.getProjectName() + "Input.class);");
+        this.printString("public static BuilderFactory<" + this.getProjectName() + "Context, " + this.getProjectName() + "Context, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.getProjectName() + "Context.class);");
 
-        this.printString("public " + getName() + "(" + this.getProjectName() + "Input input) { super(input); }");
+        this.printString("public " + getName() + "(" + this.getProjectName() + "Context context) { super(context); }");
 
         this.printString("@Override\n" +
-                "protected String description(" + this.getProjectName() + "Input input) {\n" +
-                "  return \"Builder " + getName() + ": \" + input;\n" +
+                "protected String description(" + this.getProjectName() + "Context context) {\n" +
+                "  return \"Builder " + getName() + ": \" + context;\n" +
                 "}");
 
         this.addImport("java.io.File");
         this.printString("@Override\n" +
-                "public File persistentPath(" + this.getProjectName() + "Input input) {\n" +
+                "public File persistentPath(" + this.getProjectName() + "Context context) {\n" +
                 "  return new File(\"deps/" + getName() + ".dep\");\n" +
                 "}");
 

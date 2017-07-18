@@ -31,7 +31,7 @@ public class BuilderInputGenerator extends JavaGenerator {
     public BuilderInputGenerator(String pkg, String name, Project project, File buildParent, boolean continueOnError) {
         super(pkg);
         this.namingManager = new NamingManager();
-        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name+"Input"));
+        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name+"Context"));
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
         this.buildParent = buildParent;
@@ -305,7 +305,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("public " + name + " require"+namingManager.getClassNameFor(target.getName())+"Builder(Builder<"+name+","+name+"> builder) throws IOException {", "}");
         this.increaseIndentation(1);
 
-        this.printString(name+" cinput = this.clone(\""+target.getName()+"\");");
+        this.printString(name+" ccontext = this.clone(\""+target.getName()+"\");");
 
         boolean hasCondition = false;
         if (target.getIf() != null && !target.getIf().isEmpty()) {
@@ -323,12 +323,12 @@ public class BuilderInputGenerator extends JavaGenerator {
         }
 
         // require the builder
-        this.printString("builder.requireBuild("+namingManager.getClassNameFor(target.getName())+"Builder.factory, cinput);");
+        this.printString("builder.requireBuild("+namingManager.getClassNameFor(target.getName())+"Builder.factory, ccontext);");
 
         if (hasCondition)
             this.closeOneLevel();
 
-        this.printString("return cinput.clone(getBuilderName());");
+        this.printString("return ccontext.clone(getBuilderName());");
 
         this.closeOneLevel();
     }

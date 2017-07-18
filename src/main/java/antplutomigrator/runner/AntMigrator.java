@@ -129,7 +129,7 @@ public class AntMigrator {
         NamingManager namingManager = new NamingManager();
 
         BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName(), project, buildFile.getParentFile(), line.hasOption("c"));
-        files.put(namingManager.getClassNameFor(project.getName()) + "Input.java", builderInputGenerator.getPrettyPrint());
+        files.put(namingManager.getClassNameFor(project.getName()) + "Context.java", builderInputGenerator.getPrettyPrint());
 
         String plutoBuildListener = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoBuildListener.java").toURI())));
         files.put("PlutoBuildListener.java", plutoBuildListener.replace("<pkg>", line.getOptionValue("pkg")));
@@ -159,7 +159,7 @@ public class AntMigrator {
         if (element.getTaskName().equals("macrodef")) {
             // We have a macro. Use a MacroGenerator to antplutomigrator.generate a class for it
             NamingManager namingManager = new NamingManager();
-            PropertyResolver resolver = new PropertyResolver(project, "input");
+            PropertyResolver resolver = new PropertyResolver(project, "context");
             // Exceute to add to the type table
             element.perform();
             MacroGenerator macroGenerator = new MacroGenerator(line.getOptionValue("pkg"), project, namingManager, resolver, element, line.hasOption("c"));
