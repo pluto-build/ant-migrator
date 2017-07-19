@@ -35,7 +35,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
         this.buildParent = buildParent;
-        this.elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError);
+        this.elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError, "this");
         this.PATH_PROPERTY_NAMES = Arrays.asList("basedir", "ant.file." + name);
         this.continueOnError = continueOnError;
     }
@@ -63,7 +63,8 @@ public class BuilderInputGenerator extends JavaGenerator {
 
         this.generateGetMethod();
 
-        this.generateConfigureProjectMethod();
+        this.generateProjectMethod();
+        this.generateResolveFileMethod();
 
         this.printString("");
         this.generateNullOrEmptyMethod();
@@ -185,10 +186,19 @@ public class BuilderInputGenerator extends JavaGenerator {
                 "  }");
     }
 
-    private void generateConfigureProjectMethod() {
+    private void generateProjectMethod() {
         this.addImport("org.apache.tools.ant.Project");
-        this.printString("public void configureProject(Project project) {", "}");
+        this.printString("private transient Project project;");
+        this.printString("public Project project() {", "}");
         this.increaseIndentation(1);
+
+        this.printString("if (project == null) {", "}");
+        this.increaseIndentation(1);
+
+        this.printString("project = new Project();\n" +
+                "project.addBuildListener(new PlutoBuildListener());\n" +
+                "PlutoPropertyHelper propertyHelper = PlutoPropertyHelper.getPropertyHelper(project);\n" +
+                "propertyHelper.setPropertyInteractor(this);");
 
         this.printString("project.setBasedir(this.get(\"basedir\"));");
 
@@ -206,6 +216,19 @@ public class BuilderInputGenerator extends JavaGenerator {
                 generateConfigureProjectElement(child);
             }
         }
+        this.closeOneLevel();
+
+        this.printString("return project;");
+
+        this.closeOneLevel();
+    }
+
+    private void generateResolveFileMethod() {
+        this.addImport("java.io.File");
+        this.printString("public File resolveFile(String file) {", "}");
+        this.increaseIndentation(1);
+
+        this.printString("return project().resolveFile(file);");
 
         this.closeOneLevel();
     }

@@ -152,7 +152,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
 
     @Override
     public boolean hasInitMethod() {
-        return false;
+        return true;
     }
 
     @Override

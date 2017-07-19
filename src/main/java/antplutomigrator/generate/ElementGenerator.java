@@ -40,6 +40,7 @@ public class ElementGenerator {
     private boolean noConstructor = false;
     private boolean onlyConstructors = false;
     private final boolean continueOnErrors;
+    private final String contextName;
 
     public List<String> getIgnoredMacroElements() {
         return ignoredMacroElements;
@@ -82,6 +83,16 @@ public class ElementGenerator {
         this.namingManager = namingManager;
         this.resolver = resolver;
         this.continueOnErrors = continueOnErrors;
+        this.contextName = "ccontext";
+    }
+
+    public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, Resolvable resolver, boolean continueOnErrors, String contextName) {
+        this.generator = generator;
+        this.project = project;
+        this.namingManager = namingManager;
+        this.resolver = resolver;
+        this.continueOnErrors = continueOnErrors;
+        this.contextName = contextName;
     }
 
     public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName) {
@@ -132,6 +143,8 @@ public class ElementGenerator {
 
                 if (introspectionHelper.hasInitMethod())
                     generator.printString(taskName + ".init();");
+                // TODO: Do this right...
+                //generator.printString(contextName+".initTask("+taskName+");");
 
                 try {
                     // Just for debugging purposes right now
@@ -246,7 +259,7 @@ public class ElementGenerator {
 
             if (n.equals("id")) {
                 // We have a reference id. Add code to add it to the project.
-                generator.printString("project.addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
+                generator.printString(getProject()+".addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
                 continue;
             }
 
@@ -259,9 +272,11 @@ public class ElementGenerator {
             String argument = "\"" + escapedValue + "\"";
             if (argumentClass.getName().equals("boolean")) {
                 // We expect a boolean, use true or false as values without wrapping into a string.
+                generator.addImport("org.apache.tools.ant.Project");
                 argument = "Project.toBoolean(\"" + escapedValue + "\")";
             } else if (java.io.File.class.equals(argumentClass)) {
-                argument = "project.resolveFile(\"" + escapedValue + "\")";
+                generator.addImport("org.apache.tools.ant.Project");
+                argument = contextName+".resolveFile(\"" + escapedValue + "\")";
             } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
                 TTypeName argumentClassName = new TTypeName(argumentClass.getName());
                 String shortName = argumentClassName.getShortName();
@@ -300,7 +315,7 @@ public class ElementGenerator {
                 // Not a string. Use single argument constructor from single string...
                 // This might not exist resulting in a type error in the resulting migrated Script
                 if (includeProject) {
-                    argument = "new " + argumentClass.getSimpleName() + "(project, " + argument + ")";
+                    argument = "new " + argumentClass.getSimpleName() + "("+getProject()+", " + argument + ")";
                 } else {
                     argument = "new " + argumentClass.getSimpleName() + "(" + argument + ")";
                 }
@@ -310,8 +325,15 @@ public class ElementGenerator {
         }
     }
 
-    public void generateProjectSetter(String taskName) {
-        generator.printString(taskName + ".setProject(project);");
+    public String getProject() {
+        if (this.contextName.equals("this")) {
+            return "project";
+        }
+        else return this.contextName + ".project()";
+    }
+
+    private void generateProjectSetter(String taskName) {
+        generator.printString(taskName + ".setProject("+getProject()+");");
     }
 
     public void generateAntCall(AntIntrospectionHelper introspectionHelper) {
@@ -361,7 +383,7 @@ public class ElementGenerator {
                     // TODO: This is very fragile and possibly wrong
                     for (TParameter parameter : constructor.getParameters()) {
                         if (parameter.getTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.Project"))
-                            params.add("project");
+                            params.add(getProject());
                         else if (parameter.getName().equals("context"))
                             params.add("ccontext.clone(\"" + taskName + "\")");
                         else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
