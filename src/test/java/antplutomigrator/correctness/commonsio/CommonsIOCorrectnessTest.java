@@ -138,7 +138,9 @@ public class CommonsIOCorrectnessTest {
 
         String classPathDocker = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath_fd.txt").toURI())));
 
-        taskExecutor.addTask(new DockerRunnerTask(plutoDir, "CommonsIO_Pluto", "java -cp "+classPathDocker+":../target/. build.pluto.commonsio.CommonsIO", new File("/share/test/commons-io-2.5-src/"), mounts));
+        String plutoRunCommand = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_run_command.txt").toURI())));
+        plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[] {"<classpath>"}, new String[]{classPathDocker});
+        taskExecutor.addTask(new DockerRunnerTask(plutoDir, "CommonsIO_Pluto", plutoRunCommand, new File("/share/test/commons-io-2.5-src/"), mounts));
 
         ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
         comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
