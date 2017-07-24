@@ -37,9 +37,11 @@ public class DockerRunnerTask extends TestTask {
 
     @Override
     public void execute() throws Exception {
+        new RemoveDockerContainerTask(name).execute();
         String mountStr = "";
         for (Mount mount: mounts)
             mountStr += mount;
-        new RunCommandTask(localWorkingDir,"docker run -i --privileged=true --security-opt=seccomp:unconfined "+mountStr+" -w "+workingDir.getAbsolutePath()+" --name "+name+" xmanu/pluto-docker:0.1 bash -c \""+command+"\"").execute();
+        new RunCommandTask(localWorkingDir,"docker run -i --privileged=true --security-opt=seccomp:unconfined "+mountStr+" -w "+workingDir.getAbsolutePath()+" --name "+name+" xmanu/pluto-docker:0.2 bash -c \""+command+"\"").execute();
+        new RemoveDockerContainerTask(name).execute();
     }
 }

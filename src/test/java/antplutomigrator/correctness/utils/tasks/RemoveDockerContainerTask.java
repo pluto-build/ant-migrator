@@ -1,8 +1,11 @@
 package antplutomigrator.correctness.utils.tasks;
 
 import antplutomigrator.correctness.utils.TestTask;
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
+
+import static org.junit.Assert.assertEquals;
 
 public class RemoveDockerContainerTask extends TestTask {
     private final String name;
@@ -18,6 +21,15 @@ public class RemoveDockerContainerTask extends TestTask {
 
     @Override
     public void execute() throws Exception {
-        new RunCommandTask(new File("."), "docker container rm " + name).execute();
+
+        Process antProcess = new ProcessBuilder().directory(new File(".")).command("docker", "container", "rm", name).start();
+        int res = antProcess.waitFor();
+
+        if (res == 1) {
+            assert IOUtils.toString(antProcess.getErrorStream()).contains("No such container");
+        } else
+            assert res == 0;
+
+        //new RunCommandTask(new File("."), "docker container rm " + name).execute();
     }
 }

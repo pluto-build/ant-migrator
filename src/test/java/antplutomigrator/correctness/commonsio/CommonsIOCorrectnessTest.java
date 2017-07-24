@@ -1,7 +1,6 @@
 package antplutomigrator.correctness.commonsio;
 
-import antplutomigrator.correctness.comparison.MD5FileComparer;
-import antplutomigrator.correctness.comparison.UnzipFileComparer;
+import antplutomigrator.correctness.comparison.*;
 import antplutomigrator.correctness.utils.*;
 import antplutomigrator.correctness.utils.tasks.*;
 import org.apache.commons.io.FileUtils;
@@ -15,6 +14,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -24,7 +24,7 @@ public class CommonsIOCorrectnessTest {
     private Log log = LogFactory.getLog(CommonsIOCorrectnessTest.class);
 
     @Test
-    public void testCorrectness1() throws Exception {
+    public void testCorrectnessWithoutFD() throws Exception {
         URL commonsioZipUrl = new URL("http://apache.lauf-forum.at/commons/io/source/commons-io-2.5-src.zip");
 
         File testDir = new File("testdata/antplutomigrator/correctness/commonsio/");
@@ -120,7 +120,7 @@ public class CommonsIOCorrectnessTest {
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", true));
 
-        String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath_fd.txt").toURI())));
+        String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
         String absoluteClassPath = CompileJavaTask.makeAbsolute(classPath);
 
@@ -129,21 +129,21 @@ public class CommonsIOCorrectnessTest {
         List<Mount> mounts = new ArrayList<>();
         mounts.add(new Mount(antSrcDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));
+
         taskExecutor.addTask(new DockerRunnerTask(antSrcDir, "CommonsIO_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/"), mounts));
-        taskExecutor.addTask(new RemoveDockerContainerTask("CommonsIO_Ant"));
 
         mounts = new ArrayList<>();
         mounts.add(new Mount(plutoDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));
 
-        taskExecutor.addTask(new DockerRunnerTask(plutoDir, "CommonsIO_Pluto", "java -cp /share/m2/repository/org/apache/ant/ant/1.10.1/ant-1.10.1.jar:/share/m2/repository/build/pluto/pluto/1.10.0-SNAPSHOT/pluto-1.10.0-SNAPSHOT.jar:/share/m2/repository/org/sugarj/common/1.7.3-SNAPSHOT/common-1.7.3-SNAPSHOT.jar:/share/m2/repository/org/objenesis/objenesis/2.2/objenesis-2.2.jar:/share/m2/repository/com/cedarsoftware/java-util-pluto-fixes/1.19.4-SNAPSHOT/java-util-pluto-fixes-1.19.4-20160107.071149-1.jar:/share/m2/repository/org/apache/commons/commons-exec/1.3/commons-exec-1.3.jar:/share/m2/repository/org/fusesource/jansi/jansi/1.14/jansi-1.14.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:../target/. build.pluto.commonsio.CommonsIO", new File("/share/test/commons-io-2.5-src/"), mounts));
-        //taskExecutor.addTask(new RunCommandTask(plutoSrcDir, "docker run -i --privileged=true --security-opt=seccomp:unconfined -v /Users/manuel/Documents/PhD/2017/ant-pluto-migrator/testdata/antplutomigrator/correctness/commonsiofd/pluto/:/share/test/ -v /Users/manuel/.m2/:/share/m2/ -w /share/test/commons-io-2.5-src/ --name testCommonsIO xmanu/pluto-docker:0.1 bash -c \"java -cp /share/m2/repository/org/apache/ant/ant/1.10.1/ant-1.10.1.jar:/share/m2/repository/build/pluto/pluto/1.10.0-SNAPSHOT/pluto-1.10.0-SNAPSHOT.jar:/share/m2/repository/org/sugarj/common/1.7.3-SNAPSHOT/common-1.7.3-SNAPSHOT.jar:/share/m2/repository/org/objenesis/objenesis/2.2/objenesis-2.2.jar:/share/m2/repository/com/cedarsoftware/java-util-pluto-fixes/1.19.4-SNAPSHOT/java-util-pluto-fixes-1.19.4-20160107.071149-1.jar:/share/m2/repository/org/apache/commons/commons-exec/1.3/commons-exec-1.3.jar:/share/m2/repository/org/fusesource/jansi/jansi/1.14/jansi-1.14.jar:/usr/lib/jvm/java-8-openjdk-amd64/lib/tools.jar:../target/. build.pluto.commonsio.CommonsIO\""));
+        String classPathDocker = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath_fd.txt").toURI())));
 
-        taskExecutor.addTask(new RemoveDockerContainerTask("CommonsIO_Pluto"));
+        taskExecutor.addTask(new DockerRunnerTask(plutoDir, "CommonsIO_Pluto", "java -cp "+classPathDocker+":../target/. build.pluto.commonsio.CommonsIO", new File("/share/test/commons-io-2.5-src/"), mounts));
 
         ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
         comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
         comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
+        comparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new AntVersionIgnoredLineComparer())));
 
         taskExecutor.addTask(comparerTask);
 
