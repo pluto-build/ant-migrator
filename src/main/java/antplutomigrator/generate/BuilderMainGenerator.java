@@ -24,6 +24,10 @@ public class BuilderMainGenerator extends JavaGenerator {
         this.enableDebugLogging = enableDebugLogging;
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public void generatePrettyPrint() {
         super.generatePrettyPrint();

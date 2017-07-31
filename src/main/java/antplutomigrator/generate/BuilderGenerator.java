@@ -96,7 +96,7 @@ public class BuilderGenerator extends JavaGenerator {
             this.printString("require(new File(\"" + fileDep + "\"));");
         }
 
-        this.printString("context = context.clone(\""+getName()+"\");");
+        //this.printString("context = context.clone(\""+getName()+"\");");
 
         for (String dep : getDependentBuilders()) {
             String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(dep));
@@ -153,15 +153,15 @@ public class BuilderGenerator extends JavaGenerator {
     private void generateClass() {
         this.addImport("build.pluto.builder.Builder");
         this.addImport("build.pluto.output.None");
-        this.printString("public class " + getName() + " extends Builder<" + this.getProjectName() + "Context, " + this.getProjectName() + "Context> {", "}");
+        this.printString("public class " + getName() + " extends AntBuilder {", "}");
         this.increaseIndentation(1);
         this.addImport("build.pluto.builder.factory.BuilderFactory");
         this.addImport("build.pluto.builder.factory.BuilderFactoryFactory");
-        this.printString("public static BuilderFactory<" + this.getProjectName() + "Context, " + this.getProjectName() + "Context, " + getName() + "> factory = BuilderFactoryFactory.of(" + getName() + ".class, " + this.getProjectName() + "Context.class);");
+        this.printString("public static BuilderFactory<" + this.getProjectName() + "Context, " + this.getProjectName() + "Context, " + getName() + "> factory = BuilderFactoryFactory.of("+this.getName()+".class, " + this.getProjectName() + "Context.class);");
 
         this.printString("public " + getName() + "(" + this.getProjectName() + "Context context) { super(context); }");
 
-        this.printString("@Override\n" +
+        /*this.printString("@Override\n" +
                 "protected String description(" + this.getProjectName() + "Context context) {\n" +
                 "  return \"Builder " + getName() + ": \" + context;\n" +
                 "}");
@@ -177,7 +177,7 @@ public class BuilderGenerator extends JavaGenerator {
         this.printString("@Override\n" +
                 "protected Stamper defaultStamper() {\n" +
                 "  return FileHashStamper.instance;\n" +
-                "}");
+                "}");*/
 
 
         generateBuildMethod();

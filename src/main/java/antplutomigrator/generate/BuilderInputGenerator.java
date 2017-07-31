@@ -173,8 +173,8 @@ public class BuilderInputGenerator extends JavaGenerator {
                 "  return clone;\n" +
                 "}");
 
-        this.printString("public " + name + " clone(String newBuilderName) {\n" +
-                "  " + name + " clone = new " + name + "(newBuilderName, (HashMap<String, String>)newProperties.clone());\n" +
+        this.printString("public " + name + " withName(String newBuilderName) {\n" +
+                "  " + name + " clone = new " + name + "(newBuilderName, newProperties);\n" +
                 "  return clone;\n" +
                 "}");
     }

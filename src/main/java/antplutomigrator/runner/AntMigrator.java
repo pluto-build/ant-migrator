@@ -142,10 +142,14 @@ public class AntMigrator {
         String consumer = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("BiConsumer.java").toURI())));
         files.put("BiConsumer.java", consumer.replace("<pkg>", line.getOptionValue("pkg")));
 
+        BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), project.getDefaultTarget(), !line.hasOption("noFD"), line.hasOption("d"));
         if (line.hasOption("m")) {
-            BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), project.getDefaultTarget(), !line.hasOption("noFD"), line.hasOption("d"));
             files.put(namingManager.getClassNameFor(project.getName()) + ".java", mainGenerator.getPrettyPrint());
         }
+
+        String antBuilder = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("AntBuilder.java").toURI())));
+        files.put("AntBuilder.java", antBuilder.replace("<pkg>", line.getOptionValue("pkg")).replace("<ctx>", mainGenerator.getName() + "Context"));
+
 
         for (Map.Entry<String, String> entry : files.entrySet()) {
             if (line.hasOption("od")) {
