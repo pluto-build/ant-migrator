@@ -356,7 +356,7 @@ public class ElementGenerator {
             generator.increaseIndentation(1);
 
             generator.printString("@Override");
-            generator.printString("public void execute("+elementTypeClassName.getShortName()+" "+taskName+", " + getInputName() + " ccontext) {", "}");
+            generator.printString("public void execute("+elementTypeClassName.getShortName()+" "+taskName+", " + getInputName() + " context) {", "}");
             generator.increaseIndentation(1);
         } else {
             TMethod constructorFactoryMethod = introspectionHelper.getConstructorFactoryMethod();

@@ -115,8 +115,6 @@ public class MacroGenerator extends JavaGenerator {
         UnknownElement sequential = getSequential();
 
 
-        this.printString(this.getInputName() + "context = context.clone();");
-
         ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver, continueOnError);
         elementGenerator.setIgnoredMacroElements(definedElements);
         elementGenerator.setLocalScopedVariables(false);
