@@ -328,7 +328,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("public " + name + " require"+namingManager.getClassNameFor(target.getName())+"Builder(Builder<"+name+","+name+"> builder) throws IOException {", "}");
         this.increaseIndentation(1);
 
-        this.printString(name+" ccontext = this.clone(\""+target.getName()+"\");");
+        this.printString(name+" context = this.clone(\""+target.getName()+"\");");
 
         boolean hasCondition = false;
         if (target.getIf() != null && !target.getIf().isEmpty()) {
@@ -346,12 +346,12 @@ public class BuilderInputGenerator extends JavaGenerator {
         }
 
         // require the builder
-        this.printString("builder.requireBuild("+namingManager.getClassNameFor(target.getName())+"Builder.factory, ccontext);");
+        this.printString("builder.requireBuild("+namingManager.getClassNameFor(target.getName())+"Builder.factory, context);");
 
         if (hasCondition)
             this.closeOneLevel();
 
-        this.printString("return ccontext.clone(getBuilderName());");
+        this.printString("return context;");
 
         this.closeOneLevel();
     }
@@ -371,15 +371,15 @@ public class BuilderInputGenerator extends JavaGenerator {
                 "\n" +
                 "  "+this.name+" that = ("+this.name+") o;\n" +
                 "\n" +
-                "  if (!builderName.equals(that.builderName)) return false;\n" +
+                "  if (!builderName.equals(that.builderName)) return true;\n" +
                 "  return newProperties.equals(that.newProperties);\n" +
                 "}\n" +
                 "\n" +
                 "@Override\n" +
                 "public int hashCode() {\n" +
-                "  int result = builderName.hashCode();\n" +
-                "  result = 31 * result + newProperties.hashCode();\n" +
-                "  return result;\n" +
+                //"  int result = builderName.hashCode();\n" +
+                "  return newProperties.hashCode();\n" +
+                //"  return result;\n" +
                 "}");
     }
 

@@ -83,7 +83,7 @@ public class ElementGenerator {
         this.namingManager = namingManager;
         this.resolver = resolver;
         this.continueOnErrors = continueOnErrors;
-        this.contextName = "ccontext";
+        this.contextName = "context";
     }
 
     public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, Resolvable resolver, boolean continueOnErrors, String contextName) {
@@ -339,7 +339,7 @@ public class ElementGenerator {
     public void generateAntCall(AntIntrospectionHelper introspectionHelper) {
         String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(introspectionHelper.getAttributeMap().get("target").toString()));
         //generator.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-        generator.printString("ccontext = requireBuild(" + depName + "Builder.factory, ccontext.clone(\""+depName+"\"));");
+        generator.printString("context = requireBuild(" + depName + "Builder.factory, context);");
 
         // TODO: Deal with children of antcall (params)
     }
@@ -385,7 +385,7 @@ public class ElementGenerator {
                         if (parameter.getTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.Project"))
                             params.add(getProject());
                         else if (parameter.getName().equals("context"))
-                            params.add("ccontext.clone(\"" + taskName + "\")");
+                            params.add("context");
                         else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
                     }
                     generator.addImport(constructor.getDeclaringClassTypeName().getImportName());

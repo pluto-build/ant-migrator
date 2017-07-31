@@ -81,7 +81,7 @@ public class BuilderGenerator extends JavaGenerator {
         this.project = project;
         this.target = target;
         this.useFileDependencyDiscovery = useFileDependencyDiscovery;
-        this.resolver = new PropertyResolver(project, "ccontext");
+        this.resolver = new PropertyResolver(project, "context");
         this.elementGenerator = new ElementGenerator(this, project, getNamingManager(), resolver, continueOnError);
         this.continueOnError = continueOnError;
     }
@@ -91,30 +91,33 @@ public class BuilderGenerator extends JavaGenerator {
                 "protected "+getInputName()+" build(" + this.getInputName() + " context) throws Exception {", "}");
         this.increaseIndentation(1);
 
-        this.printString(this.getInputName() + " ccontext = context.clone();");
 
         for (String fileDep : getDependentFiles()) {
             this.printString("require(new File(\"" + fileDep + "\"));");
         }
 
+        this.printString("context = context.clone(\""+getName()+"\");");
+
         for (String dep : getDependentBuilders()) {
             String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(dep));
             //this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            this.printString("ccontext = requireBuild(" + depName + "Builder.factory, ccontext.clone(\""+depName+"\"));");
+            this.printString("context = requireBuild(" + depName + "Builder.factory, context);");
             //this.printString("cinput = cinput.require"+depName+"Builder(this);");
         }
 
+        this.printString("context = context.clone();");
+
         // Check for if and unless conditions:
         if (target.getIf() != null) {
-            this.printString("if (!ccontext.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
+            this.printString("if (!context.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
             this.increaseIndentation(1);
-            this.printString("return ccontext.clone(ccontext.getBuilderName());");
+            this.printString("return context.clone(context.getBuilderName());");
             this.closeOneLevel();
         }
         if (target.getUnless() != null) {
-            this.printString("if (!ccontext.testUnless(\"" + resolver.getExpandedValue(target.getUnless()) + "\")) {", "}");
+            this.printString("if (!context.testUnless(\"" + resolver.getExpandedValue(target.getUnless()) + "\")) {", "}");
             this.increaseIndentation(1);
-            this.printString("return ccontext.clone(ccontext.getBuilderName());");
+            this.printString("return context.clone(context.getBuilderName());");
             this.closeOneLevel();
         }
 
@@ -142,7 +145,7 @@ public class BuilderGenerator extends JavaGenerator {
             }
         }
 
-        this.printString("return ccontext.clone(context.getBuilderName());");
+        this.printString("return context;");
         this.closeOneLevel();
     }
 
