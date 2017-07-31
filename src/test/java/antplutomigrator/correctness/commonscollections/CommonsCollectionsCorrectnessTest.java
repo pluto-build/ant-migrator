@@ -24,6 +24,8 @@ import java.util.List;
 public class CommonsCollectionsCorrectnessTest {
     private Log log = LogFactory.getLog(CommonsCollectionsCorrectnessTest.class);
 
+    private boolean debug = false;
+
     @Test
     public void testCorrectness1() throws Exception {
         URL commonsioZipUrl = new URL("http://mirror.serversupportforum.de/apache//commons/collections/source/commons-collections4-4.1-src.zip");
@@ -89,7 +91,7 @@ public class CommonsCollectionsCorrectnessTest {
         taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "6769b60edceefbfcae8e7519c32b24ca"));
         taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
-        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true));
+        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true, debug));
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
