@@ -85,8 +85,8 @@ public class BuilderInputGenerator extends JavaGenerator {
     private void generateGetMethod() {
         this.printString("public String get(String v) {", "}");
         this.increaseIndentation(1);
-        this.printString("if (newProperties.containsKey(v))\n" +
-                "  return newProperties.get(v);");
+        this.printString("if (nested.containsKey(v))\n" +
+                "  return nested.get(v);");
         this.printString("switch (v) {", "}");
         this.increaseIndentation(1);
 
@@ -159,23 +159,23 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("public String getBuilderName() {\n" +
                 "  return this.builderName;\n" +
                 "}");
-        this.printString("private HashMap<String, String> newProperties = new HashMap<>();");
+        this.printString("private HashMap<String, String> nested = new HashMap<>();");
 
         this.printString("public " + name + "(String builderName) { this.builderName = builderName; }");
 
         this.printString("private " + name + "(String builderName, HashMap<String, String> properties) {", "}");
         this.increaseIndentation(1);
         this.printString("this.builderName = builderName;");
-        this.printString("this.newProperties = properties;");
+        this.printString("this.nested = properties;");
         this.closeOneLevel();
 
         this.printString("public " + name + " clone() {\n" +
-                "  " + name + " clone = new " + name + "(builderName, (HashMap<String, String>)newProperties.clone());\n" +
+                "  " + name + " clone = new " + name + "(builderName, (HashMap<String, String>)nested.clone());\n" +
                 "  return clone;\n" +
                 "}");
 
         this.printString("public " + name + " withName(String newBuilderName) {\n" +
-                "  " + name + " clone = new " + name + "(newBuilderName, newProperties);\n" +
+                "  " + name + " clone = new " + name + "(newBuilderName, nested);\n" +
                 "  return clone;\n" +
                 "}");
     }
@@ -183,8 +183,8 @@ public class BuilderInputGenerator extends JavaGenerator {
     public void generatePropertySetter() {
         this.printString("public void setProperty(String k, String v) {\n" +
                 "  if (k != null && v != null)\n" +
-                "    if (this.newProperties.put(k, v) != null)\n" +
-                "      throw new IllegalStateException(\"Redefined property\");\n" +
+                "    if (this.nested.put(k, v) != null && !k.equals(\"basedir\"))\n" +
+                "      throw new IllegalStateException(\"Redefined property \" + k);\n" +
                 "}");
     }
 
@@ -361,7 +361,7 @@ public class BuilderInputGenerator extends JavaGenerator {
     private void generateToStringMethod() {
         this.printString("@Override\n" +
                 "public String toString() {\n" +
-                "  return this.builderName + \"@\" + this.hashCode() + \" \" + this.newProperties.toString() + \"\";\n" +
+                "  return this.builderName + \"@\" + this.hashCode() + \" \" + this.nested.toString() + \"\";\n" +
                 "}");
     }
 
@@ -374,13 +374,13 @@ public class BuilderInputGenerator extends JavaGenerator {
                 "  "+this.name+" that = ("+this.name+") o;\n" +
                 "\n" +
                 "  if (!builderName.equals(that.builderName)) return true;\n" +
-                "  return newProperties.equals(that.newProperties);\n" +
+                "  return nested.equals(that.nested);\n" +
                 "}\n" +
                 "\n" +
                 "@Override\n" +
                 "public int hashCode() {\n" +
                 //"  int result = builderName.hashCode();\n" +
-                "  return newProperties.hashCode();\n" +
+                "  return nested.hashCode();\n" +
                 //"  return result;\n" +
                 "}");
     }
