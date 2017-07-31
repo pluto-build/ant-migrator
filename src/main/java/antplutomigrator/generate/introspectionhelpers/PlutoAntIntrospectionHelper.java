@@ -91,15 +91,16 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean hasProjectSetter() {
-        boolean hasProjectSetter = false;
+    public boolean isProjectComponent() {
+        /*boolean hasProjectSetter = false;
         for (Method method : getElementTypeClass().getMethods()) {
             if (method.getName().equals("setProject") && method.getParameterCount() == 1 && method.getParameterTypes()[0].getName().equals("org.apache.tools.ant.Project")) {
                 hasProjectSetter = true;
                 break;
             }
         }
-        return hasProjectSetter;
+        return hasProjectSetter;*/
+        return ProjectComponent.class.isAssignableFrom(getElementTypeClass());
     }
 
     @Override
@@ -155,12 +156,13 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean hasInitMethod() {
-        try {
+    public boolean isTask() {
+        /*try {
             return this.getElementTypeClass().getMethod("init") != null;
         } catch (NoSuchMethodException e) {
             return false;
-        }
+        }*/
+        return Task.class.isAssignableFrom(getElementTypeClass());
     }
 
     @Override

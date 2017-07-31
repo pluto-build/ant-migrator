@@ -170,7 +170,9 @@ abstract public class AntIntrospectionHelper {
      * Determines if the current element has a project setter method.
      * @return
      */
-    public abstract boolean hasProjectSetter();
+    public abstract boolean isProjectComponent();
+
+    public abstract boolean isTask();
 
     /**
      * Retrieves the setter method for a given attribute
@@ -286,7 +288,6 @@ abstract public class AntIntrospectionHelper {
         return AntIntrospectionHelper.findParentsForNestedMacroElement(getElement(), name);
     }
 
-    public abstract boolean hasInitMethod();
     public abstract boolean hasExecuteMethod();
 
     public static List<UnknownElement> findParentsForNestedMacroElement(UnknownElement element, String name) {

@@ -138,13 +138,10 @@ public class ElementGenerator {
                 generateConstructor(introspectionHelper, taskName);
 
             if (!onlyConstructors) {
-                if (introspectionHelper.hasProjectSetter())
-                    generateProjectSetter(taskName);
-
-                if (introspectionHelper.hasInitMethod())
-                    generator.printString(taskName + ".init();");
-                // TODO: Do this right...
-                //generator.printString(contextName+".initTask("+taskName+");");
+                if (introspectionHelper.isTask()) {
+                    generator.printString(contextName + ".initTask("+taskName+");");
+                } else if (introspectionHelper.isProjectComponent())
+                    generator.printString(contextName + ".initElement("+taskName+");");
 
                 try {
                     // Just for debugging purposes right now

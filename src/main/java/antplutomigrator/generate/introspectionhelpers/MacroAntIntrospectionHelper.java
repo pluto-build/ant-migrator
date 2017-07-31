@@ -56,7 +56,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean hasProjectSetter() {
+    public boolean isProjectComponent() {
         return false;
     }
 
@@ -151,7 +151,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     }
 
     @Override
-    public boolean hasInitMethod() {
+    public boolean isTask() {
         return true;
     }
 

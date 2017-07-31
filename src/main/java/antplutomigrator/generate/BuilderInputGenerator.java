@@ -65,6 +65,7 @@ public class BuilderInputGenerator extends JavaGenerator {
 
         this.generateProjectMethod();
         this.generateResolveFileMethod();
+        this.generateInitMethods();
 
         this.printString("");
         this.generateNullOrEmptyMethod();
@@ -182,8 +183,9 @@ public class BuilderInputGenerator extends JavaGenerator {
     public void generatePropertySetter() {
         this.printString("public void setProperty(String k, String v) {\n" +
                 "  if (k != null && v != null)\n" +
-                "    this.newProperties.put(k, v);\n" +
-                "  }");
+                "    if (this.newProperties.put(k, v) != null)\n" +
+                "      throw new IllegalStateException(\"Redefined property\");\n" +
+                "}");
     }
 
     private void generateProjectMethod() {
@@ -380,6 +382,18 @@ public class BuilderInputGenerator extends JavaGenerator {
                 //"  int result = builderName.hashCode();\n" +
                 "  return newProperties.hashCode();\n" +
                 //"  return result;\n" +
+                "}");
+    }
+
+    public void generateInitMethods() {
+        this.addImport("org.apache.tools.ant.Task");
+        this.printString("public void initTask(Task task) {\n"+
+                "  task.setProject(this.project());\n" +
+                "  task.init();\n" +
+                "}");
+        this.addImport("org.apache.tools.ant.ProjectComponent");
+        this.printString("public void initElement(ProjectComponent projectComponent) {\n"+
+                "  projectComponent.setProject(this.project());\n" +
                 "}");
     }
 
