@@ -63,6 +63,11 @@ public class AntMigrator {
                 .longOpt("debug")
                 .desc("Enable debug logging on generated code.")
                 .build());
+        options.addOption(Option.builder("t")
+                .longOpt("target")
+                .hasArg()
+                .desc("Set executed the target.")
+                .build());
         // TODO: Add option to change executed target(s) in main class...
 
         CommandLineParser parser = new DefaultParser();
@@ -142,7 +147,12 @@ public class AntMigrator {
         String consumer = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("BiConsumer.java").toURI())));
         files.put("BiConsumer.java", consumer.replace("<pkg>", line.getOptionValue("pkg")));
 
-        BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), project.getDefaultTarget(), !line.hasOption("noFD"), line.hasOption("d"));
+        String targetName = project.getDefaultTarget();
+
+        if (line.hasOption("t"))
+            targetName = line.getOptionValue("t");
+
+        BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), targetName, !line.hasOption("noFD"), line.hasOption("d"));
         if (line.hasOption("m")) {
             files.put(namingManager.getClassNameFor(project.getName()) + ".java", mainGenerator.getPrettyPrint());
         }

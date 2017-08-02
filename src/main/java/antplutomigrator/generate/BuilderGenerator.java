@@ -111,13 +111,13 @@ public class BuilderGenerator extends JavaGenerator {
         if (target.getIf() != null) {
             this.printString("if (!context.testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
             this.increaseIndentation(1);
-            this.printString("return context.clone(context.getBuilderName());");
+            this.printString("return context;");
             this.closeOneLevel();
         }
         if (target.getUnless() != null) {
             this.printString("if (!context.testUnless(\"" + resolver.getExpandedValue(target.getUnless()) + "\")) {", "}");
             this.increaseIndentation(1);
-            this.printString("return context.clone(context.getBuilderName());");
+            this.printString("return context;");
             this.closeOneLevel();
         }
 

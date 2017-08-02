@@ -134,7 +134,7 @@ public class ElementGenerator {
             if (elementTypeClassName == null)
                 throw new RuntimeException("Could not get type definition for " + element.getTaskName());
 
-            if (!noConstructor)
+            if (!noConstructor && !introspectionHelper.isAntCall())
                 generateConstructor(introspectionHelper, taskName);
 
             if (!onlyConstructors) {
@@ -159,7 +159,8 @@ public class ElementGenerator {
                 generateText(element, taskName);
             }
 
-            generateChildren(element, taskName, introspectionHelper);
+            if (!introspectionHelper.isAntCall())
+                generateChildren(element, taskName, introspectionHelper);
 
             if (!onlyConstructors) {
                 generateMacroInvocationSpecificCode(introspectionHelper);
@@ -336,9 +337,20 @@ public class ElementGenerator {
     public void generateAntCall(AntIntrospectionHelper introspectionHelper) {
         String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(introspectionHelper.getAttributeMap().get("target").toString()));
         //generator.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-        generator.printString("context = requireBuild(" + depName + "Builder.factory, context);");
+        String antCallContextName = namingManager.getNameFor("antcallContext");
+        generator.printString(getInputName() + " " + antCallContextName + " = context.clone();");
 
-        // TODO: Deal with children of antcall (params)
+        if (introspectionHelper.getElement().getChildren() != null) {
+            for (UnknownElement child : introspectionHelper.getElement().getChildren()) {
+                if (child.getTaskName().equals("param")) {
+                    generator.printString(antCallContextName + ".setProperty(\"" + resolver.getExpandedValue(child.getWrapper().getAttributeMap().get("name").toString()) + "\", \"" + resolver.getExpandedValue(child.getWrapper().getAttributeMap().get("value").toString()) + "\");");
+                } else {
+                    log.warn("While migrating antcall " + depName + " couldn't deal with child " + child.getTaskName());
+                }
+            }
+        }
+
+        generator.printString("requireBuild(" + depName + "Builder.factory, "+antCallContextName+");");
     }
 
     public void generateConstructor(AntIntrospectionHelper introspectionHelper, String taskName) {

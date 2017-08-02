@@ -99,11 +99,7 @@ public class MacroGenerator extends JavaGenerator {
     private void generateProject() {
         this.addImport("org.apache.tools.ant.Project");
         this.addImport(basePkg + "." + getInputName());
-        this.printString("final Project project;");
         this.printString("final " + getInputName() + " context;");
-        this.printString("public Project getProject() {\n" +
-                "  return this.project;\n" +
-                "}");
 
         this.printString("public " + getName() + "(Project project, " + getInputName() + " context) {\n" +
                 "  this.project = project;\n" +
@@ -168,7 +164,8 @@ public class MacroGenerator extends JavaGenerator {
         }
 
         for (UnknownElement child : sequential.getChildren()) {
-            this.printString(namingManager.getNameFor(child) + ".execute();");
+            if (!child.getTaskName().equals("antcall"))
+                this.printString(namingManager.getNameFor(child) + ".execute();");
         }
 
         this.closeOneLevel(); // end method
@@ -181,14 +178,14 @@ public class MacroGenerator extends JavaGenerator {
                 def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
             }
             String textName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
-            macroPropertyResolver.addAttribute(textName);
+            macroPropertyResolver.addAttribute(element.getWrapper().getAttributeMap().get("name").toString());
         }
         if (element.getTaskName().equals("attribute")) {
             String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
 
             // TODO: probably fill these first to enable proper expansion
             // Remark: Probably not, as https://ant.apache.org/manual/Tasks/macrodef.html notes that order is important and expansion might not happen otherwise...
-            macroPropertyResolver.addAttribute(attributeName);
+            macroPropertyResolver.addAttribute(element.getWrapper().getAttributeMap().get("name").toString());
         }
         if (element.getTaskName().equals("element")) {
             String elementName = element.getWrapper().getAttributeMap().get("name").toString();
@@ -297,7 +294,7 @@ public class MacroGenerator extends JavaGenerator {
                 AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(this.project, nestedElement, nestedName, getPkg(), parentIntrospectionHelper);
                 //TTypeName name = introspectionHelper.getElementTypeClassName();
 
-                ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, resolver, continueOnError);
+                ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver, continueOnError);
 
                 elementGenerator.generateConstructor(introspectionHelper, nestedName);
                 this.printString("lam.execute(" + nestedName + ", context);");

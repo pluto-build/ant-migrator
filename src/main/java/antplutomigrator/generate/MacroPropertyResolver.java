@@ -12,6 +12,7 @@ public class MacroPropertyResolver implements Resolvable {
 
     private final Resolvable baseResolver;
     private List<String> attributes = new ArrayList<>();
+    private NamingManager namingManager = new NamingManager();
 
     public List<String> getAttributes() {
         return attributes;
@@ -37,7 +38,7 @@ public class MacroPropertyResolver implements Resolvable {
 
         for (String attributeName: attributes) {
             // TODO: Use namingManager.getClassName here
-            expanded = expanded.replace("@{"+attributeName+"}", "\"+this.get"+ StringUtils.capitalize(attributeName)+"()+\"");
+            expanded = expanded.replace("@{"+attributeName+"}", "\"+this.get"+ namingManager.getClassNameFor(attributeName)+"()+\"");
         }
 
         return baseResolver.getExpandedValue(expanded);

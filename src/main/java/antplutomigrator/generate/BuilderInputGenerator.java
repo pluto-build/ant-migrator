@@ -182,9 +182,10 @@ public class BuilderInputGenerator extends JavaGenerator {
 
     public void generatePropertySetter() {
         this.printString("public void setProperty(String k, String v) {\n" +
-                "  if (k != null && v != null)\n" +
-                "    if (this.nested.put(k, v) != null && !k.equals(\"basedir\"))\n" +
-                "      throw new IllegalStateException(\"Redefined property \" + k);\n" +
+                "  if (k != null && v != null)" +
+                "    this.nested.put(k, v);\n" +
+                "    //if (this.nested.put(k, v) != null && !k.equals(\"basedir\"))\n" +
+                "    //  throw new IllegalStateException(\"Redefined property \" + k);\n" +
                 "}");
     }
 
