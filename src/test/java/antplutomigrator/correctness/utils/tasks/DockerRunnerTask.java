@@ -41,7 +41,7 @@ public class DockerRunnerTask extends TestTask {
         String mountStr = "";
         for (Mount mount: mounts)
             mountStr += mount;
-        new RunCommandTask(localWorkingDir,"docker run -i --privileged=true --security-opt=seccomp:unconfined "+mountStr+" -w "+workingDir.getAbsolutePath()+" --name "+name+" xmanu/pluto-docker:0.2 bash -c \"time "+command+"\"").execute();
+        new RunCommandTask(localWorkingDir,"docker run -i --privileged=true --security-opt=seccomp:unconfined "+mountStr+" -w "+workingDir.getAbsolutePath()+" --name "+name+" xmanu/pluto-docker:0.3 bash -c \"time "+command+"\"").execute();
         new RemoveDockerContainerTask(name).execute();
     }
 }

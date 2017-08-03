@@ -148,11 +148,14 @@ public class AntMigrator {
         files.put("BiConsumer.java", consumer.replace("<pkg>", line.getOptionValue("pkg")));
 
         String targetName = project.getDefaultTarget();
+        List<String> targets = new ArrayList<>();
 
         if (line.hasOption("t"))
-            targetName = line.getOptionValue("t");
+            targets.addAll(Arrays.asList(line.getOptionValue("t").split(",")));
+        else
+            targets.add(targetName);
 
-        BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), targetName, !line.hasOption("noFD"), line.hasOption("d"));
+        BuilderMainGenerator mainGenerator = new BuilderMainGenerator(line.getOptionValue("pkg"), project.getName(), targets, !line.hasOption("noFD"), line.hasOption("d"));
         if (line.hasOption("m")) {
             files.put(namingManager.getClassNameFor(project.getName()) + ".java", mainGenerator.getPrettyPrint());
         }

@@ -16,7 +16,16 @@ public class MigrateAntToPlutoTask extends TestTask {
     private final String pkg;
     private final boolean fileDepencencyDiscovery;
     private final boolean debug;
-    private final String target;
+    private final List<String> targets;
+    private boolean continueOnError = false;
+
+    public boolean isContinueOnError() {
+        return continueOnError;
+    }
+
+    public void setContinueOnError(boolean continueOnError) {
+        this.continueOnError = continueOnError;
+    }
 
     public MigrateAntToPlutoTask(File buildFile, File outDir, String pkg) {
         this.buildFile = buildFile;
@@ -24,7 +33,7 @@ public class MigrateAntToPlutoTask extends TestTask {
         this.pkg = pkg;
         this.fileDepencencyDiscovery = false;
         this.debug = false;
-        this.target = null;
+        this.targets = null;
     }
 
     public MigrateAntToPlutoTask(File buildFile, File outDir, String pkg, boolean fileDepencencyDiscovery, boolean debug) {
@@ -33,16 +42,16 @@ public class MigrateAntToPlutoTask extends TestTask {
         this.pkg = pkg;
         this.fileDepencencyDiscovery = fileDepencencyDiscovery;
         this.debug = debug;
-        this.target = null;
+        this.targets = null;
     }
 
-    public MigrateAntToPlutoTask(File buildFile, File outDir, String pkg, boolean fileDepencencyDiscovery, boolean debug, String target) {
+    public MigrateAntToPlutoTask(File buildFile, File outDir, String pkg, boolean fileDepencencyDiscovery, boolean debug, List<String> targets) {
         this.buildFile = buildFile;
         this.outDir = outDir;
         this.pkg = pkg;
         this.fileDepencencyDiscovery = fileDepencencyDiscovery;
         this.debug = debug;
-        this.target = target;
+        this.targets = targets;
     }
 
     @Override
@@ -61,14 +70,24 @@ public class MigrateAntToPlutoTask extends TestTask {
         args.add(outDir.getAbsolutePath());
         args.add("-m");
 
+        if (isContinueOnError())
+            args.add("-c");
+
         if (!fileDepencencyDiscovery)
             args.add("-noFD");
         if (debug)
             args.add("-d");
 
-        if (target != null) {
+        if (targets != null) {
             args.add("-t");
-            args.add(target);
+
+            String targetString = "";
+            for (String target: targets)
+                targetString += target + ",";
+            if (targetString.endsWith(","))
+                targetString = targetString.substring(0, targetString.length()-1);
+
+            args.add(targetString);
         }
 
         AntMigrator.main(args.toArray(new String[] {}));

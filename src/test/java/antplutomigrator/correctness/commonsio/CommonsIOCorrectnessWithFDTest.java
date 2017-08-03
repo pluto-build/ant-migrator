@@ -70,7 +70,7 @@ public class CommonsIOCorrectnessWithFDTest {
             }
         });
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
-        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", true, debug, "dist"));
+        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", true, debug, Arrays.asList("dist")));
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
@@ -128,7 +128,7 @@ public class CommonsIOCorrectnessWithFDTest {
             }
         });
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
-        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", false, debug, "dist"));
+        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", false, debug, Arrays.asList("dist")));
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
@@ -186,7 +186,7 @@ public class CommonsIOCorrectnessWithFDTest {
             }
         });
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
-        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", true, debug, "dist"));
+        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", true, debug, Arrays.asList("dist")));
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
