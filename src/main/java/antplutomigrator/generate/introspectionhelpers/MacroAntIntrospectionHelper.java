@@ -47,7 +47,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public TConstructor getConstructor() {
         ArrayList<TParameter> parameters = new ArrayList<>();
-        parameters.add(new TParameter("project", new TTypeName(Project.class.getName())));
+        parameters.add(new TParameter("builder", new TTypeName("AntBuilder")));
         parameters.add(new TParameter("context", new TTypeName(namingManager.getClassNameFor(getProject().getName() + "Context"))));
         String pkg = getPkg();
         if (!pkg.endsWith(".macros"))

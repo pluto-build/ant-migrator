@@ -13,16 +13,26 @@ import java.io.Serializable;
 public abstract class AntBuilder extends Builder<<ctx>, <ctx>> {
 
     private String name;
+    private int hashCode;
 
-    public AntBuilder(<ctx> input) {
-        super(input);
+    public AntBuilder(<ctx> context) {
+        super(context);
         this.name = this.getClass().getSimpleName();
+        this.hashCode = context.hashCode();
     }
 
     @Override
     public <In_ extends Serializable, Out_ extends Output, B_ extends Builder<In_, Out_>, F_ extends BuilderFactory<In_, Out_, B_>, SubIn_ extends In_> Out_ requireBuild(F_ factory, SubIn_ input) throws IOException {
         assert input instanceof <ctx>;
         return super.requireBuild(factory, (In_)((<ctx>)input).withName(name));
+    }
+
+    public <In_ extends <ctx>, Out_ extends <ctx>, B_ extends Builder<In_, Out_>, F_ extends BuilderFactory<In_, Out_, B_>, SubIn_ extends In_> void antCall(F_ factory,  SubIn_ context) {
+        try {
+            this.requireBuild(factory, context);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -32,7 +42,7 @@ public abstract class AntBuilder extends Builder<<ctx>, <ctx>> {
 
     @Override
     public File persistentPath(<ctx> context) {
-        return new File("deps/"+name+".dep");
+        return new File("deps/"+name+"."+hashCode+".dep");
     }
 
     @Override

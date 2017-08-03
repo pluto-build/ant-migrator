@@ -93,6 +93,8 @@ public class MacroGenerator extends JavaGenerator {
 
             log.error("Failed to migrate macro: " + this.name, e);
             this.printString("// TODO: Failed to migrate macro...");
+
+            this.closeOneLevel();
         }
     }
 
@@ -100,9 +102,11 @@ public class MacroGenerator extends JavaGenerator {
         this.addImport("org.apache.tools.ant.Project");
         this.addImport(basePkg + "." + getInputName());
         this.printString("final " + getInputName() + " context;");
+        this.addImport(basePkg + ".AntBuilder");
+        this.printString("final AntBuilder builder;");
 
-        this.printString("public " + getName() + "(Project project, " + getInputName() + " context) {\n" +
-                "  this.project = project;\n" +
+        this.printString("public " + getName() + "(AntBuilder builder, " + getInputName() + " context) {\n" +
+                "  this.builder = builder;\n" +
                 "  this.context = context;",
                 "}");
         this.increaseIndentation(1);
@@ -115,6 +119,7 @@ public class MacroGenerator extends JavaGenerator {
         elementGenerator.setIgnoredMacroElements(definedElements);
         elementGenerator.setLocalScopedVariables(false);
         elementGenerator.setOnlyConstructors(true);
+        elementGenerator.setInMacro(true);
 
         for (UnknownElement child : sequential.getChildren()) {
             if (!definedElements.contains(child.getTaskName())) {
@@ -157,6 +162,7 @@ public class MacroGenerator extends JavaGenerator {
         elementGenerator.setIgnoredMacroElements(definedElements);
         elementGenerator.setLocalScopedVariables(false);
         elementGenerator.setNoConstructor(true);
+        elementGenerator.setInMacro(true);
 
         for (UnknownElement child : sequential.getChildren()) {
             // Implicits were already inserted above, do NOT repeat here!

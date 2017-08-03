@@ -41,6 +41,7 @@ public class ElementGenerator {
     private boolean onlyConstructors = false;
     private final boolean continueOnErrors;
     private final String contextName;
+    private boolean inMacro = false;
 
     public List<String> getIgnoredMacroElements() {
         return ignoredMacroElements;
@@ -71,6 +72,14 @@ public class ElementGenerator {
 
     public String getProjectName() {
         return getNamingManager().getClassNameFor(StringUtils.capitalize(project.getName()));
+    }
+
+    public boolean isInMacro() {
+        return inMacro;
+    }
+
+    public void setInMacro(boolean inMacro) {
+        this.inMacro = inMacro;
     }
 
     public String getInputName() {
@@ -350,7 +359,15 @@ public class ElementGenerator {
             }
         }
 
-        generator.printString("requireBuild(" + depName + "Builder.factory, "+antCallContextName+");");
+        if (!isInMacro())
+            generator.printString("antCall(" + depName + "Builder.factory, "+antCallContextName+");");
+        else {
+            String pkg = introspectionHelper.getPkg();
+            if (pkg.endsWith(".macros"))
+                pkg = pkg.substring(0, pkg.lastIndexOf(".macros"));
+            generator.addImport( pkg + "." + depName + "Builder");
+            generator.printString("builder.antCall(" + depName + "Builder.factory, "+antCallContextName+");");
+        }
     }
 
     public void generateConstructor(AntIntrospectionHelper introspectionHelper, String taskName) {
@@ -393,6 +410,11 @@ public class ElementGenerator {
                     for (TParameter parameter : constructor.getParameters()) {
                         if (parameter.getTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.Project"))
                             params.add(getProject());
+                        else if (parameter.getTypeName().getFullyQualifiedName().equals("AntBuilder"))
+                            if (isInMacro())
+                                params.add("builder");
+                            else
+                                params.add("this");
                         else if (parameter.getName().equals("context"))
                             params.add("context");
                         else throw new RuntimeException("Encountered Constructor parameter that was not expected!");
