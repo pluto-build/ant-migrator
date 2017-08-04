@@ -27,13 +27,12 @@ public class CommonsIOCorrectnessWithFDTest {
 
     private boolean debug = false;
 
-    URL commonsioZipUrl = new URL("http://apache.lauf-forum.at/commons/io/source/commons-io-2.5-src.zip");
+    URL url = new URL("http://apache.lauf-forum.at/commons/io/source/commons-io-2.5-src.zip");
 
-    File zipsrc = new File("../migrator-testdata/antplutomigrator/commons-io.zip");
+    File zipFile = new File("../migrator-testdata/antplutomigrator/commons-io.zip");
 
     File testDir = new File("../migrator-testdata/antplutomigrator/correctness/commonsiofd/");
     File sourceDir = new File(testDir,"source");
-    File commonsioZipFile = new File(testDir, "commons-io.zip");
     File antDir = new File(testDir, "ant");
     File antBuildXml = new File(antDir, "commons-io-2.5-src/build.xml");
     File plutoDir = new File(testDir, "pluto");
@@ -51,9 +50,8 @@ public class CommonsIOCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "bd1731c2655a9c46f4a01dd6b1ef24fb"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "bd1731c2655a9c46f4a01dd6b1ef24fb", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new TestTask() {
             @Override
             public String getDescription() {
@@ -109,9 +107,8 @@ public class CommonsIOCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "bd1731c2655a9c46f4a01dd6b1ef24fb"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "bd1731c2655a9c46f4a01dd6b1ef24fb", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new TestTask() {
             @Override
             public String getDescription() {
@@ -167,9 +164,8 @@ public class CommonsIOCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "bd1731c2655a9c46f4a01dd6b1ef24fb"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "bd1731c2655a9c46f4a01dd6b1ef24fb", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new TestTask() {
             @Override
             public String getDescription() {
@@ -229,9 +225,8 @@ public class CommonsIOCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "bd1731c2655a9c46f4a01dd6b1ef24fb"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "bd1731c2655a9c46f4a01dd6b1ef24fb", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         List<Mount> mounts = new ArrayList<>();
         mounts.add(new Mount(antSrcDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));

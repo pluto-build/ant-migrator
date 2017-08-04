@@ -26,12 +26,12 @@ public class CommonsCollectionsCorrectnessWithFDTest {
 
     private boolean debug = false;
 
-    URL zipURl = new URL("http://mirror.serversupportforum.de/apache//commons/collections/source/commons-collections4-4.1-src.zip");
+    URL url = new URL("http://mirror.serversupportforum.de/apache//commons/collections/source/commons-collections4-4.1-src.zip");
     File zipsrc = new File("../migrator-testdata/antplutomigrator/commons-collections.zip");
 
     File testDir = new File("../migrator-testdata/antplutomigrator/correctness/commonscollectionsfd/");
     File sourceDir = new File(testDir,"source");
-    File commonsioZipFile = new File(testDir, "commons-collections.zip");
+    File zipFile = new File(testDir, "commons-collections.zip");
     File antDir = new File(testDir, "ant");
     File antBuildXml = new File(antDir, "commons-collections4-4.1-src/build.xml");
     File plutoDir = new File(testDir, "pluto");
@@ -48,9 +48,8 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "6769b60edceefbfcae8e7519c32b24ca"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "6769b60edceefbfcae8e7519c32b24ca", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true, debug));
 
@@ -91,9 +90,8 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "6769b60edceefbfcae8e7519c32b24ca"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "6769b60edceefbfcae8e7519c32b24ca", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", false, debug));
 
@@ -134,9 +132,8 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "6769b60edceefbfcae8e7519c32b24ca"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "6769b60edceefbfcae8e7519c32b24ca", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true, debug));
 
@@ -183,9 +180,8 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "6769b60edceefbfcae8e7519c32b24ca"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "6769b60edceefbfcae8e7519c32b24ca", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         List<Mount> mounts = new ArrayList<>();
         mounts.add(new Mount(antSrcDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));

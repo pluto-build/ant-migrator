@@ -9,6 +9,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -23,6 +24,9 @@ public class JMeterCorrectnessWithFDTest {
 
     private boolean debug = true;
 
+    URL url = new URL("ftp://ftp.fau.de/apache//jmeter/source/apache-jmeter-3.2_src.zip");
+
+    File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/jmeter.zip");
     File src = new File("../migrator-testdata/antplutomigrator/apache-jmeter-3.2/");
     File testDir = new File("../migrator-testdata/antplutomigrator/correctness/jmeter/");
     File antDir = new File(testDir, "ant");
@@ -41,7 +45,8 @@ public class JMeterCorrectnessWithFDTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyDirectoryTask(src, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "d5936f4f471b6b84c0d7f8b5c75ea72d", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.jmeter", true, debug, Arrays.asList("download_jars", "compile"));
         migrateAntToPlutoTask.setContinueOnError(true);

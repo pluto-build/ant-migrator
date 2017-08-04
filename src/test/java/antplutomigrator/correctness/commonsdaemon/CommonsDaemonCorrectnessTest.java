@@ -27,12 +27,11 @@ public class CommonsDaemonCorrectnessTest {
 
     private boolean debug = false;
 
-    URL commonsdaemonZipUrl = new URL("http://mirror.dkd.de/apache//commons/daemon/source/commons-daemon-1.0.15-src.zip");
+    URL url = new URL("http://mirror.dkd.de/apache//commons/daemon/source/commons-daemon-1.0.15-src.zip");
 
-    File commonsdaemonZipSrc = new File("../migrator-testdata/antplutomigrator/commons-daemon.zip");
+    File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/commons-daemon.zip");
     File testDir = new File("../migrator-testdata/antplutomigrator/correctness/commonsdaemon/");
     File sourceDir = new File(testDir,"source");
-    File commonsioZipFile = new File(testDir, "commons-daemon.zip");
     File antDir = new File(testDir, "ant");
     File antBuildXml = new File(antDir, "commons-daemon-1.0.15-src/build.xml");
     File plutoDir = new File(testDir, "pluto");
@@ -49,9 +48,8 @@ public class CommonsDaemonCorrectnessTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(commonsdaemonZipSrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "9c6580f437a429d3694a5a3214cc83c1"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "9c6580f437a429d3694a5a3214cc83c1", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsdaemon"));
 
@@ -95,9 +93,8 @@ public class CommonsDaemonCorrectnessTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(commonsdaemonZipSrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "9c6580f437a429d3694a5a3214cc83c1"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "9c6580f437a429d3694a5a3214cc83c1", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsdaemon", false, true));
 

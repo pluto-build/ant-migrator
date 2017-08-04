@@ -23,7 +23,9 @@ public class JMeterCorrectnessTest {
 
     private boolean debug = false;
 
-    File src = new File("../migrator-testdata/antplutomigrator/apache-jmeter-3.2/");
+    URL url = new URL("ftp://ftp.fau.de/apache//jmeter/source/apache-jmeter-3.2_src.zip");
+
+    File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/jmeter.zip");
     File testDir = new File("../migrator-testdata/antplutomigrator/correctness/jmeter/");
     File antDir = new File(testDir, "ant");
     File antBuildXml = new File(antDir, "apache-jmeter-3.2/build.xml");
@@ -41,7 +43,8 @@ public class JMeterCorrectnessTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyDirectoryTask(src, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "d5936f4f471b6b84c0d7f8b5c75ea72d", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.jmeter", false, debug, Arrays.asList("download_jars", "compile"));
         migrateAntToPlutoTask.setContinueOnError(true);
@@ -52,21 +55,21 @@ public class JMeterCorrectnessTest {
         String absoluteClassPath = CompileJavaTask.makeAbsolute(classPath);
 
         taskExecutor.addTask(new CompileJavaTask(plutoDir, new File(plutoDir, "build/pluto/jmeter/JMeter.java"), targetDir, classPath, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_compile_args.txt").toURI())))));
-        //taskExecutor.addTask(new RunCommandTask(antSrcDir, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI())))));
+        taskExecutor.addTask(new RunCommandTask(antSrcDir, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI())))));
         String plutoRunCommand = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_run_command.txt").toURI())));
         plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[]{"<classpath>"}, new String[]{absoluteClassPath});
         taskExecutor.addTask(new RunCommandTask(plutoSrcDir, plutoRunCommand));
 
-        /*ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
+        ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "lib"), new File(plutoSrcDir, "lib"));
         comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
         comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
 
         taskExecutor.addTask(comparerTask);
 
-        ComparerTask distComparerTask = new ComparerTask(new File(antSrcDir, "dist"), new File(plutoSrcDir, "dist"));
-        distComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
-        distComparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
-        distComparerTask.getDirectoryComparer().addFileComparer(new FileComparer() {
+        ComparerTask buildComparerTask = new ComparerTask(new File(antSrcDir, "build"), new File(plutoSrcDir, "build"));
+        buildComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
+        buildComparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
+        buildComparerTask.getDirectoryComparer().addFileComparer(new FileComparer() {
             @Override
             public boolean filesAreEqual(File f1, File f2) {
                 // Ignore this file for now...
@@ -75,8 +78,7 @@ public class JMeterCorrectnessTest {
                 return false;
             }
         });
-        distComparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new JavaDocDateIgnoredLineComparer())));
-        taskExecutor.addTask(distComparerTask);*/
+        taskExecutor.addTask(buildComparerTask);
 
         taskExecutor.executeTasks();
     }

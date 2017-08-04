@@ -2,9 +2,7 @@ package antplutomigrator.correctness.commonscollections;
 
 import antplutomigrator.correctness.comparison.*;
 import antplutomigrator.correctness.utils.TaskExecutor;
-import antplutomigrator.correctness.utils.TestTask;
 import antplutomigrator.correctness.utils.tasks.*;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.util.JavaEnvUtils;
@@ -15,9 +13,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by manuel on 01.06.17.
@@ -27,13 +22,12 @@ public class CommonsCollectionsCorrectnessTest {
 
     private boolean debug = false;
 
-    URL commonsioZipUrl = new URL("http://mirror.serversupportforum.de/apache//commons/collections/source/commons-collections4-4.1-src.zip");
+    URL url = new URL("http://mirror.dkd.de/apache//commons/collections/source/commons-collections4-4.1-src.zip");
 
-    File zipsrc = new File("../migrator-testdata/antplutomigrator/commons-collections.zip");
+    File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/commons-collections.zip");
 
     File testDir = new File("../migrator-testdata/antplutomigrator/correctness/commonscollections/");
     File sourceDir = new File(testDir,"source");
-    File commonsioZipFile = new File(testDir, "commons-collections.zip");
     File antDir = new File(testDir, "ant");
     File antBuildXml = new File(antDir, "commons-collections4-4.1-src/build.xml");
     File plutoDir = new File(testDir, "pluto");
@@ -51,9 +45,8 @@ public class CommonsCollectionsCorrectnessTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new CopyFileTask(zipsrc, commonsioZipFile));
-        taskExecutor.addTask(new MD5CheckTask(commonsioZipFile, "6769b60edceefbfcae8e7519c32b24ca"));
-        taskExecutor.addTask(new UnzipTask(commonsioZipFile, antDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "6769b60edceefbfcae8e7519c32b24ca", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections"));
 
