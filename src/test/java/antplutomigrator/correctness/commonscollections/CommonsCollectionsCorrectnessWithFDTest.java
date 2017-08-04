@@ -26,8 +26,8 @@ public class CommonsCollectionsCorrectnessWithFDTest {
 
     private boolean debug = false;
 
-    URL url = new URL("http://mirror.serversupportforum.de/apache//commons/collections/source/commons-collections4-4.1-src.zip");
-    File zipsrc = new File("../migrator-testdata/antplutomigrator/commons-collections.zip");
+    URL url = new URL("http://mirror.dkd.de/apache//commons/collections/source/commons-collections4-4.1-src.zip");
+    File zipsrc = new File("../migrator-testdata/antplutomigrator/downloads/commons-collections.zip");
 
     File testDir = new File("../migrator-testdata/antplutomigrator/correctness/commonscollectionsfd/");
     File sourceDir = new File(testDir,"source");
