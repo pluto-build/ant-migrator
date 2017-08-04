@@ -23,8 +23,8 @@ public class UnzipFileComparer implements FileComparer {
         if (f1.getName().endsWith("jar") || f1.getName().endsWith("zip")) {
             try {
                 File tempDir = FileUtils.getTempDirectory();
-                File f1Tmp = new File(tempDir, "f1");
-                File f2Tmp = new File(tempDir, "f2");
+                File f1Tmp = new File(tempDir, "antplutomigrator/"+f1.getName().replace(".","_"));
+                File f2Tmp = new File(tempDir, "antplutomigrator/"+f2.getName().replace(".","_"));
                 ZipFile f1z = new ZipFile(f1);
                 f1z.setRunInThread(true);
                 f1z.extractAll(f1Tmp.getAbsolutePath());

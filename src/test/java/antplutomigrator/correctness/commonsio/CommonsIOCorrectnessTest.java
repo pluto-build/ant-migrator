@@ -67,7 +67,7 @@ public class CommonsIOCorrectnessTest {
             }
         });
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
-        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio"));
+        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsio", false, debug, Arrays.asList("dist")));
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
@@ -82,6 +82,7 @@ public class CommonsIOCorrectnessTest {
         ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
         comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
         comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
+        comparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new JavaDocDateIgnoredLineComparer())));
 
         taskExecutor.addTask(comparerTask);
 
