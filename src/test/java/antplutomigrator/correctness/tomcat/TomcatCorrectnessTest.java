@@ -3,6 +3,7 @@ package antplutomigrator.correctness.tomcat;
 import antplutomigrator.correctness.comparison.*;
 import antplutomigrator.correctness.utils.TaskExecutor;
 import antplutomigrator.correctness.utils.tasks.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.util.JavaEnvUtils;
@@ -35,6 +36,8 @@ public class TomcatCorrectnessTest {
     File targetDir = new File(plutoDir, "target");
     File antSrcDir = new File(antDir, "tomcat8-debian-8.5.16-1");
     File plutoSrcDir = new File(plutoDir, "tomcat8-debian-8.5.16-1");
+    File antLibsDir = new File(antDir, "libs");
+    File plutoLibsDir = new File(plutoDir, "libs");
 
     public TomcatCorrectnessTest() throws MalformedURLException {
     }
@@ -47,11 +50,20 @@ public class TomcatCorrectnessTest {
         taskExecutor.addTask(new ProvideDownloadTask(url, "6dfb297a2f6e729cd773e036167212cd", zipFile));
         taskExecutor.addTask(new UnzipTask(zipFile, antDir));
 
-        HashMap<String, String> replacements = new HashMap();
+        HashMap<String, String> replacements = new HashMap<>();
         replacements.put("<antcall target=\"examples-sources\" />", "");
         taskExecutor.addTask(new ReplaceInLinesTask(antBuildXml, replacements));
 
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
+
+        HashMap<String, String> replacementProperties = new HashMap<>();
+        replacementProperties.put("base.path=${user.home}/tomcat-build-libs", "base.path="+antLibsDir.getAbsolutePath());
+        taskExecutor.addTask(new ReplaceInLinesTask(new File(antSrcDir, "build.properties.default"), replacementProperties));
+
+        HashMap<String, String> replacementPropertiesPluto = new HashMap<>();
+        replacementPropertiesPluto.put("base.path=${user.home}/tomcat-build-libs", "base.path="+plutoLibsDir.getAbsolutePath());
+        taskExecutor.addTask(new ReplaceInLinesTask(new File(plutoSrcDir, "build.properties.default"), replacementPropertiesPluto));
+
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.tomcat", false, debug);
         migrateAntToPlutoTask.setContinueOnError(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
@@ -62,9 +74,11 @@ public class TomcatCorrectnessTest {
 
         taskExecutor.addTask(new CompileJavaTask(plutoDir, new File(plutoDir, "build/pluto/tomcat/Tomcat8_5.java"), targetDir, classPath, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_compile_args.txt").toURI())))));
         taskExecutor.addTask(new RunCommandTask(antSrcDir, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI())))));
+
         String plutoRunCommand = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_run_command.txt").toURI())));
         plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[]{"<classpath>"}, new String[]{absoluteClassPath});
         taskExecutor.addTask(new RunCommandTask(plutoSrcDir, plutoRunCommand));
+
 
         ComparerTask buildComparerTask = new ComparerTask(new File(antSrcDir, "output"), new File(plutoSrcDir, "output"));
         buildComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
@@ -72,6 +86,12 @@ public class TomcatCorrectnessTest {
         buildComparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new ServerInfoDateIgnoredLineComparer())));
 
         taskExecutor.addTask(buildComparerTask);
+
+        ComparerTask libComparerTask = new ComparerTask(antLibsDir, plutoLibsDir);
+        libComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
+        libComparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(libComparerTask.getDirectoryComparer()));
+
+        taskExecutor.addTask(libComparerTask);
 
         taskExecutor.executeTasks();
     }
