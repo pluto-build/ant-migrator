@@ -27,6 +27,8 @@ public abstract class AntBuilder extends Builder<<ctx>, <ctx>> {
     @Override
     public <In_ extends Serializable, Out_ extends Output, B_ extends Builder<In_, Out_>, F_ extends BuilderFactory<In_, Out_, B_>, SubIn_ extends In_> Out_ requireBuild(F_ factory, SubIn_ context) throws IOException {
         assert context instanceof <ctx>;
+        if (((<ctx>)context).getBuilderName().equals("antcall"))
+            return super.requireBuild(factory, (In_)((<ctx>)context).withName(((<ctx>)context).getBuilderName()));
         return super.requireBuild(factory, (In_)((<ctx>)context).withName(name));
     }
 

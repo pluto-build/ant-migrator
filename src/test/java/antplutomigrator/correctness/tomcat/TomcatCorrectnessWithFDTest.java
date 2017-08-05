@@ -68,7 +68,7 @@ public class TomcatCorrectnessWithFDTest {
         mounts.add(new Mount(antDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));
 
-        //taskExecutor.addTask(new DockerRunnerTask(antDir, "Tomcat_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/tomcat8-debian-8.5.16-1/"), mounts));
+        taskExecutor.addTask(new DockerRunnerTask(antDir, "Tomcat_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/tomcat8-debian-8.5.16-1/"), mounts));
 
 
         mounts = new ArrayList<>();
