@@ -1,0 +1,1 @@
+-d <target> -sourcepath <source> <file> -cp <classpath>

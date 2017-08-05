@@ -1,6 +1,7 @@
 package antplutomigrator.generate;
 
 import antplutomigrator.generate.anthelpers.ReflectionHelpers;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.*;
@@ -237,8 +238,10 @@ public class BuilderInputGenerator extends JavaGenerator {
     }
 
     private void generateConfigureProjectElement(UnknownElement element) {
-        if (element.getWrapper().getAttributeMap().containsKey("id")) {
+        if (element.getWrapper().getAttributeMap().containsKey("id") || element.getTaskName().equals("defaultexcludes")) {
             String childName = elementGenerator.generateElement(null, element, null);
+            if (element.getTaskName().equals("defaultexcludes"))
+                this.printString(childName+ ".execute();");
         } else if (element.getTaskName().equals("macrodef")) {
             // Deal with macros. First do macrodef execution to make them available everywhere
 

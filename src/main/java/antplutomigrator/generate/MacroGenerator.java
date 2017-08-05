@@ -134,7 +134,7 @@ public class MacroGenerator extends JavaGenerator {
                 if (element.getWrapper().getAttributeMap().containsKey("default")) {
                     def = "\"" + macroPropertyResolver.getExpandedValue(resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("default").toString())) + "\"";
                 }
-                String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
+                String attributeName = namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()).toLowerCase();
 
                 this.printString(attributeName + " = " + def + ";");
             }
@@ -232,7 +232,7 @@ public class MacroGenerator extends JavaGenerator {
             // TODO: optional, trim, description
         }
         if (element.getTaskName().equals("attribute")) {
-            String attributeName = StringUtils.decapitalize(namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()));
+            String attributeName = namingManager.getClassNameFor(element.getWrapper().getAttributeMap().get("name").toString()).toLowerCase();
 
             log.trace("Generating macro attribute: " + attributeName);
 

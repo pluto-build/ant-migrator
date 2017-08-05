@@ -3,7 +3,7 @@ package <pkg>;
 import build.pluto.builder.Builder;
 import build.pluto.builder.factory.BuilderFactory;
 import build.pluto.output.Output;
-import build.pluto.stamp.FileHashStamper;
+import build.pluto.stamp.LastModifiedStamper;
 import build.pluto.stamp.Stamper;
 
 import java.io.File;
@@ -50,6 +50,6 @@ public abstract class AntBuilder extends Builder<<ctx>, <ctx>> {
 
     @Override
     protected Stamper defaultStamper() {
-        return FileHashStamper.instance;
+        return LastModifiedStamper.instance;
     }
 }

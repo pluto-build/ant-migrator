@@ -63,6 +63,7 @@ public class MacroAntIntrospectionHelper extends AntIntrospectionHelper {
     @Override
     public TMethod getAttributeMethod(String attr) {
         ArrayList<TParameter> parameters = new ArrayList<>();
+
         parameters.add(new TParameter(namingManager.getClassNameFor(attr), new TTypeName(String.class.getName())));
         return new TMethod("set" + namingManager.getClassNameFor(attr), parameters, new TTypeName(void.class.getName()));
     }

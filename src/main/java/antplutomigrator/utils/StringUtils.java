@@ -1,5 +1,7 @@
 package antplutomigrator.utils;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 /**
  * Created by manuel on 30.11.16.
  */
@@ -23,6 +25,6 @@ public class StringUtils {
     }
 
     public static String javaPrint(String string) {
-        return "\""+string.replace("\n","\\n")+"\"";
+        return "\""+ StringEscapeUtils.escapeJava(string)+"\"";
     }
 }

@@ -1,5 +1,6 @@
 package antplutomigrator.correctness.jmeter;
 
+import antplutomigrator.correctness.comparison.*;
 import antplutomigrator.correctness.utils.TaskExecutor;
 import antplutomigrator.correctness.utils.tasks.*;
 import org.apache.commons.logging.Log;
@@ -24,7 +25,7 @@ import static org.junit.Assert.fail;
 public class JMeterCorrectnessWithFDTest {
     private Log log = LogFactory.getLog(JMeterCorrectnessWithFDTest.class);
 
-    private boolean debug = true;
+    private boolean debug = false;
 
     URL url = new URL("ftp://ftp.fau.de/apache//jmeter/source/apache-jmeter-3.2_src.zip");
 
@@ -44,13 +45,19 @@ public class JMeterCorrectnessWithFDTest {
 
     @Test
     public void testCorrectnessWithFD() throws Exception {
-        fail();
+        //fail();
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
         taskExecutor.addTask(new ProvideDownloadTask(url, "d5936f4f471b6b84c0d7f8b5c75ea72d", zipFile));
         taskExecutor.addTask(new UnzipTask(zipFile, antDir));
+
+        // Fix build.xml to not use non-relative paths
+        taskExecutor.addTask(new MakePropertiesRelativeTask(antBuildXml));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
+
+
+
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.jmeter", true, debug, Arrays.asList("download_jars", "compile"));
         migrateAntToPlutoTask.setContinueOnError(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
@@ -65,7 +72,7 @@ public class JMeterCorrectnessWithFDTest {
         mounts.add(new Mount(antDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));
 
-        //taskExecutor.addTask(new DockerRunnerTask(antDir, "JMeter_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/apache-jmeter-3.2/"), mounts));
+        taskExecutor.addTask(new DockerRunnerTask(antDir, "JMeter_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/apache-jmeter-3.2/"), mounts));
 
 
         mounts = new ArrayList<>();
@@ -78,26 +85,16 @@ public class JMeterCorrectnessWithFDTest {
         plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[] {"<classpath>"}, new String[]{classPathDocker});
         taskExecutor.addTask(new DockerRunnerTask(plutoDir, "JMeter_Pluto", plutoRunCommand, new File("/share/test/apache-jmeter-3.2/"), mounts));
 
-        /*ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
-        comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
-        comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
+        ComparerTask libComparerTask = new ComparerTask(new File(antSrcDir, "lib"), new File(plutoSrcDir, "lib"));
+        libComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
 
-        taskExecutor.addTask(comparerTask);
+        taskExecutor.addTask(libComparerTask);
 
-        ComparerTask distComparerTask = new ComparerTask(new File(antSrcDir, "dist"), new File(plutoSrcDir, "dist"));
-        distComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
-        distComparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
-        distComparerTask.getDirectoryComparer().addFileComparer(new FileComparer() {
-            @Override
-            public boolean filesAreEqual(File f1, File f2) {
-                // Ignore this file for now...
-                if (f1.getName().endsWith("commons-daemon-1.0.15-native-src.tar.gz"))
-                    return true;
-                return false;
-            }
-        });
-        distComparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new JavaDocDateIgnoredLineComparer())));
-        taskExecutor.addTask(distComparerTask);*/
+        ComparerTask buildComparerTask = new ComparerTask(new File(antSrcDir, "build"), new File(plutoSrcDir, "build"));
+        buildComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
+        buildComparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(libComparerTask.getDirectoryComparer()));
+        buildComparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new JavaDocDateIgnoredLineComparer())));
+        taskExecutor.addTask(buildComparerTask);
 
         taskExecutor.executeTasks();
     }

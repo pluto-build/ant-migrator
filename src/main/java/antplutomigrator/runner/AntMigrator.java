@@ -97,6 +97,11 @@ public class AntMigrator {
         NoExpansionPropertyHelper propertyHelper = NoExpansionPropertyHelper.getPropertyHelper(project);
         ProjectHelper.configureProject(project, buildFile);
 
+        if (project.getName() == null) {
+            project.setName("project");
+        }
+
+        //project.initProperties();
         // Introduce this workaround to "reexceute" the necessary properties...
         // TODO: Maybe reexecute and reset every UnknownElement? To be more generally correct?
         Target defaultTarget = project.getTargets().get("");
@@ -109,7 +114,13 @@ public class AntMigrator {
                         String propertyFile = element.getWrapper().getAttributeMap().get(type).toString();
                         log.debug("found property "+type+": " + propertyFile);
                         element.getWrapper().removeAttribute(type);
-                        element.getWrapper().setAttribute(type, propertyHelper.reallyParseProperties(propertyFile));
+                        String expanded = propertyHelper.reallyParseProperties(propertyFile).toString();
+                        String oldExpanded = "";
+                        while (!expanded.equals(oldExpanded)) {
+                            oldExpanded = expanded;
+                            expanded = propertyHelper.reallyParseProperties(expanded).toString();
+                        }
+                        element.getWrapper().setAttribute(type, expanded);
                         element.maybeConfigure();
                         element.execute();
                     }

@@ -1,4 +1,4 @@
-package antplutomigrator.correctness.jmeter;
+package antplutomigrator.correctness.tomcat;
 
 import antplutomigrator.correctness.comparison.*;
 import antplutomigrator.correctness.utils.TaskExecutor;
@@ -14,28 +14,29 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * Created by manuel on 01.06.17.
  */
-public class JMeterCorrectnessTest {
-    private Log log = LogFactory.getLog(JMeterCorrectnessTest.class);
+public class TomcatCorrectnessTest {
+    private Log log = LogFactory.getLog(TomcatCorrectnessTest.class);
 
     private boolean debug = false;
 
-    URL url = new URL("ftp://ftp.fau.de/apache//jmeter/source/apache-jmeter-3.2_src.zip");
+    URL url = new URL("https://github.com/Debian/tomcat8/archive/master.zip");
 
-    File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/jmeter.zip");
-    File testDir = new File("../migrator-testdata/antplutomigrator/correctness/jmeter/");
+    File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/tomcat.zip");
+    File testDir = new File("../migrator-testdata/antplutomigrator/correctness/tomcat/");
     File antDir = new File(testDir, "ant");
-    File antBuildXml = new File(antDir, "apache-jmeter-3.2/build.xml");
+    File antBuildXml = new File(antDir, "tomcat8-master/build.xml");
     File plutoDir = new File(testDir, "pluto");
-    File plutoBuildXml = new File(plutoDir, "apache-jmeter-3.2/build.xml");
+    File plutoBuildXml = new File(plutoDir, "tomcat8-master/build.xml");
     File targetDir = new File(plutoDir, "target");
-    File antSrcDir = new File(antDir, "apache-jmeter-3.2");
-    File plutoSrcDir = new File(plutoDir, "apache-jmeter-3.2");
+    File antSrcDir = new File(antDir, "tomcat8-master");
+    File plutoSrcDir = new File(plutoDir, "tomcat8-master");
 
-    public JMeterCorrectnessTest() throws MalformedURLException {
+    public TomcatCorrectnessTest() throws MalformedURLException {
     }
 
     @Test
@@ -43,10 +44,15 @@ public class JMeterCorrectnessTest {
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
-        taskExecutor.addTask(new ProvideDownloadTask(url, "d5936f4f471b6b84c0d7f8b5c75ea72d", zipFile));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "8909798e8c52d54c385f48ace62a3fb0", zipFile));
         taskExecutor.addTask(new UnzipTask(zipFile, antDir));
+
+        HashMap<String, String> replacements = new HashMap();
+        replacements.put("<antcall target=\"examples-sources\" />", "");
+        taskExecutor.addTask(new ReplaceInLinesTask(antBuildXml, replacements));
+
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
-        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.jmeter", false, debug, Arrays.asList("download_jars", "compile"));
+        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.tomcat", false, debug);
         migrateAntToPlutoTask.setContinueOnError(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
@@ -54,30 +60,17 @@ public class JMeterCorrectnessTest {
         String classPath = readClassPath + ":" + new File(JavaEnvUtils.getJavaHome()).getParent() + "/lib/tools.jar";
         String absoluteClassPath = CompileJavaTask.makeAbsolute(classPath);
 
-        taskExecutor.addTask(new CompileJavaTask(plutoDir, new File(plutoDir, "build/pluto/jmeter/JMeter.java"), targetDir, classPath, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_compile_args.txt").toURI())))));
+        taskExecutor.addTask(new CompileJavaTask(plutoDir, new File(plutoDir, "build/pluto/tomcat/Tomcat8_5.java"), targetDir, classPath, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_compile_args.txt").toURI())))));
         taskExecutor.addTask(new RunCommandTask(antSrcDir, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI())))));
         String plutoRunCommand = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_run_command.txt").toURI())));
         plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[]{"<classpath>"}, new String[]{absoluteClassPath});
         taskExecutor.addTask(new RunCommandTask(plutoSrcDir, plutoRunCommand));
 
-        ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "lib"), new File(plutoSrcDir, "lib"));
-        comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
-        comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
-
-        taskExecutor.addTask(comparerTask);
-
-        ComparerTask buildComparerTask = new ComparerTask(new File(antSrcDir, "build"), new File(plutoSrcDir, "build"));
+        ComparerTask buildComparerTask = new ComparerTask(new File(antSrcDir, "output"), new File(plutoSrcDir, "output"));
         buildComparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
         buildComparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(buildComparerTask.getDirectoryComparer()));
-        buildComparerTask.getDirectoryComparer().addFileComparer(new FileComparer() {
-            @Override
-            public boolean filesAreEqual(File f1, File f2) {
-                // Ignore this file for now...
-                if (f1.getName().endsWith("commons-daemon-1.0.15-native-src.tar.gz"))
-                    return true;
-                return false;
-            }
-        });
+        buildComparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new ServerInfoDateIgnoredLineComparer())));
+
         taskExecutor.addTask(buildComparerTask);
 
         taskExecutor.executeTasks();
