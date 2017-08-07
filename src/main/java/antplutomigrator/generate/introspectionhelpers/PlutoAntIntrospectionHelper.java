@@ -56,7 +56,14 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
         try {
             IntrospectionHelper.Creator creator = getElementCreator(getElement());
             Constructor<?> c = ReflectionHelpers.getNestedCreatorConstructorFor(creator);
-            return new TConstructor(c);
+            TConstructor constructor = new TConstructor(c);
+            if (constructor.getName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+                constructor.setName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+            }
+            if (constructor.getDeclaringClassTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+                constructor.setDeclaringClassStringTypeName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+            }
+            return constructor;
         } catch (NullPointerException e) {
 
         }
@@ -77,7 +84,16 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
         if (constructor == null)
             return null;
 
-        return new TConstructor(constructor);
+        TConstructor tConstructor = new TConstructor(constructor);
+
+        if (tConstructor.getName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+            tConstructor.setName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+        }
+        if (tConstructor.getDeclaringClassTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+            tConstructor.setDeclaringClassStringTypeName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+        }
+
+        return tConstructor;
     }
 
     public IntrospectionHelper.Creator getElementCreator(UnknownElement e) {

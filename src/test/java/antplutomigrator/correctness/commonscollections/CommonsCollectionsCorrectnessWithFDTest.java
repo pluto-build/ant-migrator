@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.fail;
+
 /**
  * Created by manuel on 01.06.17.
  */

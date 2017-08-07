@@ -127,7 +127,10 @@ abstract public class AntIntrospectionHelper {
     }
 
     public TTypeName getElementTypeClassName() {
-        return new TTypeName(getElementTypeClass().getName());
+        String typeNameString = getElementTypeClass().getName();
+        if (typeNameString.equals("org.apache.tools.ant.taskdefs.Javac"))
+            typeNameString = getPkg() + ".NoIncrJavac";
+        return new TTypeName(typeNameString);
     }
 
     /**

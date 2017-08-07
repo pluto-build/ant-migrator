@@ -157,6 +157,8 @@ public class AntMigrator {
         files.put("PlutoPropertyHelper.java", plutoPropertyHelper.replace("<pkg>", line.getOptionValue("pkg")));
         String consumer = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("BiConsumer.java").toURI())));
         files.put("BiConsumer.java", consumer.replace("<pkg>", line.getOptionValue("pkg")));
+        String noIncrJavac = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("NoIncrJavac.java").toURI())));
+        files.put("NoIncrJavac.java", noIncrJavac.replace("<pkg>", line.getOptionValue("pkg")));
 
         String targetName = project.getDefaultTarget();
         List<String> targets = new ArrayList<>();
@@ -172,7 +174,11 @@ public class AntMigrator {
         }
 
         String antBuilder = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("AntBuilder.java").toURI())));
-        files.put("AntBuilder.java", antBuilder.replace("<pkg>", line.getOptionValue("pkg")).replace("<ctx>", mainGenerator.getName() + "Context"));
+        String fd = "@Override\n" +
+                "protected boolean useFileDependencyDiscovery() {\n" +
+                "  return " + (!line.hasOption("noFD")) + ";\n" +
+                "}";
+        files.put("AntBuilder.java", antBuilder.replace("<pkg>", line.getOptionValue("pkg")).replace("<ctx>", mainGenerator.getName() + "Context").replace("<fd>", fd));
 
 
         for (Map.Entry<String, String> entry : files.entrySet()) {

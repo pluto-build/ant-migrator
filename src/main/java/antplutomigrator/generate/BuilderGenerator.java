@@ -189,10 +189,10 @@ public class BuilderGenerator extends JavaGenerator {
 
 
     private void generateUseFileDependencyDiscoveryPrettyPrint() {
-        this.printString("@Override\n" +
+        /*this.printString("@Override\n" +
                 "protected boolean useFileDependencyDiscovery() {\n" +
                 "  return " + getUseFileDependencyDiscovery().toString() + ";\n" +
-                "}");
+                "}");*/
     }
 
     public void generatePrettyPrint() {

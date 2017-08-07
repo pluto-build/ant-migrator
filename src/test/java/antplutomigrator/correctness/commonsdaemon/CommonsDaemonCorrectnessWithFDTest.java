@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.fail;
+
 /**
  * Created by manuel on 01.06.17.
  */
@@ -29,7 +31,7 @@ public class CommonsDaemonCorrectnessWithFDTest {
     URL url = new URL("http://mirror.dkd.de/apache//commons/daemon/source/commons-daemon-1.0.15-src.zip");
 
     File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/commons-daemon.zip");
-    File testDir = new File("../migrator-testdata/antplutomigrator/correctness/commonsdaemon/");
+    File testDir = new File("../migrator-testdata/antplutomigrator/correctness/commonsdaemonfd/");
     File sourceDir = new File(testDir,"source");
     File antDir = new File(testDir, "ant");
     File antBuildXml = new File(antDir, "commons-daemon-1.0.15-src/build.xml");

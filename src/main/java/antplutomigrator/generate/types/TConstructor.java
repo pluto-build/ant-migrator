@@ -10,9 +10,9 @@ import java.util.List;
  */
 public class TConstructor {
 
-    private final TTypeName name;
-    private final TTypeName declaringClassStringTypeName;
-    private final List<TParameter> parameters;
+    private TTypeName name;
+    private TTypeName declaringClassStringTypeName;
+    private List<TParameter> parameters;
 
     public TTypeName getName() {
         return name;
@@ -24,6 +24,19 @@ public class TConstructor {
     public TTypeName getDeclaringClassTypeName() {
         return declaringClassStringTypeName;
     }
+
+    public void setName(TTypeName name) {
+        this.name = name;
+    }
+
+    public void setDeclaringClassStringTypeName(TTypeName declaringClassStringTypeName) {
+        this.declaringClassStringTypeName = declaringClassStringTypeName;
+    }
+
+    public void setParameters(List<TParameter> parameters) {
+        this.parameters = parameters;
+    }
+
     public Class<?> getOnClass() {
         return ReflectionHelpers.getClassFor(declaringClassStringTypeName.getFullyQualifiedName());
     }
