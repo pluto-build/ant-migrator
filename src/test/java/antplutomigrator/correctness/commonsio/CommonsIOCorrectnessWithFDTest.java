@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.fail;
+
 /**
  * Created by manuel on 01.06.17.
  */
@@ -161,6 +163,7 @@ public class CommonsIOCorrectnessWithFDTest {
 
     @Test
     public void testCorrectnessWithFDReRun() throws Exception {
+        fail();
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
@@ -222,6 +225,7 @@ public class CommonsIOCorrectnessWithFDTest {
 
     @Test
     public void testAntIncremental() throws Exception {
+        fail();
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));

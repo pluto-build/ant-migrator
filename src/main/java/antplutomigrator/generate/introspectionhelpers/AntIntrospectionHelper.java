@@ -1,6 +1,7 @@
 package antplutomigrator.generate.introspectionhelpers;
 
 import antplutomigrator.generate.MigrationException;
+import antplutomigrator.generate.Settings;
 import antplutomigrator.generate.types.TConstructor;
 import antplutomigrator.generate.types.TMethod;
 import antplutomigrator.generate.types.TTypeName;
@@ -128,7 +129,7 @@ abstract public class AntIntrospectionHelper {
 
     public TTypeName getElementTypeClassName() {
         String typeNameString = getElementTypeClass().getName();
-        if (typeNameString.equals("org.apache.tools.ant.taskdefs.Javac"))
+        if (Settings.getInstance().isUseNoIncrJavac() && typeNameString.equals("org.apache.tools.ant.taskdefs.Javac"))
             typeNameString = getPkg() + ".NoIncrJavac";
         return new TTypeName(typeNameString);
     }

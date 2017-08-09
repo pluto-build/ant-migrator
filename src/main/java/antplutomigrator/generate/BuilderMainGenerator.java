@@ -50,7 +50,11 @@ public class BuilderMainGenerator extends JavaGenerator {
         for (String defTarget: defTargets) {
             String contextName = namingManager.getNameFor("context");
             this.printString(StringUtils.capitalize(name) + "Context "+contextName+" = new " + StringUtils.capitalize(name) + "Context(\"" + StringUtils.capitalize(defTarget) + "\");");
-            this.printString("BuildManagers.build(new BuildRequest<>(" + StringUtils.capitalize(defTarget) + "Builder.factory, "+contextName+"));");
+            String reqName = namingManager.getNameFor("req");
+            this.printString("BuildRequest<?, ?, ?, ?> "+reqName+" = new BuildRequest<>(" + StringUtils.capitalize(defTarget) + "Builder.factory, "+contextName+");");
+            this.printString("BuildManagers.build("+reqName+");");
+            if (Settings.getInstance().isCalculateStatistics())
+                this.printString("Statistics.calculateStatistics("+reqName+");");
         }
 
         if (useFileDependencyDiscovery) {

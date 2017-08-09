@@ -56,6 +56,7 @@ public class TomcatCorrectnessWithFDTest {
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.tomcat", true, debug);
         migrateAntToPlutoTask.setContinueOnError(true);
+        migrateAntToPlutoTask.setCalculateStatistics(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
@@ -87,6 +88,53 @@ public class TomcatCorrectnessWithFDTest {
         buildComparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new ServerInfoDateIgnoredLineComparer())));
 
         taskExecutor.addTask(buildComparerTask);
+
+        taskExecutor.executeTasks();
+    }
+
+    @Test
+    public void testCorrectnessIncr() throws Exception {
+        TaskExecutor taskExecutor = new TaskExecutor();
+
+        taskExecutor.addTask(new DeleteDirTask(testDir));
+        taskExecutor.addTask(new ProvideDownloadTask(url, "6dfb297a2f6e729cd773e036167212cd", zipFile));
+        taskExecutor.addTask(new UnzipTask(zipFile, antDir));
+
+        HashMap<String, String> replacements = new HashMap();
+        replacements.put("<antcall target=\"examples-sources\" />", "");
+        taskExecutor.addTask(new ReplaceInLinesTask(antBuildXml, replacements));
+
+        HashMap<String, String> replacementProperties = new HashMap<>();
+        replacementProperties.put("base.path=${user.home}/tomcat-build-libs", "base.path=/share/test/tomcat-build-libs");
+        taskExecutor.addTask(new ReplaceInLinesTask(new File(antSrcDir, "build.properties.default"), replacementProperties));
+
+        taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
+        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.tomcat", true, debug);
+        migrateAntToPlutoTask.setContinueOnError(true);
+        taskExecutor.addTask(migrateAntToPlutoTask);
+
+        String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
+        String classPath = readClassPath + ":" + new File(JavaEnvUtils.getJavaHome()).getParent() + "/lib/tools.jar";
+        String absoluteClassPath = CompileJavaTask.makeAbsolute(classPath);
+
+        taskExecutor.addTask(new CompileJavaTask(plutoDir, new File(plutoDir, "build/pluto/tomcat/Tomcat8_5.java"), targetDir, classPath, new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_compile_args.txt").toURI())))));
+
+        List<Mount> mounts = new ArrayList<>();
+        mounts.add(new Mount(plutoDir, new File("/share/test/")));
+        mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));
+
+        String classPathDocker = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath_fd.txt").toURI())));
+
+        String plutoRunCommand = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("pluto_run_command.txt").toURI())));
+        plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[] {"<classpath>"}, new String[]{classPathDocker});
+        taskExecutor.addTask(new DockerRunnerTask(plutoDir, "Tomcat_Pluto", plutoRunCommand, new File("/share/test/tomcat8-debian-8.5.16-1/"), mounts));
+        taskExecutor.addTask(new DockerRunnerTask(plutoDir, "Tomcat_Pluto", plutoRunCommand, new File("/share/test/tomcat8-debian-8.5.16-1/"), mounts));
+
+        HashMap<String, String> changeReplacements = new HashMap<>();
+        changeReplacements.put("<title>Apache Tomcat Examples</title>", "<title>Apache Tomcat Examples CHANGED</title>");
+        taskExecutor.addTask(new ReplaceInLinesTask(new File(plutoSrcDir, "webapps/examples/index.html"), changeReplacements));
+
+        taskExecutor.addTask(new DockerRunnerTask(plutoDir, "Tomcat_Pluto", plutoRunCommand, new File("/share/test/tomcat8-debian-8.5.16-1/"), mounts));
 
         taskExecutor.executeTasks();
     }

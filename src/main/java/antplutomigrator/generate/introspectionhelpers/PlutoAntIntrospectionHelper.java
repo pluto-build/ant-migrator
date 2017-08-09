@@ -1,5 +1,6 @@
 package antplutomigrator.generate.introspectionhelpers;
 
+import antplutomigrator.generate.Settings;
 import antplutomigrator.generate.anthelpers.ReflectionHelpers;
 import antplutomigrator.generate.types.TConstructor;
 import antplutomigrator.generate.types.TMethod;
@@ -57,11 +58,13 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
             IntrospectionHelper.Creator creator = getElementCreator(getElement());
             Constructor<?> c = ReflectionHelpers.getNestedCreatorConstructorFor(creator);
             TConstructor constructor = new TConstructor(c);
-            if (constructor.getName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
-                constructor.setName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
-            }
-            if (constructor.getDeclaringClassTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
-                constructor.setDeclaringClassStringTypeName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+            if (Settings.getInstance().isUseNoIncrJavac()) {
+                if (constructor.getName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+                    constructor.setName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+                }
+                if (constructor.getDeclaringClassTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+                    constructor.setDeclaringClassStringTypeName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+                }
             }
             return constructor;
         } catch (NullPointerException e) {
@@ -86,11 +89,13 @@ public class PlutoAntIntrospectionHelper extends AntIntrospectionHelper {
 
         TConstructor tConstructor = new TConstructor(constructor);
 
-        if (tConstructor.getName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
-            tConstructor.setName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
-        }
-        if (tConstructor.getDeclaringClassTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
-            tConstructor.setDeclaringClassStringTypeName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+        if (Settings.getInstance().isUseNoIncrJavac()) {
+            if (tConstructor.getName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+                tConstructor.setName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+            }
+            if (tConstructor.getDeclaringClassTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.taskdefs.Javac")) {
+                tConstructor.setDeclaringClassStringTypeName(new TTypeName(this.getPkg() + ".NoIncrJavac"));
+            }
         }
 
         return tConstructor;

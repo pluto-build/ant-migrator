@@ -68,7 +68,12 @@ public class AntMigrator {
                 .hasArg()
                 .desc("Set executed the target.")
                 .build());
-        // TODO: Add option to change executed target(s) in main class...
+        options.addOption(Option.builder("noIncrJavac")
+                .desc("Use a non incremental Javac task version.")
+                .build());
+        options.addOption(Option.builder("calcStats")
+                .desc("Calculate build statistics after run.")
+                .build());
 
         CommandLineParser parser = new DefaultParser();
         CommandLine line;
@@ -100,6 +105,10 @@ public class AntMigrator {
         if (project.getName() == null) {
             project.setName("project");
         }
+
+        Settings settings = Settings.getInstance();
+        settings.setUseNoIncrJavac(line.hasOption("noIncrJavac"));
+        settings.setCalculateStatistics(line.hasOption("calcStats"));
 
         //project.initProperties();
         // Introduce this workaround to "reexceute" the necessary properties...
@@ -157,8 +166,14 @@ public class AntMigrator {
         files.put("PlutoPropertyHelper.java", plutoPropertyHelper.replace("<pkg>", line.getOptionValue("pkg")));
         String consumer = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("BiConsumer.java").toURI())));
         files.put("BiConsumer.java", consumer.replace("<pkg>", line.getOptionValue("pkg")));
-        String noIncrJavac = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("NoIncrJavac.java").toURI())));
-        files.put("NoIncrJavac.java", noIncrJavac.replace("<pkg>", line.getOptionValue("pkg")));
+        if (Settings.getInstance().isUseNoIncrJavac()) {
+            String noIncrJavac = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("NoIncrJavac.java").toURI())));
+            files.put("NoIncrJavac.java", noIncrJavac.replace("<pkg>", line.getOptionValue("pkg")));
+        }
+        if (Settings.getInstance().isCalculateStatistics()) {
+            String statistics = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("Statistics.java").toURI())));
+            files.put("Statistics.java", statistics.replace("<pkg>", line.getOptionValue("pkg")));
+        }
 
         String targetName = project.getDefaultTarget();
         List<String> targets = new ArrayList<>();

@@ -40,6 +40,7 @@ public class CommonsDaemonCorrectnessWithFDTest {
     File targetDir = new File(plutoDir, "target");
     File antSrcDir = new File(antDir, "commons-daemon-1.0.15-src");
     File plutoSrcDir = new File(plutoDir, "commons-daemon-1.0.15-src");
+    List<File> mainDepFiles = Arrays.asList(new File(plutoSrcDir, "deps/DistBuilder.0.dep"));
 
     public CommonsDaemonCorrectnessWithFDTest() throws MalformedURLException {
     }
@@ -53,7 +54,9 @@ public class CommonsDaemonCorrectnessWithFDTest {
         taskExecutor.addTask(new ProvideDownloadTask(url, "9c6580f437a429d3694a5a3214cc83c1", zipFile));
         taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
-        taskExecutor.addTask(new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsdaemon", true, debug));
+        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsdaemon", true, debug);
+        migrateAntToPlutoTask.setCalculateStatistics(true);
+        taskExecutor.addTask(migrateAntToPlutoTask);
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
         String classPath = readClassPath+":"+new File(JavaEnvUtils.getJavaHome()).getParent()+"/lib/tools.jar";
@@ -65,7 +68,7 @@ public class CommonsDaemonCorrectnessWithFDTest {
         mounts.add(new Mount(antSrcDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));
 
-        taskExecutor.addTask(new DockerRunnerTask(antSrcDir, "CommonsDaemon_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/"), mounts));
+        //taskExecutor.addTask(new DockerRunnerTask(antSrcDir, "CommonsDaemon_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/"), mounts));
 
         mounts = new ArrayList<>();
         mounts.add(new Mount(plutoDir, new File("/share/test/")));
@@ -77,12 +80,12 @@ public class CommonsDaemonCorrectnessWithFDTest {
         plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[] {"<classpath>"}, new String[]{classPathDocker});
         taskExecutor.addTask(new DockerRunnerTask(plutoDir, "CommonsDaemon_Pluto", plutoRunCommand, new File("/share/test/commons-daemon-1.0.15-src/"), mounts));
 
-        ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
+        /*ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
         comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
         comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
         comparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new AntVersionIgnoredLineComparer())));
 
-        taskExecutor.addTask(comparerTask);
+        taskExecutor.addTask(comparerTask);*/
 
         taskExecutor.executeTasks();
     }
@@ -131,6 +134,7 @@ public class CommonsDaemonCorrectnessWithFDTest {
 
     @Test
     public void testCorrectnessWithFDRerun() throws Exception {
+        fail();
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));
@@ -167,6 +171,7 @@ public class CommonsDaemonCorrectnessWithFDTest {
 
     @Test
     public void testAntIncremental() throws Exception {
+        fail();
         TaskExecutor taskExecutor = new TaskExecutor();
 
         taskExecutor.addTask(new DeleteDirTask(testDir));

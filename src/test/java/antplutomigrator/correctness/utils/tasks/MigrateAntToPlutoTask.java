@@ -18,6 +18,7 @@ public class MigrateAntToPlutoTask extends TestTask {
     private final boolean debug;
     private final List<String> targets;
     private boolean continueOnError = false;
+    private boolean calculateStatistics = false;
 
     public boolean isContinueOnError() {
         return continueOnError;
@@ -25,6 +26,14 @@ public class MigrateAntToPlutoTask extends TestTask {
 
     public void setContinueOnError(boolean continueOnError) {
         this.continueOnError = continueOnError;
+    }
+
+    public boolean isCalculateStatistics() {
+        return calculateStatistics;
+    }
+
+    public void setCalculateStatistics(boolean calculateStatistics) {
+        this.calculateStatistics = calculateStatistics;
     }
 
     public MigrateAntToPlutoTask(File buildFile, File outDir, String pkg) {
@@ -72,6 +81,9 @@ public class MigrateAntToPlutoTask extends TestTask {
 
         if (isContinueOnError())
             args.add("-c");
+
+        if (isCalculateStatistics())
+            args.add("-calcStats");
 
         if (!fileDepencencyDiscovery)
             args.add("-noFD");

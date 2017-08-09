@@ -31,7 +31,7 @@ public class JMeterCorrectnessWithFDTest {
 
     File zipFile = new File("../migrator-testdata/antplutomigrator/downloads/jmeter.zip");
     File src = new File("../migrator-testdata/antplutomigrator/apache-jmeter-3.2/");
-    File testDir = new File("../migrator-testdata/antplutomigrator/correctness/jmeter/");
+    File testDir = new File("../migrator-testdata/antplutomigrator/correctness/jmeterfd/");
     File antDir = new File(testDir, "ant");
     File antBuildXml = new File(antDir, "apache-jmeter-3.2/build.xml");
     File plutoDir = new File(testDir, "pluto");
@@ -60,6 +60,7 @@ public class JMeterCorrectnessWithFDTest {
 
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.jmeter", true, debug, Arrays.asList("download_jars", "compile"));
         migrateAntToPlutoTask.setContinueOnError(true);
+        migrateAntToPlutoTask.setCalculateStatistics(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
