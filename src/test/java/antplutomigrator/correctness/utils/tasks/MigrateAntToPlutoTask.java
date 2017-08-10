@@ -19,6 +19,7 @@ public class MigrateAntToPlutoTask extends TestTask {
     private final List<String> targets;
     private boolean continueOnError = false;
     private boolean calculateStatistics = false;
+    private boolean noIncrJavac = false;
 
     public boolean isContinueOnError() {
         return continueOnError;
@@ -34,6 +35,14 @@ public class MigrateAntToPlutoTask extends TestTask {
 
     public void setCalculateStatistics(boolean calculateStatistics) {
         this.calculateStatistics = calculateStatistics;
+    }
+
+    public boolean isNoIncrJavac() {
+        return noIncrJavac;
+    }
+
+    public void setNoIncrJavac(boolean noIncrJavac) {
+        this.noIncrJavac = noIncrJavac;
     }
 
     public MigrateAntToPlutoTask(File buildFile, File outDir, String pkg) {
@@ -84,6 +93,9 @@ public class MigrateAntToPlutoTask extends TestTask {
 
         if (isCalculateStatistics())
             args.add("-calcStats");
+
+        if (isNoIncrJavac())
+            args.add("-noIncrJavac");
 
         if (!fileDepencencyDiscovery)
             args.add("-noFD");

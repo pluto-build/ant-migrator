@@ -66,6 +66,7 @@ public class TomcatCorrectnessTest {
 
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.tomcat", false, debug);
         migrateAntToPlutoTask.setContinueOnError(true);
+        migrateAntToPlutoTask.setCalculateStatistics(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));

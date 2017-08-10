@@ -48,6 +48,7 @@ public class JMeterCorrectnessTest {
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.jmeter", false, debug, Arrays.asList("download_jars", "compile"));
         migrateAntToPlutoTask.setContinueOnError(true);
+        migrateAntToPlutoTask.setCalculateStatistics(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));

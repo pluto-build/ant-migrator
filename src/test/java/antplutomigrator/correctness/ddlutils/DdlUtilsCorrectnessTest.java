@@ -50,6 +50,7 @@ public class DdlUtilsCorrectnessTest {
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.ddlutils", false, debug, Arrays.asList("jar"));
         migrateAntToPlutoTask.setContinueOnError(true);
+        migrateAntToPlutoTask.setCalculateStatistics(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));

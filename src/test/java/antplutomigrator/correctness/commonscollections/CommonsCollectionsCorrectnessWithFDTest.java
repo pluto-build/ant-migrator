@@ -54,7 +54,7 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
 
-        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true, debug);
+        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true, debug, Arrays.asList("dist"));
         migrateAntToPlutoTask.setCalculateStatistics(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
@@ -68,7 +68,7 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         mounts.add(new Mount(antSrcDir, new File("/share/test/")));
         mounts.add(new Mount(new File(System.getProperty("user.home")+"/.m2/"), new File("/share/m2/")));
 
-        //taskExecutor.addTask(new DockerRunnerTask(antSrcDir, "CommonsCollections_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/"), mounts));
+        taskExecutor.addTask(new DockerRunnerTask(antSrcDir, "CommonsCollections_Ant", new String(Files.readAllBytes(Paths.get(this.getClass().getResource("ant_command.txt").toURI()))), new File("/share/test/"), mounts));
 
         mounts = new ArrayList<>();
         mounts.add(new Mount(plutoDir, new File("/share/test/")));
@@ -80,12 +80,12 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         plutoRunCommand = CompileJavaTask.substituteVars(plutoRunCommand, new String[] {"<classpath>"}, new String[]{classPathDocker});
         taskExecutor.addTask(new DockerRunnerTask(plutoDir, "CommonsCollections_Pluto", plutoRunCommand, new File("/share/test/commons-collections4-4.1-src/"), mounts));
 
-        /*ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
+        ComparerTask comparerTask = new ComparerTask(new File(antSrcDir, "target"), new File(plutoSrcDir, "target"));
         comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
         comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
         comparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new AntVersionIgnoredLineComparer())));
 
-        taskExecutor.addTask(comparerTask);*/
+        taskExecutor.addTask(comparerTask);
 
         taskExecutor.executeTasks();
     }

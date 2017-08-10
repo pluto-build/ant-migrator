@@ -56,6 +56,7 @@ public class CommonsDaemonCorrectnessWithFDTest {
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
         MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonsdaemon", true, debug);
         migrateAntToPlutoTask.setCalculateStatistics(true);
+        migrateAntToPlutoTask.setNoIncrJavac(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 
         String readClassPath = new String(Files.readAllBytes(Paths.get(this.getClass().getResource("classpath.txt").toURI())));
