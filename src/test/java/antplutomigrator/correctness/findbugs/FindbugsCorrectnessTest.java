@@ -1,10 +1,9 @@
 package antplutomigrator.correctness.findbugs;
 
-import antplutomigrator.correctness.comparison.*;
-import antplutomigrator.correctness.utils.TaskExecutor;
-import antplutomigrator.correctness.utils.TestTask;
-import antplutomigrator.correctness.utils.tasks.*;
-import org.apache.commons.io.FileUtils;
+import antplutomigrator.testrunners.comparison.*;
+import antplutomigrator.testrunners.utils.TaskExecutor;
+import antplutomigrator.testrunners.utils.TestTask;
+import antplutomigrator.testrunners.utils.tasks.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.util.JavaEnvUtils;

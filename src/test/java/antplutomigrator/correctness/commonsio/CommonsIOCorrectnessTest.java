@@ -1,8 +1,9 @@
 package antplutomigrator.correctness.commonsio;
 
-import antplutomigrator.correctness.comparison.*;
-import antplutomigrator.correctness.utils.*;
-import antplutomigrator.correctness.utils.tasks.*;
+import antplutomigrator.testrunners.utils.TaskExecutor;
+import antplutomigrator.testrunners.utils.TestTask;
+import antplutomigrator.testrunners.utils.tasks.*;
+import antplutomigrator.testrunners.comparison.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -14,10 +15,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
 
 /**
  * Created by manuel on 01.06.17.

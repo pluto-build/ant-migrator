@@ -1,8 +1,8 @@
 package antplutomigrator.correctness.ddlutils;
 
-import antplutomigrator.correctness.comparison.*;
-import antplutomigrator.correctness.utils.TaskExecutor;
-import antplutomigrator.correctness.utils.tasks.*;
+import antplutomigrator.testrunners.comparison.*;
+import antplutomigrator.testrunners.utils.TaskExecutor;
+import antplutomigrator.testrunners.utils.tasks.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.util.JavaEnvUtils;

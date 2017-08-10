@@ -1,7 +1,6 @@
 package antplutomigrator.generate;
 
 import antplutomigrator.generate.anthelpers.ReflectionHelpers;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.*;
@@ -98,13 +97,16 @@ public class BuilderInputGenerator extends JavaGenerator {
                             k.startsWith(s) && Execute.getEnvironmentVariables().containsKey(k.substring(s.length())))) {
                         this.printString("case \"" + k + "\":", "");
                         this.increaseIndentation(1);
-                        if (PATH_PROPERTY_NAMES.contains(k)) {
+                        UnknownElement property = getProperty(k);
+                        if (property != null && property.getWrapper().getAttributeMap().containsKey("location")) {
+                            v = property.getWrapper().getAttributeMap().get("location");
+                        }
+                        else if (PATH_PROPERTY_NAMES.contains(k)) {
                             // Handle paths separately
                             String path = makeRelative(v.toString());
-                            this.printString("return "+ resolver.getExpandedValue(StringUtils.javaPrint(path)) + ";");
-                        } else {
-                            this.printString("return " + resolver.getExpandedValue(StringUtils.javaPrint(v.toString())) + ";");
+                            v = path;
                         }
+                        this.printString("return " + resolver.getExpandedValue(StringUtils.javaPrint(v.toString())) + ";");
                         this.closeOneLevel();
                     }
                 }
@@ -141,6 +143,20 @@ public class BuilderInputGenerator extends JavaGenerator {
         }
         this.closeOneLevel(); // end switch
         this.closeOneLevel(); // end method
+    }
+
+    private UnknownElement getProperty(String k) {
+        for (Task task: project.getTargets().get("").getTasks()) {
+            if (task instanceof UnknownElement) {
+                UnknownElement element = (UnknownElement)task;
+                if (element.getTaskName().equals("property")) {
+                    if (element.getWrapper().getAttributeMap().get("name") != null && element.getWrapper().getAttributeMap().get("name").equals(k)) {
+                        return element;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public String makeRelative(String path) {

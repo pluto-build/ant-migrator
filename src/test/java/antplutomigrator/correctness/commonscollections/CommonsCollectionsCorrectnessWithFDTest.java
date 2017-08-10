@@ -1,9 +1,9 @@
 package antplutomigrator.correctness.commonscollections;
 
-import antplutomigrator.correctness.comparison.*;
-import antplutomigrator.correctness.utils.TaskExecutor;
-import antplutomigrator.correctness.utils.TestTask;
-import antplutomigrator.correctness.utils.tasks.*;
+import antplutomigrator.testrunners.comparison.*;
+import antplutomigrator.testrunners.utils.TaskExecutor;
+import antplutomigrator.testrunners.utils.TestTask;
+import antplutomigrator.testrunners.utils.tasks.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.util.JavaEnvUtils;
@@ -54,7 +54,7 @@ public class CommonsCollectionsCorrectnessWithFDTest {
         taskExecutor.addTask(new UnzipTask(zipFile, antDir));
         taskExecutor.addTask(new CopyDirectoryTask(antSrcDir, plutoDir));
 
-        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true, debug, Arrays.asList("dist"));
+        MigrateAntToPlutoTask migrateAntToPlutoTask = new MigrateAntToPlutoTask(plutoBuildXml, plutoDir, "build.pluto.commonscollections", true, debug);
         migrateAntToPlutoTask.setCalculateStatistics(true);
         taskExecutor.addTask(migrateAntToPlutoTask);
 

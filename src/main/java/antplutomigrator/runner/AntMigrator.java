@@ -11,9 +11,9 @@ import antplutomigrator.utils.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.*;
 import java.util.*;
 
 /**
@@ -160,18 +160,18 @@ public class AntMigrator {
         BuilderInputGenerator builderInputGenerator = new BuilderInputGenerator(line.getOptionValue("pkg"), project.getName(), project, buildFile.getParentFile(), line.hasOption("c"));
         files.put(namingManager.getClassNameFor(project.getName()) + "Context.java", builderInputGenerator.getPrettyPrint());
 
-        String plutoBuildListener = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoBuildListener.java").toURI())));
+        String plutoBuildListener = readResource("/PlutoBuildListener.java");
         files.put("PlutoBuildListener.java", plutoBuildListener.replace("<pkg>", line.getOptionValue("pkg")));
-        String plutoPropertyHelper = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("PlutoPropertyHelper.java").toURI())));
+        String plutoPropertyHelper = readResource("/PlutoPropertyHelper.java");
         files.put("PlutoPropertyHelper.java", plutoPropertyHelper.replace("<pkg>", line.getOptionValue("pkg")));
-        String consumer = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("BiConsumer.java").toURI())));
+        String consumer = readResource("/BiConsumer.java");
         files.put("BiConsumer.java", consumer.replace("<pkg>", line.getOptionValue("pkg")));
         if (Settings.getInstance().isUseNoIncrJavac()) {
-            String noIncrJavac = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("NoIncrJavac.java").toURI())));
+            String noIncrJavac = readResource("/NoIncrJavac.java");
             files.put("NoIncrJavac.java", noIncrJavac.replace("<pkg>", line.getOptionValue("pkg")));
         }
         if (Settings.getInstance().isCalculateStatistics()) {
-            String statistics = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("Statistics.java").toURI())));
+            String statistics = readResource("/Statistics.java");
             files.put("Statistics.java", statistics.replace("<pkg>", line.getOptionValue("pkg")));
         }
 
@@ -188,7 +188,7 @@ public class AntMigrator {
             files.put(namingManager.getClassNameFor(project.getName()) + ".java", mainGenerator.getPrettyPrint());
         }
 
-        String antBuilder = new String(Files.readAllBytes(Paths.get(AntMigrator.class.getResource("AntBuilder.java").toURI())));
+        String antBuilder = readResource("/AntBuilder.java");
         String fd = "@Override\n" +
                 "protected boolean useFileDependencyDiscovery() {\n" +
                 "  return " + (!line.hasOption("noFD")) + ";\n" +
@@ -205,6 +205,21 @@ public class AntMigrator {
                 System.out.println(entry.getValue());
                 System.out.println();
             }
+        }
+    }
+
+    private static String readResource(String name) throws Exception {
+        final URI uri = AntMigrator.class.getResource(name).toURI();
+        if (uri.getScheme().equals("file"))
+        {
+            Path path = Paths.get(uri);
+            return new String(Files.readAllBytes(path));
+        }
+        Map<String, String> env = new HashMap<>();
+        env.put("create", "true");
+        try (FileSystem zipfs = FileSystems.newFileSystem(uri, env)) {
+            Path path = Paths.get(uri);
+            return new String(Files.readAllBytes(path));
         }
     }
 
@@ -233,7 +248,7 @@ public class AntMigrator {
         Path macrosDir = dir.resolve("macros");
         Files.createDirectories(macrosDir);
 
-        Path file = dir.resolve(StringUtils.capitalize(name));
+        Path file = dir.resolve(name);
         log.info("Writing: " + file);
         Files.write(file, content.getBytes());
     }
