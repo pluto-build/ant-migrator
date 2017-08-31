@@ -1,9 +1,8 @@
-package antplutomigrator.correctness.asmtools;
+package antplutomigrator.correctness.asm;
 
 import antplutomigrator.correctness.CorrectnessTest;
 import antplutomigrator.testrunners.comparison.*;
 import antplutomigrator.testrunners.utils.TaskExecutor;
-import antplutomigrator.testrunners.utils.TestTask;
 import antplutomigrator.testrunners.utils.tasks.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,14 +19,14 @@ import java.util.Arrays;
 /**
  * Created by manuel on 01.06.17.
  */
-public class AsmToolsCorrectnessTest extends CorrectnessTest {
-    File plutoBuildXml = new File(plutoSrcDir, "build/build.xml");
-    File antBuildDir = new File(antSrcDir, "build");
-    File plutoBuildDir = new File(plutoSrcDir, "build");
+public class AsmCorrectnessTest extends CorrectnessTest {
+    File antBuildSrcDir = new File(antSrcDir, "asm");
+    File plutoBuildSrcDir = new File(plutoSrcDir, "asm");
+    File plutoBuildXml = new File(plutoBuildSrcDir, "build.xml");
 
 
-    public AsmToolsCorrectnessTest() throws Exception {
-        super("asmtools.properties", false);
+    public AsmCorrectnessTest() throws Exception {
+        super("asm.properties", false);
     }
 
     @Test
@@ -44,10 +43,10 @@ public class AsmToolsCorrectnessTest extends CorrectnessTest {
         taskExecutor.addTask(migrateAntToPlutoTask);
 
         taskExecutor.addTask(new CompileJavaTask(plutoDir, migratedMainSrc, targetDir, classpath, pluto_compile_args));
-        taskExecutor.addTask(new RunCommandTask(antBuildDir, ant_command));
-        taskExecutor.addTask(new RunCommandTask(plutoBuildDir, pluto_run_command));
+        taskExecutor.addTask(new RunCommandTask(antBuildSrcDir, ant_command));
+        taskExecutor.addTask(new RunCommandTask(plutoBuildSrcDir, pluto_run_command));
 
-        ComparerTask comparerTask = new ComparerTask(new File(antDir, "asmtools-6.0-build"), new File(plutoDir, "asmtools-6.0-build"));
+        ComparerTask comparerTask = new ComparerTask(new File(antBuildSrcDir, "output"), new File(plutoBuildSrcDir, "output"));
         comparerTask.getDirectoryComparer().addFileComparer(new MD5FileComparer());
         comparerTask.getDirectoryComparer().addFileComparer(new UnzipFileComparer(comparerTask.getDirectoryComparer()));
         comparerTask.getDirectoryComparer().addFileComparer(new LineByLineFileComparer(Arrays.asList(new EqualLineComparer(), new JavaDocDateIgnoredLineComparer())));

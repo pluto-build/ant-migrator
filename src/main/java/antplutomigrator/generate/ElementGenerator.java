@@ -120,6 +120,11 @@ public class ElementGenerator {
             if (element.getTaskName().equals("macrodef"))
                 return taskName;
 
+            if (element.getTaskName().equals("taskdef") || element.getTaskName().equals("componentdef") || element.getTaskName().equals("typedef")) {
+                log.error("Encountered " + element.getTaskName() + " at " + element.getLocation() + ". This is not yet supported...");
+                return taskName;
+            }
+
             if (taskName == null)
                 taskName = getNamingManager().getNameFor(element);
 
