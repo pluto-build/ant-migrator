@@ -2,6 +2,8 @@ package antplutomigrator.generate;
 
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import antplutomigrator.generate.introspectionhelpers.MacroAntIntrospectionHelper;
+import antplutomigrator.generate.transformers.ConfigureTaskTransformer;
+import antplutomigrator.generate.transformers.ConstructorTaskTransformer;
 import antplutomigrator.generate.types.TTypeName;
 import javafx.util.Pair;
 import org.apache.commons.logging.Log;
@@ -302,12 +304,14 @@ public class MacroGenerator extends JavaGenerator {
 
                 ElementGenerator elementGenerator = new ElementGenerator(this, project, namingManager, macroPropertyResolver, continueOnError);
 
-                elementGenerator.generateConstructor(introspectionHelper, nestedName);
+                ConstructorTaskTransformer constructorTaskTransformer = new ConstructorTaskTransformer(nestedElement,  elementGenerator, introspectionHelper);
+                constructorTaskTransformer.transform();
                 this.printString("lam.execute(" + nestedName + ", context);");
-                elementGenerator.generateAddMethod(introspectionHelper, nestedName);
+                ConfigureTaskTransformer configureTaskTransformer = new ConfigureTaskTransformer(nestedElement, elementGenerator, introspectionHelper);
+                configureTaskTransformer.generateAddMethod(introspectionHelper, nestedName);
 
-                //?
-                elementGenerator.generateMacroInvocationSpecificCode(introspectionHelper);
+                //TODO ?
+                //elementGenerator.generateMacroInvocationSpecificCode(introspectionHelper);
             }
 
             this.closeOneLevel(); // end configure

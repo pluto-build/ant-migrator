@@ -32,7 +32,7 @@ public abstract class Generator {
         closingStrings = new ArrayList<>();
     }
 
-    protected void increaseIndentation(int level) {
+    public void increaseIndentation(int level) {
         indent += level;
     }
 
@@ -47,18 +47,18 @@ public abstract class Generator {
         laterList.add(new Pair(builder.length(), s));
     }
 
-    protected void printString(String str) {
+    public void printString(String str) {
         Arrays.asList(str.split("\n")).forEach(line ->
                 builder.append(getIndentString()).append(line).append("\n")
         );
     }
 
-    protected void printString(String str, String closing) {
+    public void printString(String str, String closing) {
         printString(str);
         closingStrings.add(0, closing);
     }
 
-    protected void closeOneLevel() {
+    public void closeOneLevel() {
         if (indent > 0)
             increaseIndentation(-1);
         if (closingStrings.size() > 0) {
