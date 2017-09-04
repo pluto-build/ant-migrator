@@ -51,7 +51,7 @@ public class ConfigureTaskTransformer extends Transformer {
 
         generateMacroInvocationSpecificCode(introspectionHelper);
 
-        if (introspectionHelper.hasExecuteMethod())
+        if (introspectionHelper.hasExecuteMethod() && introspectionHelper.getParentIntrospectionHelper() == null)
             generator.printString(taskName + ".execute();");
     }
 
