@@ -50,6 +50,9 @@ public class ConfigureTaskTransformer extends Transformer {
         generateChildren(element, taskName, introspectionHelper);
 
         generateMacroInvocationSpecificCode(introspectionHelper);
+
+        if (introspectionHelper.hasExecuteMethod())
+            generator.printString(taskName + ".execute();");
     }
 
     public void generateAttributes(UnknownElement element, String taskName, AntIntrospectionHelper introspectionHelper) {

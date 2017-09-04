@@ -127,18 +127,6 @@ public class BuilderGenerator extends JavaGenerator {
 
                 // Generate code for the task, including all children in the build file
                 String taskName = getElementGenerator().generateElement(null, element, null);
-
-                // Antcalls are resolved directly to builder calls. No calling of execute...
-                if (taskName != null && !element.getTaskName().equals("antcall")) {
-                    try {
-                        AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, getPkg(), null);
-                        if (introspectionHelper.hasExecuteMethod())
-                            this.printString(taskName + ".execute();");
-                    } catch (Exception e) {
-                        // TODO: Why does this occur sometimes?!?
-                        log.error("Couldn't create introspectionHelper for " + taskName + " this should never happen...", e);
-                    }
-                }
             } else {
                 // All tasks should also be UnknownElements. If not, fail the conversion
                 throw new RuntimeException("Didn't know how to handle " + t.toString());

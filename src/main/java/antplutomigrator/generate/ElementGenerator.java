@@ -168,6 +168,18 @@ public class ElementGenerator {
             Transformer transformer = TransformerFactory.getTransformer(element, this, introspectionHelper);
             transformer.transform();
 
+
+
+            // Antcalls are resolved directly to builder calls. No calling of execute...
+            if (taskName != null && !element.getTaskName().equals("antcall")) {
+                try {
+
+                } catch (Exception e) {
+                    // TODO: Why does this occur sometimes?!?
+                    log.error("Couldn't create introspectionHelper for " + taskName + " this should never happen...", e);
+                }
+            }
+
             return taskName;
         } catch (RuntimeException e) {
             if (!continueOnErrors)

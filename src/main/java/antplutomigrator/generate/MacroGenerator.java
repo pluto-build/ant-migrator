@@ -171,11 +171,6 @@ public class MacroGenerator extends JavaGenerator {
             elementGenerator.generateElement(null, child, null, true);
         }
 
-        for (UnknownElement child : sequential.getChildren()) {
-            if (!child.getTaskName().equals("antcall"))
-                this.printString(namingManager.getNameFor(child) + ".execute();");
-        }
-
         this.closeOneLevel(); // end method
     }
 
