@@ -13,7 +13,18 @@ public abstract class SpecializedTaskTransformer extends Transformer {
     }
 
     public boolean containsOnlySupportedAttributes(String... attr) {
-        return element.getWrapper().getAttributeMap().keySet().containsAll(Arrays.asList(attr)) &&
-                Arrays.asList(attr).containsAll(element.getWrapper().getAttributeMap().keySet());
+        return Arrays.asList(attr).containsAll(element.getWrapper().getAttributeMap().keySet());
+    }
+
+    public String attributeForKey(String key) {
+        Object attr = element.getWrapper().getAttributeMap().get(key);
+        // TODO: Correct handling for null attributes
+        if (attr == null)
+            return null;
+        return expand(attr.toString());
+    }
+
+    public String expand(String str) {
+        return resolver.getExpandedValue(str);
     }
 }

@@ -1,0 +1,16 @@
+<project name="SpecializedTest" default="Echo" basedir=".">
+    <property name="testProperty" value="Hello, world!" />
+    <property name="testRec1" value="1" />
+    <property name="testRec2" value="${testRec1} 2" />
+    <property name="append" value="true" />
+    <property environment="env"/>
+
+    <target name="Echo">
+        <echo message="${testProperty} ${testRec2}"/>
+        <echo message="This is test${line.separator}" file="result.txt" append="false"/>
+        <echo message="This should be appended...${line.separator}" file="result.txt" append="${append}"/>
+        <echo message="This is the PATH: ${env.PATH}"/>
+        <property name="someOtherProperty" value="42" />
+        <echo message="someOtherProperty: ${someOtherProperty}"/>
+    </target>
+</project>

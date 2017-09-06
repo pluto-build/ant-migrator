@@ -5,19 +5,18 @@ import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import antplutomigrator.generate.transformers.SpecializedTaskTransformer;
 import org.apache.tools.ant.UnknownElement;
 
-public class EchoTransformer extends SpecializedTaskTransformer {
-    public EchoTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
+public class PropertyTransformer extends SpecializedTaskTransformer {
+    public PropertyTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
         super(element, elementGenerator, introspectionHelper);
     }
 
     @Override
     public boolean supportsElement() {
-        return containsOnlySupportedAttributes("message");
+        return this.containsOnlySupportedAttributes("name", "value");
     }
 
     @Override
     public void transform() throws RuntimeException {
-        generator.addImport("org.sugarj.common.Log");
-        generator.printString("Log.log.log(\""+resolver.getExpandedValue(element.getWrapper().getAttributeMap().get("message").toString())+"\", Log.ALWAYS);");
+        generator.printString("context.setProperty(\""+attributeForKey("name")+"\", \""+attributeForKey("value")+"\");");
     }
 }
