@@ -16,6 +16,10 @@ public abstract class SpecializedTaskTransformer extends Transformer {
         return Arrays.asList(attr).containsAll(element.getWrapper().getAttributeMap().keySet());
     }
 
+    public boolean containsKey(String key) {
+        return element.getWrapper().getAttributeMap().containsKey(key);
+    }
+
     public String attributeForKey(String key) {
         Object attr = element.getWrapper().getAttributeMap().get(key);
         // TODO: Correct handling for null attributes
