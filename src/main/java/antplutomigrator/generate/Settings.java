@@ -1,30 +1,38 @@
 package antplutomigrator.generate;
 
 public class Settings {
-    private boolean useNoIncrJavac;
-    private boolean calculateStatistics;
+  private static Settings instance = new Settings();
+  private boolean useNoIncrJavac;
+  private boolean calculateStatistics;
+  private boolean calculateMigrationStatistics;
 
-    public boolean isUseNoIncrJavac() {
-        return useNoIncrJavac;
-    }
+  private Settings() {}
 
-    public void setUseNoIncrJavac(boolean useNoIncrJavac) {
-        this.useNoIncrJavac = useNoIncrJavac;
-    }
+  public static Settings getInstance() {
+    return instance;
+  }
 
-    public boolean isCalculateStatistics() {
-        return calculateStatistics;
-    }
+  public boolean isUseNoIncrJavac() {
+    return useNoIncrJavac;
+  }
 
-    public void setCalculateStatistics(boolean calculateStatistics) {
-        this.calculateStatistics = calculateStatistics;
-    }
+  public void setUseNoIncrJavac(boolean useNoIncrJavac) {
+    this.useNoIncrJavac = useNoIncrJavac;
+  }
 
-    private Settings() { }
+  public boolean isCalculateStatistics() {
+    return calculateStatistics;
+  }
 
-    private static Settings instance = new Settings();
+  public void setCalculateStatistics(boolean calculateStatistics) {
+    this.calculateStatistics = calculateStatistics;
+  }
 
-    public static Settings getInstance() {
-        return instance;
-    }
+  public boolean isCalculateMigrationStatistics() {
+    return calculateMigrationStatistics;
+  }
+
+  public void setCalculateMigrationStatistics(boolean calculateMigrationStatistics) {
+    this.calculateMigrationStatistics = calculateMigrationStatistics;
+  }
 }

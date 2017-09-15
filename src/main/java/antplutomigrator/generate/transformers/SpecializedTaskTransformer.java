@@ -11,24 +11,4 @@ public abstract class SpecializedTaskTransformer extends Transformer {
         super(element, elementGenerator, introspectionHelper);
         assert this.getClass().getSimpleName().equalsIgnoreCase(element.getTaskName() + "Transformer");
     }
-
-    public boolean containsOnlySupportedAttributes(String... attr) {
-        return Arrays.asList(attr).containsAll(element.getWrapper().getAttributeMap().keySet());
-    }
-
-    public boolean containsKey(String key) {
-        return element.getWrapper().getAttributeMap().containsKey(key);
-    }
-
-    public String attributeForKey(String key) {
-        Object attr = element.getWrapper().getAttributeMap().get(key);
-        // TODO: Correct handling for null attributes
-        if (attr == null)
-            return null;
-        return expand(attr.toString());
-    }
-
-    public String expand(String str) {
-        return resolver.getExpandedValue(str);
-    }
 }

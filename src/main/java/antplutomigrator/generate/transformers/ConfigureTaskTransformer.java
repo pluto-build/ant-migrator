@@ -76,10 +76,10 @@ public class ConfigureTaskTransformer extends Transformer {
             if (argumentClass.getName().equals("boolean")) {
                 // We expect a boolean, use true or false as values without wrapping into a string.
                 generator.addImport("org.apache.tools.ant.Project");
-                argument = "Project.toBoolean(\"" + escapedValue + "\")";
+                argument = elementGenerator.getContextName()+".toBoolean(\"" + escapedValue + "\")";
             } else if (java.io.File.class.equals(argumentClass)) {
                 generator.addImport("org.apache.tools.ant.Project");
-                argument = elementGenerator.getContextName()+".resolveFile(\"" + escapedValue + "\")";
+                argument = elementGenerator.getContextName()+".toFile(\"" + escapedValue + "\")";
             } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
                 TTypeName argumentClassName = new TTypeName(argumentClass.getName());
                 String shortName = argumentClassName.getShortName();
@@ -90,10 +90,8 @@ public class ConfigureTaskTransformer extends Transformer {
                 argument = attrName;
             } else if (argumentClass.getTypeName().equals("int")) {
                 argument = "Integer.parseInt(\"" + o.toString() + "\")";
-
             } else if (argumentClass.getTypeName().equals("long")) {
                 argument = "Long.parseLong(\"" + o.toString() + "\")";
-
             } else if (!(argumentClass.getName().equals("java.lang.String") || argumentClass.getName().equals("java.lang.Object"))) {
 
                 boolean includeProject;

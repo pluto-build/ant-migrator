@@ -209,6 +209,7 @@ public class MacroGenerator extends JavaGenerator {
     }
 
     private void generateElement(UnknownElement element) {
+        Statistics.getInstance().generatedElement(element);
         if (element.getTaskName().equals("text")) {
             String def = "null";
             if (element.getWrapper().getAttributeMap().containsKey("default")) {

@@ -141,6 +141,7 @@ public class ElementGenerator {
     public String generateElement(AntIntrospectionHelper parentIntrospectionHelper, UnknownElement element, String taskName, boolean implicitInserted)  {
         try {
             log.trace("Generating element: " + element.getTaskName() + " at " + element.getLocation().toString());
+            Statistics.getInstance().generatedElement(element);
 
             // Search for implicit elements and insert them explicitly...
             if (!implicitInserted)

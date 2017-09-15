@@ -1,37 +1,40 @@
 package antplutomigrator.generate;
 
 import antplutomigrator.generate.anthelpers.ReflectionHelpers;
+import antplutomigrator.utils.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.tools.ant.*;
+import org.apache.tools.ant.Project;
+import org.apache.tools.ant.Target;
+import org.apache.tools.ant.Task;
+import org.apache.tools.ant.UnknownElement;
 import org.apache.tools.ant.taskdefs.Execute;
-import antplutomigrator.utils.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by manuel on 13.12.16.
  */
 public class BuilderInputGenerator extends JavaGenerator {
-    private Log log = LogFactory.getLog(BuilderInputGenerator.class);
-
     private final String name;
     private final Project project;
-    private boolean includeEmpty = true;
-    private PropertyResolver resolver;
-    private NamingManager namingManager;
     private final ElementGenerator elementGenerator;
     private final File buildParent;
     private final boolean continueOnError;
-
     private final List<String> PATH_PROPERTY_NAMES;
+    private Log log = LogFactory.getLog(BuilderInputGenerator.class);
+    private boolean includeEmpty = true;
+    private PropertyResolver resolver;
+    private NamingManager namingManager;
 
     public BuilderInputGenerator(String pkg, String name, Project project, File buildParent, boolean continueOnError) {
         super(pkg);
         this.namingManager = new NamingManager();
-        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name+"Context"));
+        this.name = namingManager.getClassNameFor(StringUtils.capitalize(name + "Context"));
         this.project = project;
         this.resolver = new PropertyResolver(project, "this");
         this.buildParent = buildParent;
@@ -64,7 +67,8 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.generateGetMethod();
 
         this.generateProjectMethod();
-        this.generateResolveFileMethod();
+        this.generateToFileMethod();
+        this.generateToBooleanMethod();
         this.generateInitMethods();
 
         this.printString("");
@@ -100,8 +104,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                         UnknownElement property = getProperty(k);
                         if (property != null && property.getWrapper().getAttributeMap().containsKey("location")) {
                             v = property.getWrapper().getAttributeMap().get("location");
-                        }
-                        else if (PATH_PROPERTY_NAMES.contains(k)) {
+                        } else if (PATH_PROPERTY_NAMES.contains(k)) {
                             // Handle paths separately
                             String path = makeRelative(v.toString());
                             v = path;
@@ -146,9 +149,9 @@ public class BuilderInputGenerator extends JavaGenerator {
     }
 
     private UnknownElement getProperty(String k) {
-        for (Task task: project.getTargets().get("").getTasks()) {
+        for (Task task : project.getTargets().get("").getTasks()) {
             if (task instanceof UnknownElement) {
-                UnknownElement element = (UnknownElement)task;
+                UnknownElement element = (UnknownElement) task;
                 if (element.getTaskName().equals("property")) {
                     if (element.getWrapper().getAttributeMap().get("name") != null && element.getWrapper().getAttributeMap().get("name").equals(k)) {
                         return element;
@@ -225,7 +228,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         Target mainTarget = this.project.getTargets().get("");
         List<Object> children = new ArrayList<>();
 
-        for (Target t: this.project.getTargets().values()) {
+        for (Target t : this.project.getTargets().values()) {
             children.addAll(ReflectionHelpers.getChildrenFor(t));
         }
 
@@ -243,9 +246,9 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.closeOneLevel();
     }
 
-    private void generateResolveFileMethod() {
+    private void generateToFileMethod() {
         this.addImport("java.io.File");
-        this.printString("public File resolveFile(String file) {", "}");
+        this.printString("public File toFile(String file) {", "}");
         this.increaseIndentation(1);
 
         this.printString("return project().resolveFile(file);");
@@ -253,8 +256,22 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.closeOneLevel();
     }
 
+    private void generateToBooleanMethod() {
+        this.addImport("org.apache.tools.ant.Project");
+        this.printString("public Boolean toBoolean(String b) {", "}");
+        this.increaseIndentation(1);
+
+        this.printString("return Project.toBoolean(b);");
+
+        this.closeOneLevel();
+    }
+
     private void generateConfigureProjectElement(UnknownElement element) {
-        if (element.getTaskName().equals("macrodef")) {
+        if (element.getWrapper().getAttributeMap().containsKey("id") || element.getTaskName().equals("defaultexcludes")) {
+            String childName = elementGenerator.generateElement(null, element, null);
+            if (element.getTaskName().equals("defaultexcludes"))
+                this.printString(childName + ".execute();");
+        } else if (element.getTaskName().equals("macrodef")) {
             // Deal with macros. First do macrodef execution to make them available everywhere
 
             // This should have already been done by antplutomigrator.runner.AntMigrator.java
@@ -334,7 +351,7 @@ public class BuilderInputGenerator extends JavaGenerator {
     }
 
     private void generateRequireMethods() {
-        for (Target target: project.getTargets().values()) {
+        for (Target target : project.getTargets().values()) {
             if (!target.getName().isEmpty())
                 generateRequireMethod(target);
         }
@@ -343,28 +360,28 @@ public class BuilderInputGenerator extends JavaGenerator {
     private void generateRequireMethod(Target target) {
         this.addImport("build.pluto.builder.Builder");
         this.addImport("java.io.IOException");
-        this.printString("public " + name + " require"+namingManager.getClassNameFor(target.getName())+"Builder(Builder<"+name+","+name+"> builder) throws IOException {", "}");
+        this.printString("public " + name + " require" + namingManager.getClassNameFor(target.getName()) + "Builder(Builder<" + name + "," + name + "> builder) throws IOException {", "}");
         this.increaseIndentation(1);
 
-        this.printString(name+" context = this.clone(\""+target.getName()+"\");");
+        this.printString(name + " context = this.clone(\"" + target.getName() + "\");");
 
         boolean hasCondition = false;
         if (target.getIf() != null && !target.getIf().isEmpty()) {
-            this.printString("if (testIf(\""+resolver.getExpandedValue(target.getIf())+"\")) {", "}");
+            this.printString("if (testIf(\"" + resolver.getExpandedValue(target.getIf()) + "\")) {", "}");
             this.increaseIndentation(1);
 
             hasCondition = true;
         }
 
         if (target.getUnless() != null && !target.getUnless().isEmpty()) {
-            this.printString("if (testUnless(\""+resolver.getExpandedValue(target.getUnless())+"\")) {", "}");
+            this.printString("if (testUnless(\"" + resolver.getExpandedValue(target.getUnless()) + "\")) {", "}");
             this.increaseIndentation(1);
 
             hasCondition = true;
         }
 
         // require the builder
-        this.printString("builder.requireBuild("+namingManager.getClassNameFor(target.getName())+"Builder.factory, context);");
+        this.printString("builder.requireBuild(" + namingManager.getClassNameFor(target.getName()) + "Builder.factory, context);");
 
         if (hasCondition)
             this.closeOneLevel();
@@ -387,7 +404,7 @@ public class BuilderInputGenerator extends JavaGenerator {
                 "  if (this == o) return true;\n" +
                 "  if (o == null || getClass() != o.getClass()) return false;\n" +
                 "\n" +
-                "  "+this.name+" that = ("+this.name+") o;\n" +
+                "  " + this.name + " that = (" + this.name + ") o;\n" +
                 "\n" +
                 "  if (!builderName.equals(that.builderName)) return true;\n" +
                 "  return nested.equals(that.nested);\n" +
@@ -403,12 +420,12 @@ public class BuilderInputGenerator extends JavaGenerator {
 
     public void generateInitMethods() {
         this.addImport("org.apache.tools.ant.Task");
-        this.printString("public void initTask(Task task) {\n"+
+        this.printString("public void initTask(Task task) {\n" +
                 "  task.setProject(this.project());\n" +
                 "  task.init();\n" +
                 "}");
         this.addImport("org.apache.tools.ant.ProjectComponent");
-        this.printString("public void initElement(ProjectComponent projectComponent) {\n"+
+        this.printString("public void initElement(ProjectComponent projectComponent) {\n" +
                 "  projectComponent.setProject(this.project());\n" +
                 "}");
     }

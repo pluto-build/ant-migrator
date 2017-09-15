@@ -7,7 +7,10 @@ import antplutomigrator.generate.Resolvable;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
+
+import java.util.Arrays;
 
 public abstract class Transformer {
     protected Log log = LogFactory.getLog(this.getClass());
@@ -32,4 +35,36 @@ public abstract class Transformer {
     }
 
     public abstract void transform() throws RuntimeException;
+
+
+
+    public boolean containsOnlySupportedAttributes(String... attr) {
+        return Arrays.asList(attr).containsAll(element.getWrapper().getAttributeMap().keySet());
+    }
+
+    public boolean containsKey(String key) {
+        return element.getWrapper().getAttributeMap().containsKey(key);
+    }
+
+    public String attributeForKey(String key) {
+        Object attr = element.getWrapper().getAttributeMap().get(key);
+        // TODO: Correct handling for null attributes
+        if (attr == null)
+            return null;
+        return attr.toString();
+    }
+
+    public String expand(String str) {
+        return resolver.getExpandedValue(str);
+    }
+
+    public String generateToBoolean(String value) {
+        if (Arrays.asList("on", "off", "true", "false", "yes", "no").contains(value)) {
+            return Project.toBoolean(value) + "";
+        }
+        return elementGenerator.getContextName()+".toBoolean(\""+expand(value)+"\")";
+    }
+    public String generateToFile(String value) {
+        return elementGenerator.getContextName()+".toFile(\""+expand(value)+"\")";
+    }
 }

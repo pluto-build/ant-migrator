@@ -74,6 +74,9 @@ public class AntMigrator {
         options.addOption(Option.builder("calcStats")
                 .desc("Calculate build statistics after run.")
                 .build());
+        options.addOption(Option.builder("migStats")
+                .desc("Calculate migration statistics.")
+                .build());
 
         CommandLineParser parser = new DefaultParser();
         CommandLine line;
@@ -109,6 +112,7 @@ public class AntMigrator {
         Settings settings = Settings.getInstance();
         settings.setUseNoIncrJavac(line.hasOption("noIncrJavac"));
         settings.setCalculateStatistics(line.hasOption("calcStats"));
+        settings.setCalculateMigrationStatistics(line.hasOption("migStats"));
 
         //project.initProperties();
         // Introduce this workaround to "reexceute" the necessary properties...
@@ -205,6 +209,10 @@ public class AntMigrator {
                 System.out.println(entry.getValue());
                 System.out.println();
             }
+        }
+
+        if (Settings.getInstance().isCalculateMigrationStatistics()) {
+            Statistics.getInstance().printStatistics();
         }
     }
 

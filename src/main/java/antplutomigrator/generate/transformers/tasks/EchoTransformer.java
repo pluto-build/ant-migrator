@@ -20,7 +20,7 @@ public class EchoTransformer extends SpecializedTaskTransformer {
     public void transform() throws RuntimeException {
         String message = null;
         if (containsKey("message"))
-            message = attributeForKey("message");
+            message = expand(attributeForKey("message"));
         else {
             String text = element.getWrapper().getText().toString().trim();
             if (!text.isEmpty())
@@ -30,19 +30,16 @@ public class EchoTransformer extends SpecializedTaskTransformer {
             throw new MigrationException(element.getTaskName() + " at " + element.getLocation().toString() + " has neither message nor text.");
 
         if (!containsKey("file")) {
-            generator.addImport("org.sugarj.common.Log");
-            generator.printString("Log.log.log(\"" + message + "\", Log.ALWAYS);");
+            generator.printString("report(\"" + message + "\");");
         } else {
             // import org.apache.commons.io.FileUtils;
             //FileUtils.writeStringToFile(file, data, append);
             generator.addImport("org.apache.commons.io.FileUtils");
             String append = "false";
             if (containsKey("append")) {
-                generator.addImport("org.apache.tools.ant.Project");
-                // TODO: Handling for "nice" booleans e.g. minimize Project.toBoolean("false") to false ...
-                append = "Project.toBoolean(\""+attributeForKey("append")+"\")";
+                append = generateToBoolean(attributeForKey("append"));
             }
-            generator.printString("FileUtils.writeStringToFile("+elementGenerator.getContextName()+".resolveFile(\""+attributeForKey("file")+"\"), \""+message+"\", "+append+");");
+            generator.printString("FileUtils.writeStringToFile("+generateToFile(attributeForKey("file"))+", \""+message+"\", "+append+");");
         }
     }
 }
