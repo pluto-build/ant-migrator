@@ -5,6 +5,7 @@ import antplutomigrator.generate.JavaGenerator;
 import antplutomigrator.generate.NamingManager;
 import antplutomigrator.generate.Resolvable;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.Project;
@@ -62,9 +63,12 @@ public abstract class Transformer {
         if (Arrays.asList("on", "off", "true", "false", "yes", "no").contains(value)) {
             return Project.toBoolean(value) + "";
         }
-        return elementGenerator.getContextName()+".toBoolean(\""+expand(value)+"\")";
+        return elementGenerator.getContextName()+".toBoolean(\""+StringEscapeUtils.escapeJava(value)+"\")";
     }
     public String generateToFile(String value) {
-        return elementGenerator.getContextName()+".toFile(\""+expand(value)+"\")";
+        return elementGenerator.getContextName()+".toFile(\""+StringEscapeUtils.escapeJava(value)+"\")";
+    }
+    public String generateToString(String value) {
+        return elementGenerator.getContextName()+".toString(\""+ StringEscapeUtils.escapeJava(value)+"\")";
     }
 }

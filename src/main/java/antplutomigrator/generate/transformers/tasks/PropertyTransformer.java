@@ -17,6 +17,6 @@ public class PropertyTransformer extends SpecializedTaskTransformer {
 
     @Override
     public void transform() throws RuntimeException {
-        generator.printString("context.setProperty(\""+attributeForKey("name")+"\", \""+attributeForKey("value")+"\");");
+        generator.printString("context.setProperty(\""+attributeForKey("name")+"\", "+generateToString(attributeForKey("value"))+");");
     }
 }

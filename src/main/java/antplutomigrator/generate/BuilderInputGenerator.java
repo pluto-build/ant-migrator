@@ -67,8 +67,12 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.generateGetMethod();
 
         this.generateProjectMethod();
+
+        this.generateExpandMethod();
+
         this.generateToFileMethod();
         this.generateToBooleanMethod();
+        this.generateToStringExpandMethod();
         this.generateInitMethods();
 
         this.printString("");
@@ -251,7 +255,7 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("public File toFile(String file) {", "}");
         this.increaseIndentation(1);
 
-        this.printString("return project().resolveFile(file);");
+        this.printString("return project().resolveFile(expand(file));");
 
         this.closeOneLevel();
     }
@@ -261,9 +265,48 @@ public class BuilderInputGenerator extends JavaGenerator {
         this.printString("public Boolean toBoolean(String b) {", "}");
         this.increaseIndentation(1);
 
-        this.printString("return Project.toBoolean(b);");
+        this.printString("return Project.toBoolean(expand(b));");
 
         this.closeOneLevel();
+    }
+
+    private void generateToStringExpandMethod() {
+        this.printString("public String toString(String value) {", "}");
+        this.increaseIndentation(1);
+
+        this.printString("return expand(value);");
+
+        this.closeOneLevel();
+    }
+
+    private void generateExpandMethod() {
+        this.printString("public String expand(String unexpanded) {\n" +
+                "        int i = 0;\n" +
+                "        String expanded = \"\";\n" +
+                "        while (i < unexpanded.length()) {\n" +
+                "            char c = unexpanded.charAt(i);\n" +
+                "            if (c == '$') {\n" +
+                "                if (unexpanded.charAt(i+1) == '$') {\n" +
+                "                    expanded += \"$\";\n" +
+                "                    i += 2;\n" +
+                "                } else\n" +
+                "                if (unexpanded.charAt(i+1) == '{') {\n" +
+                "                    int start = i+2;\n" +
+                "                    int end = unexpanded.indexOf('}', i);\n" +
+                "                    if (end < 0)\n" +
+                "                        throw new RuntimeException(\"Property was not closed.\");\n" +
+                "                    String property = unexpanded.substring(start, end);\n" +
+                "                    expanded += get(property);\n" +
+                "                    i = end + 1;\n" +
+                "                }\n" +
+                "            } else {\n" +
+                "                expanded += c;\n" +
+                "                i++;\n" +
+                "            }\n" +
+                "        }\n" +
+                "\n" +
+                "        return expanded;\n" +
+                "}");
     }
 
     private void generateConfigureProjectElement(UnknownElement element) {

@@ -7,6 +7,7 @@ import antplutomigrator.generate.types.TMethod;
 import antplutomigrator.generate.types.TParameter;
 import antplutomigrator.generate.types.TTypeName;
 import javafx.util.Pair;
+import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.UnknownElement;
 
 import java.util.ArrayList;
@@ -83,6 +84,30 @@ public class ConstructorTaskTransformer extends Transformer {
                     else
                         generator.printString(constructor.getDeclaringClassTypeName().getShortName() + " " + taskName + " = new " + constructor.formatUse(params) + ";");
                 }
+            }
+        }
+
+        // TODO: This is hacky
+        if (elementGenerator.isOnlyConstructors() && element.getChildren() != null) {
+            for (UnknownElement child : element.getChildren()) {
+                generator.increaseIndentation(1);
+                if (introspectionHelper.supportsNestedElement(child.getTaskName())) {
+                    elementGenerator.generateElement(introspectionHelper, child, null, true);
+                } else {
+                    Class<?> elementTypeClass = introspectionHelper.getElementTypeClass();
+                    if (elementTypeClass == null || !(TaskContainer.class.isAssignableFrom(elementTypeClass))) {
+                        // Ignore macro child elements at definition...
+                        if (!elementGenerator.getIgnoredMacroElements().contains(child.getTaskName()))
+                            throw new RuntimeException("Didn't support nested element: " + child.getTaskName());
+                    } else {
+                        // a task container - anything could happen - just add the
+                        // child to the container
+                        String childName = elementGenerator.generateElement(introspectionHelper, child, null, true);
+                        generator.printString(taskName + ".addTask(" + childName + ");");
+                    }
+
+                }
+                generator.increaseIndentation(-1);
             }
         }
     }
