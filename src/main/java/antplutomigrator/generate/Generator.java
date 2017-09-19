@@ -36,7 +36,7 @@ public abstract class Generator {
         indent += level;
     }
 
-    private String getIndentString() {
+    public String getIndentString() {
         String indentString = "";
         for (int i = 0; i < indent; i++)
             indentString += "  ";
