@@ -12,10 +12,9 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 
 import java.util.Arrays;
+import java.util.function.Predicate;
 
 public abstract class Transformer {
-    protected Log log = LogFactory.getLog(this.getClass());
-
     protected final UnknownElement element;
     protected final ElementGenerator elementGenerator;
     protected final AntIntrospectionHelper introspectionHelper;
@@ -23,8 +22,8 @@ public abstract class Transformer {
     protected final Resolvable resolver;
     protected final JavaGenerator generator;
     protected final String taskName;
+    protected Log log = LogFactory.getLog(this.getClass());
 
-    public abstract boolean supportsElement();
     public Transformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
         this.element = element;
         this.elementGenerator = elementGenerator;
@@ -35,12 +34,28 @@ public abstract class Transformer {
         this.taskName = namingManager.getNameFor(element);
     }
 
+    public abstract boolean supportsElement();
+
     public abstract void transform() throws RuntimeException;
 
-
+    public boolean containsOnlySupportedAttributes(UnknownElement element,  String... attr) {
+        return Arrays.asList(attr).containsAll(element.getWrapper().getAttributeMap().keySet());
+    }
 
     public boolean containsOnlySupportedAttributes(String... attr) {
-        return Arrays.asList(attr).containsAll(element.getWrapper().getAttributeMap().keySet());
+        return containsOnlySupportedAttributes(element, attr);
+    }
+
+    public boolean supportsChildren(UnknownElement element,  Predicate<UnknownElement> supportsChild) {
+        if (this.element.getChildren() != null)
+            for (UnknownElement c : this.element.getChildren())
+                if (!supportsChild.test(c))
+                    return false;
+        return true;
+    }
+
+    public boolean supportsChildren(Predicate<UnknownElement> supportsChild) {
+        return supportsChildren(element, supportsChild);
     }
 
     public boolean containsKey(String key) {
@@ -63,12 +78,16 @@ public abstract class Transformer {
         if (Arrays.asList("on", "off", "true", "false", "yes", "no").contains(value)) {
             return Project.toBoolean(value) + "";
         }
-        return elementGenerator.getContextName()+".toBoolean(\""+StringEscapeUtils.escapeJava(value)+"\")";
+        return elementGenerator.getContextName() + ".toBoolean(\"" + StringEscapeUtils.escapeJava(value) + "\")";
     }
+
     public String generateToFile(String value) {
-        return elementGenerator.getContextName()+".toFile(\""+StringEscapeUtils.escapeJava(value)+"\")";
+        return elementGenerator.getContextName() + ".toFile(\"" + StringEscapeUtils.escapeJava(value) + "\")";
     }
+
     public String generateToString(String value) {
-        return elementGenerator.getContextName()+".toString(\""+ StringEscapeUtils.escapeJava(value)+"\")";
+        if (!value.contains("$"))
+            return "\""+StringEscapeUtils.escapeJava(value)+"\"";
+        return elementGenerator.getContextName() + ".toString(\"" + StringEscapeUtils.escapeJava(value) + "\")";
     }
 }

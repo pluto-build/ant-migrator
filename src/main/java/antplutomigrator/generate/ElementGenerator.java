@@ -3,23 +3,16 @@ package antplutomigrator.generate;
 import antplutomigrator.generate.anthelpers.ReflectionHelpers;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import antplutomigrator.generate.transformers.Transformer;
-import antplutomigrator.generate.transformers.TransformerFactory;
-import antplutomigrator.generate.types.TConstructor;
-import antplutomigrator.generate.types.TMethod;
-import antplutomigrator.generate.types.TParameter;
+import antplutomigrator.generate.transformers.TaskTransformerFactory;
 import antplutomigrator.generate.types.TTypeName;
 import javafx.util.Pair;
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.RuntimeConfigurable;
-import org.apache.tools.ant.TaskContainer;
 import org.apache.tools.ant.UnknownElement;
-import org.apache.tools.ant.types.EnumeratedAttribute;
 import antplutomigrator.utils.StringUtils;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -166,7 +159,7 @@ public class ElementGenerator {
 
             AntIntrospectionHelper introspectionHelper = AntIntrospectionHelper.getInstanceFor(project, element, taskName, generator.getPkg(), parentIntrospectionHelper);
 
-            Transformer transformer = TransformerFactory.getTransformer(element, this, introspectionHelper);
+            Transformer transformer = TaskTransformerFactory.getTransformer(element, this, introspectionHelper);
             transformer.transform();
 
             return taskName;

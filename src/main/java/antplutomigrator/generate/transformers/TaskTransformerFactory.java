@@ -7,12 +7,13 @@ import org.apache.tools.ant.UnknownElement;
 
 import java.lang.reflect.InvocationTargetException;
 
-public class TransformerFactory {
+public class TaskTransformerFactory {
     public static Transformer getTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
         try {
             Class<Transformer> transformerCls = (Class<Transformer>) Class.forName("antplutomigrator.generate.transformers.tasks." + StringUtils.capitalize(element.getTaskName().toLowerCase()) + "Transformer");
             Transformer specializedTransformer = transformerCls.getConstructor(UnknownElement.class, ElementGenerator.class, AntIntrospectionHelper.class).newInstance(element, elementGenerator, introspectionHelper);
             // TODO: Also rework macro code, so that the second check can be removed!
+            // TODO: Some task expanders might be able to deal with parents, so probably move 3rd condition to specializedTransformer.supportsElement()?
             if (specializedTransformer.supportsElement() && !elementGenerator.isInMacro() && introspectionHelper.getParentIntrospectionHelper() == null)
                 return specializedTransformer;
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {

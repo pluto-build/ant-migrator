@@ -12,5 +12,21 @@
         <echo message="This is the PATH: ${env.PATH}"/>
         <property name="someOtherProperty" value="42" />
         <echo message="someOtherProperty: ${someOtherProperty}"/>
+        <condition property="conditionProperty" value="Success!">
+            <and>
+                <istrue value="${append}"/>
+                <equals arg1="1" arg2="${testRec1}"/>
+                <or>
+                    <istrue value="true"/>
+                    <equals arg1="42" arg2="${testProperty}"/>
+                </or>
+                <isfalse value="false"/>
+                <isset property="append"/>
+                <not>
+                    <isset property="notset"/>
+                </not>
+            </and>
+        </condition>
+        <echo message="${conditionProperty}"/>
     </target>
 </project>
