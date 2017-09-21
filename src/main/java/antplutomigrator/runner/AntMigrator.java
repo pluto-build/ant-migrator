@@ -205,7 +205,7 @@ public class AntMigrator {
                 String content = entry.getValue();
                 content = content.replace("(\"\" + ", "(");
                 content = content.replace(" + \"\")", ")");
-                if (!content.equals(entry.getValue()))
+                if (log.isDebugEnabled() && !content.equals(entry.getValue()))
                     log.debug("Content of file " + entry.getKey() + " was tidied up.");
                 files.put(entry.getKey(), content);
             }
