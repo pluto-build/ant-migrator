@@ -89,9 +89,9 @@ public class ConfigureTaskTransformer extends Transformer {
                 generator.printString(attrName + ".setValue(\"" + escapedValue + "\");");
                 argument = attrName;
             } else if (argumentClass.getTypeName().equals("int")) {
-                argument = "Integer.parseInt(\"" + o.toString() + "\")";
+                argument = "Integer.parseInt(\"" + escapedValue + "\")";
             } else if (argumentClass.getTypeName().equals("long")) {
-                argument = "Long.parseLong(\"" + o.toString() + "\")";
+                argument = "Long.parseLong(\"" + escapedValue + "\")";
             } else if (!(argumentClass.getName().equals("java.lang.String") || argumentClass.getName().equals("java.lang.Object"))) {
 
                 boolean includeProject;

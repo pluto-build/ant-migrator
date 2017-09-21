@@ -199,6 +199,18 @@ public class AntMigrator {
                 "}";
         files.put("AntBuilder.java", antBuilder.replace("<pkg>", line.getOptionValue("pkg")).replace("<ctx>", mainGenerator.getName() + "Context").replace("<fd>", fd));
 
+        // Tidy up pass:
+        for (Map.Entry<String, String> entry : files.entrySet()) {
+            if (entry.getKey().endsWith(".java")) {
+                String content = entry.getValue();
+                content = content.replace("(\"\" + ", "(");
+                content = content.replace(" + \"\")", ")");
+                if (!content.equals(entry.getValue()))
+                    log.debug("Content of file " + entry.getKey() + " was tidied up.");
+                files.put(entry.getKey(), content);
+            }
+        }
+
 
         for (Map.Entry<String, String> entry : files.entrySet()) {
             if (line.hasOption("od")) {
