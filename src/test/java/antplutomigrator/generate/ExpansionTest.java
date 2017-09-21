@@ -2,6 +2,8 @@ package antplutomigrator.generate;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 public class ExpansionTest {
     private String get(String key) {
         return "<"+key+">";
@@ -13,23 +15,23 @@ public class ExpansionTest {
         while (i < unexpanded.length()) {
             char c = unexpanded.charAt(i);
             if (c == '$') {
-                if (unexpanded.charAt(i+1) == '$') {
-                    expanded += "$";
-                    i += 2;
-                } else
-                if (unexpanded.charAt(i+1) == '{') {
-                    int start = i+2;
-                    int end = unexpanded.indexOf('}', i);
-                    if (end < 0)
-                        throw new RuntimeException("Property was not closed.");
-                    String property = unexpanded.substring(start, end);
-                    expanded += get(property);
-                    i = end + 1;
+                if (i+1 < unexpanded.length()) {
+                    if (unexpanded.charAt(i + 1) == '$') {
+                        i++;
+                    } else if (unexpanded.charAt(i + 1) == '{') {
+                        int start = i + 2;
+                        int end = unexpanded.indexOf('}', i);
+                        if (end >= 0) {
+                            String property = unexpanded.substring(start, end);
+                            expanded += get(property);
+                            i = end + 1;
+                            continue;
+                        }
+                    }
                 }
-            } else {
-                expanded += c;
-                i++;
             }
+            expanded += c;
+            i++;
         }
 
         return expanded;
@@ -48,5 +50,31 @@ public class ExpansionTest {
     @Test
     public void testDoubleDollar2() {
         assert expand("This $${doesnt} expand").equals("This ${doesnt} expand");
+    }
+
+
+    @Test
+    public void testDoubleDollar3() {
+        assert expand("$$$$").equals("$$");
+    }
+
+    @Test
+    public void testDoubleDollar4() {
+        assert expand("$$$").equals("$$");
+    }
+
+    @Test
+    public void testDoubleDollar5() {
+        assertEquals("${", expand("${"));
+    }
+
+    @Test
+    public void testDoubleDollar6() {
+        assert expand("$").equals("$");
+    }
+
+    @Test
+    public void testTomcatExample1() {
+        assert expand("**/javax.websocket.server.ServerEndpointConfig$Configurator").equals("**/javax.websocket.server.ServerEndpointConfig$Configurator");
     }
 }

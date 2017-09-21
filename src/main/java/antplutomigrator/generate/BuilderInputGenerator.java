@@ -281,31 +281,31 @@ public class BuilderInputGenerator extends JavaGenerator {
 
     private void generateExpandMethod() {
         this.printString("public String expand(String unexpanded) {\n" +
-                "        int i = 0;\n" +
-                "        String expanded = \"\";\n" +
-                "        while (i < unexpanded.length()) {\n" +
-                "            char c = unexpanded.charAt(i);\n" +
-                "            if (c == '$') {\n" +
-                "                if (unexpanded.charAt(i+1) == '$') {\n" +
-                "                    expanded += \"$\";\n" +
-                "                    i += 2;\n" +
-                "                } else\n" +
-                "                if (unexpanded.charAt(i+1) == '{') {\n" +
-                "                    int start = i+2;\n" +
+                "    int i = 0;\n" +
+                "    String expanded = \"\";\n" +
+                "    while (i < unexpanded.length()) {\n" +
+                "        char c = unexpanded.charAt(i);\n" +
+                "        if (c == '$') {\n" +
+                "            if (i+1 < unexpanded.length()) {\n" +
+                "                if (unexpanded.charAt(i + 1) == '$') {\n" +
+                "                    i++;\n" +
+                "                } else if (unexpanded.charAt(i + 1) == '{') {\n" +
+                "                    int start = i + 2;\n" +
                 "                    int end = unexpanded.indexOf('}', i);\n" +
-                "                    if (end < 0)\n" +
-                "                        throw new RuntimeException(\"Property was not closed.\");\n" +
-                "                    String property = unexpanded.substring(start, end);\n" +
-                "                    expanded += get(property);\n" +
-                "                    i = end + 1;\n" +
+                "                    if (end >= 0) {\n" +
+                "                        String property = unexpanded.substring(start, end);\n" +
+                "                        expanded += get(property);\n" +
+                "                        i = end + 1;\n" +
+                "                        continue;\n" +
+                "                    }\n" +
                 "                }\n" +
-                "            } else {\n" +
-                "                expanded += c;\n" +
-                "                i++;\n" +
                 "            }\n" +
                 "        }\n" +
+                "        expanded += c;\n" +
+                "        i++;\n" +
+                "    }\n" +
                 "\n" +
-                "        return expanded;\n" +
+                "    return expanded;\n" +
                 "}");
     }
 

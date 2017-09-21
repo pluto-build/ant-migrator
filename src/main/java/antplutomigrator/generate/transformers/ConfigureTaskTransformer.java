@@ -12,6 +12,7 @@ import org.apache.tools.ant.UnknownElement;
 import org.apache.tools.ant.types.EnumeratedAttribute;
 
 import java.lang.reflect.Constructor;
+import java.util.Arrays;
 import java.util.Map;
 
 public class ConfigureTaskTransformer extends Transformer {
@@ -72,14 +73,12 @@ public class ConfigureTaskTransformer extends Transformer {
             Class<?> argumentClass = introspectionHelper.getAttributeMethodType(n.toLowerCase());
 
             final String escapedValue = resolver.getExpandedValue(StringEscapeUtils.escapeJava(o.toString()));
-            String argument = "\"" + escapedValue + "\"";
+            String argument = generateToString(o.toString());
             if (argumentClass.getName().equals("boolean")) {
                 // We expect a boolean, use true or false as values without wrapping into a string.
-                generator.addImport("org.apache.tools.ant.Project");
-                argument = elementGenerator.getContextName()+".toBoolean(\"" + escapedValue + "\")";
+                argument = generateToBoolean(o.toString());
             } else if (java.io.File.class.equals(argumentClass)) {
-                generator.addImport("org.apache.tools.ant.Project");
-                argument = elementGenerator.getContextName()+".toFile(\"" + escapedValue + "\")";
+                argument = generateToFile(o.toString());
             } else if (EnumeratedAttribute.class.isAssignableFrom(argumentClass)) {
                 TTypeName argumentClassName = new TTypeName(argumentClass.getName());
                 String shortName = argumentClassName.getShortName();
@@ -173,5 +172,23 @@ public class ConfigureTaskTransformer extends Transformer {
             generator.closeOneLevel();
             generator.closeOneLevel();
         }
+    }
+
+    // TODO: Duplicated code
+    public String generateToBoolean(String value) {
+        if (Arrays.asList("on", "off", "true", "false", "yes", "no").contains(value)) {
+            return Project.toBoolean(value) + "";
+        }
+        return elementGenerator.getContextName() + ".toBoolean(\"" + StringEscapeUtils.escapeJava(value) + "\")";
+    }
+
+    public String generateToFile(String value) {
+        return elementGenerator.getContextName() + ".toFile(\"" + StringEscapeUtils.escapeJava(value) + "\")";
+    }
+
+    public String generateToString(String value) {
+        if (!value.contains("$"))
+            return "\""+StringEscapeUtils.escapeJava(value)+"\"";
+        return elementGenerator.getContextName() + ".toString(\"" + StringEscapeUtils.escapeJava(value) + "\")";
     }
 }
