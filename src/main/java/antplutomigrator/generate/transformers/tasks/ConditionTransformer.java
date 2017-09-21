@@ -14,21 +14,30 @@ public class ConditionTransformer extends SpecializedTaskTransformer {
 
     @Override
     public boolean supportsElement() {
-        return this.containsOnlySupportedAttributes("value", "property") &&
-                this.supportsChildren(c -> supportsConditionElement(c));
+        try {
+            return this.containsOnlySupportedAttributes("value", "property") &&
+                    this.supportsChildren(c -> supportsConditionElement(c));
+        } catch (NullPointerException e) {
+            return false;
+        }
     }
 
     @Override
     public void transform() throws RuntimeException {
         UnknownElement conditionElement = this.element.getChildren().get(0);
-        SpecializedConditionTransformer conditionTransformer = ConditionTransformerFactory.getTransformer(conditionElement, elementGenerator, null);
+        AntIntrospectionHelper childIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), element, null, generator.getPkg(), introspectionHelper);
+        antplutomigrator.generate.transformers.ConditionTransformer conditionTransformer = ConditionTransformerFactory.getTransformer(conditionElement, elementGenerator, childIntrospectionHelper);
         generator.printString("if ("+conditionTransformer.transformCondition()+") {", "}");
         generator.increaseIndentation(1);
-        generator.printString("context.setProperty(\""+attributeForKey("property")+"\", "+generateToString(attributeForKey("value"))+");");
+        String value = attributeForKey("value");
+        if (value == null)
+            value = "true";
+        generator.printString("context.setProperty(\""+attributeForKey("property")+"\", "+generateToString(value)+");");
         generator.closeOneLevel();
     }
 
     private boolean supportsConditionElement(UnknownElement conditionElement) {
-        return ConditionTransformerFactory.getTransformer(conditionElement, elementGenerator, null) != null;
+        AntIntrospectionHelper childIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), element, null, generator.getPkg(), introspectionHelper);
+        return ConditionTransformerFactory.getTransformer(conditionElement, elementGenerator, childIntrospectionHelper) != null;
     }
 }

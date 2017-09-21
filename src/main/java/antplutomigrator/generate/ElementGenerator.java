@@ -109,6 +109,10 @@ public class ElementGenerator {
         return contextName;
     }
 
+    public Project getProject() {
+        return project;
+    }
+
     public ElementGenerator(JavaGenerator generator, Project project, NamingManager namingManager, Resolvable resolver, boolean continueOnErrors) {
         this.generator = generator;
         this.project = project;
@@ -199,7 +203,7 @@ public class ElementGenerator {
         }
     }
 
-    public String getProject() {
+    public String getProjectString() {
         if (this.contextName.equals("this")) {
             return "project";
         }

@@ -62,7 +62,7 @@ public class ConfigureTaskTransformer extends Transformer {
 
             if (n.equals("id")) {
                 // We have a reference id. Add code to add it to the project.
-                generator.printString(elementGenerator.getProject()+".addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
+                generator.printString(elementGenerator.getProjectString()+".addReference(\"" + element.getWrapper().getAttributeMap().get("id") + "\", " + taskName + ");");
                 continue;
             }
 
@@ -116,7 +116,7 @@ public class ConfigureTaskTransformer extends Transformer {
                 // Not a string. Use single argument constructor from single string...
                 // This might not exist resulting in a type error in the resulting migrated Script
                 if (includeProject) {
-                    argument = "new " + argumentClass.getSimpleName() + "("+elementGenerator.getProject()+", " + argument + ")";
+                    argument = "new " + argumentClass.getSimpleName() + "("+elementGenerator.getProjectString()+", " + argument + ")";
                 } else {
                     argument = "new " + argumentClass.getSimpleName() + "(" + argument + ")";
                 }
@@ -162,7 +162,7 @@ public class ConfigureTaskTransformer extends Transformer {
     }
 
     public void generateAddMethod(AntIntrospectionHelper introspectionHelper, String taskName) {
-        if (introspectionHelper.getAddChildMethod() != null) {
+        if (introspectionHelper.getAddChildMethod() != null && introspectionHelper.getParentIntrospectionHelper().getName() != null) {
             generator.printString(introspectionHelper.getParentIntrospectionHelper().getName() + "." + introspectionHelper.getAddChildMethod().getName() + "(" + taskName + ");");
         }
     }

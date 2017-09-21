@@ -44,4 +44,9 @@ public class ExpansionTest {
     public void testDoubleDollar1() {
         assert expand("This string contains a $$.").equals("This string contains a $.");
     }
+
+    @Test
+    public void testDoubleDollar2() {
+        assert expand("This $${doesnt} expand").equals("This ${doesnt} expand");
+    }
 }

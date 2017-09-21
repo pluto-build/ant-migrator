@@ -5,7 +5,7 @@ import antplutomigrator.generate.MigrationException;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import org.apache.tools.ant.UnknownElement;
 
-public abstract class SpecializedConditionTransformer extends SpecializedTaskTransformer {
+public abstract class SpecializedConditionTransformer extends ConditionTransformer {
     public SpecializedConditionTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
         super(element, elementGenerator, introspectionHelper);
     }
@@ -21,7 +21,8 @@ public abstract class SpecializedConditionTransformer extends SpecializedTaskTra
         return getConditionTransformerFor(conditionElement) != null;
     }
 
-    public SpecializedConditionTransformer getConditionTransformerFor(UnknownElement conditionElement) {
-        return ConditionTransformerFactory.getTransformer(conditionElement, elementGenerator, null);
+    public ConditionTransformer getConditionTransformerFor(UnknownElement conditionElement) {
+        AntIntrospectionHelper childIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), conditionElement, null, generator.getPkg(), introspectionHelper);
+        return ConditionTransformerFactory.getTransformer(conditionElement, elementGenerator, childIntrospectionHelper);
     }
 }

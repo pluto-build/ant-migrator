@@ -14,23 +14,23 @@ public abstract class ListBasedCondition extends SpecializedConditionTransformer
 
     @Override
     public boolean supportsElement() {
-        return supportsChildren(c -> supportsConditionElement(c));
+        return supportsChildren(this::supportsConditionElement);
     }
 
     @Override
     public String transformCondition() {
-        String result = "(";
+        StringBuilder result = new StringBuilder("(");
         int lineLength = 0;
         for (UnknownElement c: element.getChildren()) {
             if (lineLength > 80) {
-                result += generator.getIndentString()+"  \n";
+                result.append(generator.getIndentString()).append("  \n");
                 lineLength = 0;
             }
-            if (!result.equals("("))
-                result += " "+getOperator()+" ";
+            if (!result.toString().equals("("))
+                result.append(" ").append(getOperator()).append(" ");
             String condition = getConditionTransformerFor(c).transformCondition();
             lineLength += condition.length();
-            result += condition;
+            result.append(condition);
         }
         return result + ")";
     }

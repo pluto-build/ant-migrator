@@ -2,6 +2,7 @@ package antplutomigrator.generate.transformers.conditions;
 
 import antplutomigrator.generate.ElementGenerator;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
+import antplutomigrator.generate.transformers.ConditionTransformer;
 import antplutomigrator.generate.transformers.SpecializedConditionTransformer;
 import org.apache.tools.ant.UnknownElement;
 
@@ -17,7 +18,7 @@ public class NotTransformer extends SpecializedConditionTransformer {
 
     @Override
     public String transformCondition() {
-        SpecializedConditionTransformer conditionTransformer = getConditionTransformerFor(element.getChildren().get(0));
+        ConditionTransformer conditionTransformer = getConditionTransformerFor(element.getChildren().get(0));
         return "!"+conditionTransformer.transformCondition();
     }
 }

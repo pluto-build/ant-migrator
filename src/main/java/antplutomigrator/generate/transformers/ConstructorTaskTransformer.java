@@ -65,7 +65,7 @@ public class ConstructorTaskTransformer extends Transformer {
                     // TODO: This is very fragile and possibly wrong
                     for (TParameter parameter : constructor.getParameters()) {
                         if (parameter.getTypeName().getFullyQualifiedName().equals("org.apache.tools.ant.Project"))
-                            params.add(elementGenerator.getProject());
+                            params.add(elementGenerator.getProjectString());
                         else if (parameter.getTypeName().getFullyQualifiedName().equals("AntBuilder"))
                             if (elementGenerator.isInMacro())
                                 params.add("builder");
