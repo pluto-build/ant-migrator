@@ -88,6 +88,7 @@ public class MigrateAntToPlutoTask extends TestTask {
         args.add(outDir.getAbsolutePath());
         args.add("-m");
         args.add("-migStats");
+        args.add("-fmt");
 
         if (isContinueOnError())
             args.add("-c");
