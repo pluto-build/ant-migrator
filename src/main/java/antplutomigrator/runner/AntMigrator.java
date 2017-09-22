@@ -2,17 +2,16 @@ package antplutomigrator.runner;
 
 import antplutomigrator.generate.*;
 import antplutomigrator.generate.anthelpers.NoExpansionPropertyHelper;
-import javafx.beans.property.Property;
+import antplutomigrator.utils.StringUtils;
 import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.*;
-import antplutomigrator.utils.StringUtils;
+import com.google.googlejavaformat.java.Formatter;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.*;
 
@@ -77,6 +76,9 @@ public class AntMigrator {
         options.addOption(Option.builder("migStats")
                 .desc("Calculate migration statistics.")
                 .build());
+        options.addOption(Option.builder("fmt")
+                .desc("Format generated source code using google java style.")
+                .build());
 
         CommandLineParser parser = new DefaultParser();
         CommandLine line;
@@ -113,6 +115,7 @@ public class AntMigrator {
         settings.setUseNoIncrJavac(line.hasOption("noIncrJavac"));
         settings.setCalculateStatistics(line.hasOption("calcStats"));
         settings.setCalculateMigrationStatistics(line.hasOption("migStats"));
+        settings.setFormat(line.hasOption("fmt"));
 
         //project.initProperties();
         // Introduce this workaround to "reexceute" the necessary properties...
@@ -207,6 +210,9 @@ public class AntMigrator {
                 content = content.replace(" + \"\")", ")");
                 if (log.isDebugEnabled() && !content.equals(entry.getValue()))
                     log.debug("Content of file " + entry.getKey() + " was tidied up.");
+                if (Settings.getInstance().isFormat()) {
+                    content = new Formatter().formatSource(content);
+                }
                 files.put(entry.getKey(), content);
             }
         }

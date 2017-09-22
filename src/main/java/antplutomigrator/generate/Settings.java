@@ -5,6 +5,7 @@ public class Settings {
   private boolean useNoIncrJavac;
   private boolean calculateStatistics;
   private boolean calculateMigrationStatistics;
+  private boolean format;
 
   private Settings() {}
 
@@ -34,5 +35,13 @@ public class Settings {
 
   public void setCalculateMigrationStatistics(boolean calculateMigrationStatistics) {
     this.calculateMigrationStatistics = calculateMigrationStatistics;
+  }
+
+  public boolean isFormat() {
+    return format;
+  }
+
+  public void setFormat(boolean format) {
+    this.format = format;
   }
 }
