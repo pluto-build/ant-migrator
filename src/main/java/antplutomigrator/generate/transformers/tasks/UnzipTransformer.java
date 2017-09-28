@@ -5,18 +5,19 @@ import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import antplutomigrator.generate.transformers.SpecializedTaskTransformer;
 import org.apache.tools.ant.UnknownElement;
 
-public class PropertyTransformer extends SpecializedTaskTransformer {
-    public PropertyTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
+public class UnzipTransformer extends SpecializedTaskTransformer {
+    public UnzipTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
         super(element, elementGenerator, introspectionHelper);
     }
 
     @Override
     public boolean supportsElement() {
-        return this.containsOnlySupportedAttributes("name", "value");
+        return containsOnlySupportedAttributes("src", "dest");
     }
 
     @Override
     public void transform() throws RuntimeException {
-        generator.printString(elementGenerator.getContextName()+".setProperty(\""+attributeForKey("name")+"\", "+generateToString(attributeForKey("value"))+");");
+        generator.addImport(generator.getPkg()+".lib.FileOperations");
+        generator.printString("FileOperations.unzip("+generateToFile(attributeForKey("src"))+", "+generateToFile(attributeForKey("dest"))+");");
     }
 }

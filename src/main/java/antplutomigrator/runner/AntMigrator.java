@@ -181,6 +181,8 @@ public class AntMigrator {
             String statistics = readResource("/Statistics.java");
             files.put("Statistics.java", statistics.replace("<pkg>", line.getOptionValue("pkg")));
         }
+        String fileOperations = readResource("/lib/FileOperations.java");
+        files.put("lib/FileOperations.java", fileOperations.replace("<pkg>", line.getOptionValue("pkg")));
 
         String targetName = project.getDefaultTarget();
         List<String> targets = new ArrayList<>();
@@ -271,10 +273,9 @@ public class AntMigrator {
         Path dir = Paths.get(baseDir);
         dir = dir.resolve(pkg.replace(".", "/"));
         Files.createDirectories(dir);
-        Path macrosDir = dir.resolve("macros");
-        Files.createDirectories(macrosDir);
 
         Path file = dir.resolve(name);
+        Files.createDirectories(file.getParent());
         log.info("Writing: " + file);
         Files.write(file, content.getBytes());
     }
