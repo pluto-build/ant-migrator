@@ -1,7 +1,9 @@
 package antplutomigrator.generate.transformers.tasks;
 
 import antplutomigrator.generate.ElementGenerator;
+import antplutomigrator.generate.MigrationException;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
+import antplutomigrator.generate.transformers.DefaultTaskTransformer;
 import antplutomigrator.generate.transformers.SpecializedTaskTransformer;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.UnknownElement;
@@ -13,7 +15,7 @@ public class CopyTransformer extends SpecializedTaskTransformer {
 
     @Override
     public boolean supportsElement() {
-        return this.containsOnlySupportedAttributes("file", "tofile", "todir") && this.element.getChildren() == null;
+        return this.containsOnlySupportedAttributes("file", "tofile", "todir") && this.supportsChildren(c -> c.getTaskName().equals("fileset"));
     }
 
     @Override
@@ -29,6 +31,18 @@ public class CopyTransformer extends SpecializedTaskTransformer {
             //FileUtils.copyFileToDirectory(src, dst, false);
             generator.addImport("org.apache.commons.io.FileUtils");
             generator.printString("FileUtils.copyFileToDirectory(" + generateToFile(attributeForKey("file")) + ", " + generateToFile(attributeForKey("todir")) + ", false);");
+        }
+        if (this.element.getChildren() != null && this.containsKey("todir")) {
+            for (UnknownElement fileset: this.element.getChildren()) {
+                if (!fileset.getTaskName().equals("fileset"))
+                    throw new MigrationException("Copy did contain an unexpected child.");
+
+                DefaultTaskTransformer defaultTaskTransformer = new DefaultTaskTransformer(fileset, this.elementGenerator, AntIntrospectionHelper.getInstanceFor(introspectionHelper.getProject(), fileset, namingManager.getNameFor(fileset), introspectionHelper.getPkg(), null));
+                defaultTaskTransformer.transform();
+
+                generator.addImport(generator.getPkg()+".lib.FileOperations");
+                generator.printString("FileOperations.copy("+generateToFile(this.attributeForKey("todir"))+", "+namingManager.getNameFor(fileset)+");");
+            }
         }
     }
 }
