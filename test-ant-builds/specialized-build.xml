@@ -1,17 +1,27 @@
-<project name="SpecializedTest" default="Echo" basedir=".">
+<project name="SpecializedTest" default="main" basedir=".">
     <property name="testProperty" value="Hello, world!" />
     <property name="testRec1" value="1" />
     <property name="testRec2" value="${testRec1} 2" />
     <property name="append" value="true" />
     <property environment="env"/>
 
-    <target name="Echo">
+    <target name="main" depends="echo, conditions, fileops, clean"/>
+
+    <target name="echo">
         <echo message="${testProperty} ${testRec2}"/>
         <echo message="This is test${line.separator}" file="result.txt" append="false"/>
         <echo message="This should be appended...${line.separator}" file="result.txt" append="${append}"/>
         <echo message="This is the PATH: ${env.PATH}"/>
         <property name="someOtherProperty" value="42" />
         <echo message="someOtherProperty: ${someOtherProperty}"/>
+        <echo message="$"/>
+        <echo message="$$"/>
+        <echo message="${"/>
+        <echo message="$$$"/>
+        <echo message="$$$$"/>
+    </target>
+
+    <target name="conditions">
         <condition property="conditionProperty" value="Success!">
             <and>
                 <istrue value="${append}"/>
@@ -25,8 +35,34 @@
                 <not>
                     <isset property="notset"/>
                 </not>
+                <length string="test" length="4" />
             </and>
         </condition>
         <echo message="${conditionProperty}"/>
+    </target>
+
+    <target name="fileops">
+        <mkdir dir="sub"/>
+        <move file="result.txt" todir="sub"/>
+        <copy file="sub/result.txt" tofile="sub/result2.txt"/>
+        <mkdir dir="sub2"/>
+        <get src="http://manuel.weiel.eu/wp-content/uploads/DBLP%20Search.lbaction" dest="DBLP.zip"/>
+        <available file="DBLP.zip" property="dblp.exists"/>
+        <echo message="Download complete: ${dblp.exists}" />
+        <unzip src="DBLP.zip" dest="dblp"/>
+        <copy todir="sub2">
+            <fileset dir="dblp">
+                <include name="**/*.js"/>
+            </fileset>
+        </copy>
+        <tempfile property="tmp.file"/>
+        <echo message="${tmp.file}"/>
+    </target>
+
+    <target name="clean">
+        <delete file="sub/result.txt"/>
+        <delete dir="sub"/>
+        <delete dir="sub2"/>
+        <delete dir="dblp"/>
     </target>
 </project>
