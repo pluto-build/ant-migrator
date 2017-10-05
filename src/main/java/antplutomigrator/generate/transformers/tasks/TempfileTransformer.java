@@ -39,6 +39,7 @@ public class TempfileTransformer extends SpecializedTaskTransformer {
         //File tfile = FILE_UTILS.createTempFile(prefix, suffix, destDir,
         //deleteOnExit, createFile);
         generator.addImport("java.io.File");
+        generator.addImport(generator.getPkg()+".lib.FileOperations");
         generator.printString("File "+fileName + " = FileOperations.createTempFile("+prefix+", "+suffix+", "+destdir+", "+ deleteOnExit + ", " + createFile+");");
         generator.printString(elementGenerator.getContextName()+".setProperty("+property+", "+fileName+".toString());");
     }
