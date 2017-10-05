@@ -86,6 +86,8 @@ public abstract class Transformer {
     }
 
     public String generateToString(String value) {
+        if (value == null)
+            return "null";
         if (!value.contains("$"))
             return "\""+StringEscapeUtils.escapeJava(value)+"\"";
         return elementGenerator.getContextName() + ".toString(\"" + StringEscapeUtils.escapeJava(value) + "\")";
