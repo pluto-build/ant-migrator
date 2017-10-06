@@ -8,6 +8,10 @@ import antplutomigrator.generate.transformers.SpecializedTaskTransformer;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.UnknownElement;
 
+/**
+ * Emits idiomatic code for copying files/directories
+ * NOTE: This does not obey the overwrite rules... It will always overwrite files!
+ */
 public class CopyTransformer extends SpecializedTaskTransformer {
     public CopyTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
         super(element, elementGenerator, introspectionHelper);
@@ -15,7 +19,7 @@ public class CopyTransformer extends SpecializedTaskTransformer {
 
     @Override
     public boolean supportsElement() {
-        return this.containsOnlySupportedAttributes("file", "tofile", "todir") && this.supportsChildren(c -> c.getTaskName().equals("fileset"));
+        return this.containsOnlySupportedAttributes("file", "tofile", "todir", "overwrite", "flatten") && this.supportsChildren(c -> c.getTaskName().equals("fileset"));
     }
 
     @Override
@@ -40,8 +44,12 @@ public class CopyTransformer extends SpecializedTaskTransformer {
                 DefaultTaskTransformer defaultTaskTransformer = new DefaultTaskTransformer(fileset, this.elementGenerator, AntIntrospectionHelper.getInstanceFor(introspectionHelper.getProject(), fileset, namingManager.getNameFor(fileset), introspectionHelper.getPkg(), null));
                 defaultTaskTransformer.transform();
 
+                String flatten = null;
+                if (containsKey("flatten"))
+                    flatten = generateToBoolean(attributeForKey("flatten"));
+
                 generator.addImport(generator.getPkg()+".lib.FileOperations");
-                generator.printString("FileOperations.copy("+generateToFile(this.attributeForKey("todir"))+", "+namingManager.getNameFor(fileset)+");");
+                generator.printString("FileOperations.copy("+generateToFile(this.attributeForKey("todir"))+", "+namingManager.getNameFor(fileset)+((flatten != null)?(", "+flatten):"")+");");
             }
         }
     }

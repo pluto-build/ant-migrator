@@ -1,15 +1,16 @@
 package <pkg>.lib;
 
-import java.util.Random;
-import org.apache.tools.ant.BuildException;
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
 import org.apache.commons.io.FileUtils;
+import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.Expand;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Resource;
 import org.apache.tools.ant.types.resources.FileResource;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Random;
 
 public class FileOperations {
     private static final String NULL_PLACEHOLDER = "null";
@@ -26,10 +27,17 @@ public class FileOperations {
     }
 
     public static void copy(File toDir, FileSet fileset) throws IOException {
+        FileOperations.copy(toDir, fileset, false);
+    }
+
+    public static void copy(File toDir, FileSet fileset, boolean flatten) throws IOException {
         for (Resource resource : fileset) {
             Resource fileResource = resource.as(FileResource.class);
 
-            FileUtils.copyFile(new File(fileset.getDir(), fileResource.getName()), new File(toDir, fileResource.getName()));
+            if (!flatten)
+                FileUtils.copyFile(new File(fileset.getDir(), fileResource.getName()), new File(toDir, fileResource.getName()));
+            else
+                FileUtils.copyFileToDirectory(new File(fileset.getDir(), fileResource.getName()), toDir);
         }
     }
 
