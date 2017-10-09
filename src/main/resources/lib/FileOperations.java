@@ -1,5 +1,6 @@
 package <pkg>.lib;
 
+import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.Expand;
@@ -95,5 +96,22 @@ public class FileOperations {
             result.deleteOnExit();
         }
         return result;
+    }
+
+    public static void downloadFile(URL url, File destination) throws IOException {
+        File dest = destination;
+        if (destination.isDirectory()) {
+            String path = url.getPath();
+            if (path.endsWith("/")) {
+                path = path.substring(0, path.length() - 1);
+            }
+            final int slash = path.lastIndexOf("/");
+            if (slash > -1) {
+                path = path.substring(slash + 1);
+            }
+            dest = new File(destination, path);
+        }
+
+        FileUtils.copyURLToFile(url, dest);
     }
 }
