@@ -63,6 +63,10 @@ public abstract class Transformer {
     }
 
     public String attributeForKey(String key) {
+        return attributeForKey(element, key);
+    }
+
+    public String attributeForKey(UnknownElement element,  String key) {
         Object attr = element.getWrapper().getAttributeMap().get(key);
         // TODO: Correct handling for null attributes
         if (attr == null)

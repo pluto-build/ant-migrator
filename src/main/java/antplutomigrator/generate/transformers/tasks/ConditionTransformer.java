@@ -3,7 +3,6 @@ package antplutomigrator.generate.transformers.tasks;
 import antplutomigrator.generate.ElementGenerator;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import antplutomigrator.generate.transformers.ConditionTransformerFactory;
-import antplutomigrator.generate.transformers.SpecializedConditionTransformer;
 import antplutomigrator.generate.transformers.SpecializedTaskTransformer;
 import org.apache.tools.ant.UnknownElement;
 

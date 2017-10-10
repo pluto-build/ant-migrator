@@ -7,11 +7,15 @@ import org.apache.tools.ant.taskdefs.Expand;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Resource;
 import org.apache.tools.ant.types.resources.FileResource;
+import org.apache.tools.ant.types.selectors.SelectorUtils;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.util.function.Predicate;
 
 public class FileOperations {
     private static final String NULL_PLACEHOLDER = "null";
@@ -113,5 +117,97 @@ public class FileOperations {
         }
 
         FileUtils.copyURLToFile(url, dest);
+    }
+
+    public static final String[] DEFAULTEXCLUDES = { //NOSONAR
+            // Miscellaneous typical temporary files
+            SelectorUtils.DEEP_TREE_MATCH + "/*~",
+            SelectorUtils.DEEP_TREE_MATCH + "/#*#",
+            SelectorUtils.DEEP_TREE_MATCH + "/.#*",
+            SelectorUtils.DEEP_TREE_MATCH + "/%*%",
+            SelectorUtils.DEEP_TREE_MATCH + "/._*",
+
+            // CVS
+            SelectorUtils.DEEP_TREE_MATCH + "/CVS",
+            SelectorUtils.DEEP_TREE_MATCH + "/CVS/" + SelectorUtils.DEEP_TREE_MATCH,
+            SelectorUtils.DEEP_TREE_MATCH + "/.cvsignore",
+
+            // SCCS
+            SelectorUtils.DEEP_TREE_MATCH + "/SCCS",
+            SelectorUtils.DEEP_TREE_MATCH + "/SCCS/" + SelectorUtils.DEEP_TREE_MATCH,
+
+            // Visual SourceSafe
+            SelectorUtils.DEEP_TREE_MATCH + "/vssver.scc",
+
+            // Subversion
+            SelectorUtils.DEEP_TREE_MATCH + "/.svn",
+            SelectorUtils.DEEP_TREE_MATCH + "/.svn/" + SelectorUtils.DEEP_TREE_MATCH,
+
+            // Git
+            SelectorUtils.DEEP_TREE_MATCH + "/.git",
+            SelectorUtils.DEEP_TREE_MATCH + "/.git/" + SelectorUtils.DEEP_TREE_MATCH,
+            SelectorUtils.DEEP_TREE_MATCH + "/.gitattributes",
+            SelectorUtils.DEEP_TREE_MATCH + "/.gitignore",
+            SelectorUtils.DEEP_TREE_MATCH + "/.gitmodules",
+
+            // Mercurial
+            SelectorUtils.DEEP_TREE_MATCH + "/.hg",
+            SelectorUtils.DEEP_TREE_MATCH + "/.hg/" + SelectorUtils.DEEP_TREE_MATCH,
+            SelectorUtils.DEEP_TREE_MATCH + "/.hgignore",
+            SelectorUtils.DEEP_TREE_MATCH + "/.hgsub",
+            SelectorUtils.DEEP_TREE_MATCH + "/.hgsubstate",
+            SelectorUtils.DEEP_TREE_MATCH + "/.hgtags",
+
+            // Bazaar
+            SelectorUtils.DEEP_TREE_MATCH + "/.bzr",
+            SelectorUtils.DEEP_TREE_MATCH + "/.bzr/" + SelectorUtils.DEEP_TREE_MATCH,
+            SelectorUtils.DEEP_TREE_MATCH + "/.bzrignore",
+
+            // Mac
+            SelectorUtils.DEEP_TREE_MATCH + "/.DS_Store"
+    };
+
+    public static List<String> matchedFiles(File baseDir, Predicate<String> includeFilePredicate) {
+        return matchedFiles(baseDir, includeFilePredicate, true);
+    }
+
+    public static List<String> matchedFiles(File baseDir, Predicate<String> includeFilePredicate, boolean useDefaultExcludes) {
+        if (useDefaultExcludes)
+            return matchedFiles(baseDir, "", s -> {
+                for (String exclude: DEFAULTEXCLUDES) {
+                    if (SelectorUtils.matchPath(exclude, s)) {
+                        return false;
+                    }
+                }
+                return includeFilePredicate.test(s);
+            });
+        return matchedFiles(baseDir, "", includeFilePredicate);
+    }
+
+    private static List<String> matchedFiles(File baseDir, String previousString, Predicate<String> includeFilePredicate) {
+        ArrayList<String> files = new ArrayList<>();
+        String[] newfileNames = new File(baseDir, previousString).list();
+        for (String newFileName: newfileNames) {
+            String newFileString = previousString +"/" + newFileName;
+            File newFile = new File(baseDir, newFileString);
+            if (includeFilePredicate.test(newFileString))
+                files.add(newFileString);
+            if (newFile.exists() && newFile.isDirectory())
+                files.addAll(matchedFiles(baseDir, previousString + "/" + newFileName, includeFilePredicate));
+        }
+        return files;
+    }
+
+    public static void copy(File baseDir, File toDir, Predicate<String> includeFilePredicate) throws IOException {
+        FileOperations.copy(baseDir, toDir, includeFilePredicate, false, true);
+    }
+
+    public static void copy(File baseDir, File toDir, Predicate<String> includeFilePredicate, boolean flatten, boolean useDefaultExcludes) throws IOException {
+        for (String fileString : matchedFiles(baseDir, includeFilePredicate, useDefaultExcludes)) {
+            if (!flatten)
+                FileUtils.copyFile(new File(baseDir, fileString), new File(toDir, fileString));
+            else
+                FileUtils.copyFileToDirectory(new File(baseDir, fileString), toDir);
+        }
     }
 }
