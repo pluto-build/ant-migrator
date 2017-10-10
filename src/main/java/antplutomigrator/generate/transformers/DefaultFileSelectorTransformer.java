@@ -19,7 +19,7 @@ public class DefaultFileSelectorTransformer extends FileSelectorTransformer {
 
     @Override
     public void transform() {
-        generator.printString("final " + ((BuilderGenerator)generator).getInputName() + " f" + elementGenerator.getContextName() + " = " + elementGenerator.getContextName()+";");
+        //generator.printString("final " + ((BuilderGenerator)generator).getInputName() + " f" + elementGenerator.getContextName() + " = " + elementGenerator.getContextName()+";");
         if (!elementGenerator.isNoConstructor()) {
             ConstructorTaskTransformer constructorTaskTransformer = new ConstructorTaskTransformer(element, elementGenerator, introspectionHelper);
             constructorTaskTransformer.transform();
@@ -34,8 +34,6 @@ public class DefaultFileSelectorTransformer extends FileSelectorTransformer {
     public String transformFileSelector() {
         transform();
         // TODO: very hacky
-        String contextAdjustedBaseDir = baseDir.replace(elementGenerator.getContextName()+".to", "f"+elementGenerator.getContextName()+".to");
-        String contextAdjustedFileName = fileName.replace(elementGenerator.getContextName()+".to", "f"+elementGenerator.getContextName()+".to");
-        return namingManager.getNameFor(element) + ".isSelected("+contextAdjustedBaseDir+", "+contextAdjustedFileName+", new File("+contextAdjustedBaseDir+", "+contextAdjustedFileName+"))";
+       return namingManager.getNameFor(element) + ".isSelected("+baseDir+", "+fileName+", new File("+baseDir+", "+fileName+"))";
     }
 }

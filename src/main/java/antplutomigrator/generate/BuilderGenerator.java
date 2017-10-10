@@ -88,7 +88,7 @@ public class BuilderGenerator extends JavaGenerator {
 
     private void generateBuildMethod() {
         this.printString("@Override\n" +
-                "protected "+getInputName()+" build(" + this.getInputName() + " context) throws Exception {", "}");
+                "protected "+getInputName()+" build(" + this.getInputName() + " ctx) throws Exception {", "}");
         this.increaseIndentation(1);
 
 
@@ -101,11 +101,11 @@ public class BuilderGenerator extends JavaGenerator {
         for (String dep : getDependentBuilders()) {
             String depName = StringUtils.capitalize(getNamingManager().getClassNameFor(dep));
             //this.printString(this.getInputName() + " " + StringUtils.decapitalize(depName) + "Input = new " + this.getInputName() + "();");
-            this.printString("context = requireBuild(" + depName + "Builder.factory, context);");
+            this.printString("ctx = requireBuild(" + depName + "Builder.factory, ctx);");
             //this.printString("cinput = cinput.require"+depName+"Builder(this);");
         }
 
-        this.printString("context = context.clone();");
+        this.printString("final "+this.getInputName()+" context = ctx.clone();");
 
         // Check for if and unless conditions:
         if (target.getIf() != null) {
