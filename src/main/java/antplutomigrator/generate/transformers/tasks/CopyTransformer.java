@@ -79,13 +79,16 @@ public class CopyTransformer extends SpecializedTaskTransformer {
                 if (excludes.size() > 0)
                 {
                     // handle all excludes by putting them in an and
-                    UnknownElement and = new UnknownElement("and");
-                    and.setTaskName("and");
-                    for (UnknownElement include: includes)
-                        and.addChild(include);
+                    UnknownElement or = new UnknownElement("or");
+                    or.setTaskName("or");
+                    for (UnknownElement exclude: excludes) {
+                        // Negation happens outside!
+                        exclude.setTaskName("include");
+                        or.addChild(exclude);
+                    }
 
-                    AntIntrospectionHelper andIntroSpectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), and, null, generator.getPkg(), fileSetIntrospectionHelper);
-                    FileSelectorTransformer andTransformer = FileSelectorTransformerFactory.getTransformer(and, elementGenerator, andIntroSpectionHelper, generateToFile(attributeForKey(fileset, "dir")), "s");
+                    AntIntrospectionHelper andIntroSpectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), or, null, generator.getPkg(), fileSetIntrospectionHelper);
+                    FileSelectorTransformer andTransformer = FileSelectorTransformerFactory.getTransformer(or, elementGenerator, andIntroSpectionHelper, generateToFile(attributeForKey(fileset, "dir")), "s");
                     excludesTransformed = andTransformer.transformFileSelector();
                 }
 
@@ -95,7 +98,7 @@ public class CopyTransformer extends SpecializedTaskTransformer {
                 if (!excludesTransformed.equals(""))
                 {
                     if (!transformed.equals(""))
-                        transformed += " && ";
+                        transformed += " && !";
                     transformed += excludesTransformed;
                 }
 

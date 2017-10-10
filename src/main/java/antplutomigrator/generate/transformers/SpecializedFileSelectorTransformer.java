@@ -19,9 +19,9 @@ public abstract class SpecializedFileSelectorTransformer extends FileSelectorTra
         return getFileSelectorTransformerFor(conditionElement) != null;
     }
 
-    public FileSelectorTransformer getFileSelectorTransformerFor(UnknownElement conditionElement) {
+    public FileSelectorTransformer getFileSelectorTransformerFor(UnknownElement element) {
         AntIntrospectionHelper childIntrospectionHelper = null;
-            childIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), conditionElement, null, generator.getPkg(), introspectionHelper);
-        return FileSelectorTransformerFactory.getTransformer(conditionElement, elementGenerator, childIntrospectionHelper, baseDir, fileName);
+            childIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), element, null, generator.getPkg(), introspectionHelper);
+        return FileSelectorTransformerFactory.getTransformer(element, elementGenerator, childIntrospectionHelper, baseDir, fileName);
     }
 }
