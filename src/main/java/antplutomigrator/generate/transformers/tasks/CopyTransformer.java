@@ -56,7 +56,7 @@ public class CopyTransformer extends SpecializedTaskTransformer {
                 List<UnknownElement> includes = new ArrayList<>();
                 List<UnknownElement> excludes = new ArrayList<>();
                 for (UnknownElement fileSetChild: fileset.getChildren()) {
-                    if (!fileSetChild.getTaskName().equals("exclude"))
+                    if (!fileSetChild.getTaskName().equalsIgnoreCase("exclude"))
                         includes.add(fileSetChild);
                     else
                         excludes.add(fileSetChild);
@@ -88,8 +88,8 @@ public class CopyTransformer extends SpecializedTaskTransformer {
                     }
 
                     AntIntrospectionHelper andIntroSpectionHelper = AntIntrospectionHelper.getInstanceFor(elementGenerator.getProject(), or, null, generator.getPkg(), fileSetIntrospectionHelper);
-                    FileSelectorTransformer andTransformer = FileSelectorTransformerFactory.getTransformer(or, elementGenerator, andIntroSpectionHelper, generateToFile(attributeForKey(fileset, "dir")), "s");
-                    excludesTransformed = andTransformer.transformFileSelector();
+                    FileSelectorTransformer orTransformer = FileSelectorTransformerFactory.getTransformer(or, elementGenerator, andIntroSpectionHelper, generateToFile(attributeForKey(fileset, "dir")), "s");
+                    excludesTransformed = orTransformer.transformFileSelector();
                 }
 
                 String transformed = "";
@@ -98,8 +98,8 @@ public class CopyTransformer extends SpecializedTaskTransformer {
                 if (!excludesTransformed.equals(""))
                 {
                     if (!transformed.equals(""))
-                        transformed += " && !";
-                    transformed += excludesTransformed;
+                        transformed += " && ";
+                    transformed += "!"+excludesTransformed;
                 }
 
                 String flatten = null;
