@@ -1,4 +1,6 @@
-package <pkg>.lib;
+package antplutomigrator.generate.antbehavior;
+
+import java.io.File;
 
 import java.net.URL;
 import org.apache.commons.io.FileUtils;
@@ -67,7 +69,7 @@ public class FileOperations {
      * @return a File reference to the new temporary file.
      */
     public static File createTempFile(String prefix, String suffix, File parentDir,
-                               boolean deleteOnExit, boolean createFile) {
+                                      boolean deleteOnExit, boolean createFile) {
         File result = null;
         String parent = (parentDir == null)
                 ? System.getProperty("java.io.tmpdir")
@@ -189,9 +191,9 @@ public class FileOperations {
         ArrayList<String> files = new ArrayList<>();
         String[] newfileNames = new File(baseDir, previousString).list();
         for (String newFileName: newfileNames) {
-            String newFileString = previousString +"/" + newFileName;
-            if (newFileString.startsWith("/"))
-                newFileString = newFileString.substring(1);
+            String newFileString = newFileName;
+            if (!previousString.isEmpty())
+                newFileString = previousString +"/" + newFileName;
             System.out.println(" Checking " + newFileString);
             File newFile = new File(baseDir, newFileString);
             if (includeFilePredicate.test(newFileString)) {
@@ -217,15 +219,14 @@ public class FileOperations {
             if (!flatten) {
                 if (srcFile.isFile())
                     FileUtils.copyFile(srcFile, destFile);
-                //else
-                //    FileUtils.copyDirectoryToDirectory(srcFile, destFile.getParentFile());
+                else
+                    FileUtils.copyDirectoryToDirectory(srcFile, destFile);
             }
             else {
                 if (srcFile.isFile())
                     FileUtils.copyFileToDirectory(srcFile, toDir);
-                // TODO: Is this correct?
-                //else
-                //    FileUtils.copyDirectoryToDirectory(srcFile, toDir);
+                else
+                    FileUtils.copyDirectoryToDirectory(srcFile, toDir);
             }
         }
     }

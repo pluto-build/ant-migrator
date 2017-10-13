@@ -10,6 +10,7 @@ import antplutomigrator.generate.transformers.SpecializedTaskTransformer;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.UnknownElement;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
