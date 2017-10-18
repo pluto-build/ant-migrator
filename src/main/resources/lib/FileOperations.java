@@ -1,6 +1,5 @@
 package <pkg>.lib;
 
-import java.net.URL;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.Expand;
@@ -8,13 +7,12 @@ import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Resource;
 import org.apache.tools.ant.types.resources.FileResource;
 import org.apache.tools.ant.types.selectors.SelectorUtils;
+import org.apache.tools.ant.util.LineTokenizer;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.net.URL;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class FileOperations {
@@ -228,5 +226,75 @@ public class FileOperations {
                 //    FileUtils.copyDirectoryToDirectory(srcFile, toDir);
             }
         }
+    }
+
+    public static void copyToDir(File from, File toDir, HashMap<String, String> replacements, String inputEncoding, String outputEncoding) throws IOException {
+        FileOperations.copy(from, new File(toDir, from.getName()), replacements, inputEncoding, outputEncoding);
+    }
+
+    public static void copy(File from, File to, HashMap<String, String> replacements, String inputEncoding, String outputEncoding) throws IOException {
+        BufferedReader in = null;
+        BufferedWriter out = null;
+        try {
+            InputStreamReader isr = null;
+            if (inputEncoding == null) {
+                isr = new InputStreamReader(new FileInputStream(from));
+            } else {
+                isr = new InputStreamReader(new FileInputStream(from),
+                        inputEncoding);
+            }
+            in = new BufferedReader(isr);
+            final OutputStream os = new FileOutputStream(to);
+            OutputStreamWriter osw;
+            if (outputEncoding == null) {
+                osw = new OutputStreamWriter(os);
+            } else {
+                osw = new OutputStreamWriter(os, outputEncoding);
+            }
+            out = new BufferedWriter(osw);
+
+            final LineTokenizer lineTokenizer = new LineTokenizer();
+            lineTokenizer.setIncludeDelims(true);
+            String newline = null;
+            String line = lineTokenizer.getToken(in);
+            while (line != null) {
+                if (line.length() == 0) {
+                    // this should not happen, because the lines are
+                    // returned with the end of line delimiter
+                    out.newLine();
+                } else {
+                    newline = line;
+                    if (replacements != null)
+                        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+                            newline = newline.replace(entry.getKey(), entry.getValue());
+                        }
+                    out.write(newline);
+                }
+                line = lineTokenizer.getToken(in);
+            }
+        } finally {
+            out.close();
+            in.close();
+        }
+    }
+
+    public static void copy(File baseDir, File toDir, Predicate<String> includeFilePredicate, HashMap<String, String> replacements, String inputEncoding, String outputEncoding, boolean flatten, boolean useDefaultExcludes) throws IOException {
+        if ((replacements == null || replacements.isEmpty()) && inputEncoding == null && outputEncoding == null) {
+            FileOperations.copy(baseDir, toDir, includeFilePredicate, flatten, useDefaultExcludes);
+            return;
+        }
+
+        for (String fileString : matchedFiles(baseDir, includeFilePredicate, useDefaultExcludes)) {
+            File source = new File(baseDir, fileString);
+            File destination = toDir;
+            if (!flatten)
+                destination = new File(toDir, fileString);
+
+            FileOperations.copy(source, destination, replacements, inputEncoding, outputEncoding);
+        }
+    }
+
+    public static void copy(File baseDir, File toDir, Predicate<String> includeFilePredicate, HashMap<String, String> replacements) throws IOException {
+        copy(baseDir, toDir, includeFilePredicate, replacements, null, null, false, true);
     }
 }

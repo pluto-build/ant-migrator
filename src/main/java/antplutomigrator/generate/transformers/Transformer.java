@@ -11,7 +11,9 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.UnknownElement;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Predicate;
 
 public abstract class Transformer {
@@ -56,6 +58,20 @@ public abstract class Transformer {
 
     public boolean supportsChildren(Predicate<UnknownElement> supportsChild) {
         return supportsChildren(element, supportsChild);
+    }
+
+    public List<UnknownElement> childrenMatching(UnknownElement elememnt, Predicate<UnknownElement> predicate) {
+        List<UnknownElement> matched = new ArrayList<>();
+        if (element.getChildren() != null)
+            for (UnknownElement child: element.getChildren()) {
+                if (predicate.test(child))
+                    matched.add(child);
+            }
+        return matched;
+    }
+
+    public List<UnknownElement> childrenMatching(Predicate<UnknownElement> predicate) {
+        return childrenMatching(element, predicate);
     }
 
     public boolean containsKey(String key) {

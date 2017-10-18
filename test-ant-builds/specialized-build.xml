@@ -53,16 +53,36 @@
         <copy todir="sub2">
             <fileset dir="dblp">
                 <include name="**/*.js"/>
+                <exclude name="**/*.plist"/>
+            </fileset>
+        </copy>
+        <copy todir="sub3" flatten="true">
+            <fileset dir="dblp">
+                <or>
+                    <filename name="**/*.js"/>
+                    <filename name="**/*.plist"/>
+                </or>
             </fileset>
         </copy>
         <tempfile property="tmp.file"/>
         <echo message="${tmp.file}"/>
+
+        <echo message="Replace this: @TEST@" file="to-replace.txt"/>
+        <copy file="to-replace.txt" tofile="replaced.txt">
+            <filterset>
+                <filter token="TEST" value="REPLACED"/>
+            </filterset>
+        </copy>
     </target>
 
     <target name="clean">
         <delete file="sub/result.txt"/>
+        <delete file="DBLP.zip"/>
         <delete dir="sub"/>
         <delete dir="sub2"/>
+        <delete dir="sub3"/>
         <delete dir="dblp"/>
+        <delete file="to-replace.txt"/>
+        <delete file="replaced.txt"/>
     </target>
 </project>
