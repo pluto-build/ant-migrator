@@ -1,18 +1,29 @@
 package <pkg>.lib;
 
-import java.net.URL;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.tools.ant.BuildException;
-import org.apache.tools.ant.taskdefs.Expand;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Resource;
 import org.apache.tools.ant.types.resources.FileResource;
 import org.apache.tools.ant.types.selectors.SelectorUtils;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Predicate;
@@ -24,11 +35,56 @@ public class FileOperations {
     private static Random rand = new Random(System.currentTimeMillis()
             + Runtime.getRuntime().freeMemory());
 
-    public static void unzip(File src, File dest) {
-        Expand expand = new Expand();
-        expand.setSrc(src);
-        expand.setDest(dest);
-        expand.execute();
+    public static void unzip(File src, File dest) throws IOException {
+        ZipFile zipFile = new ZipFile(src);
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        for (ZipArchiveEntry entry : Collections.list(entries)) {
+            File destFile = new File(dest, entry.getName());
+            if (entry.isDirectory())
+                destFile.mkdirs();
+            else {
+                // copy file
+                destFile.getParentFile().mkdirs();
+                InputStream in = zipFile.getInputStream(entry);
+                OutputStream out = new FileOutputStream(destFile);
+                IOUtils.copy(in, out);
+                in.close();
+                out.close();
+            }
+        }
+        zipFile.close();
+    }
+
+    public static void gunzip(File src, File dest) throws IOException {
+        // only expand if dest does not exists or src is newer than dest
+        if (dest.exists() && src.lastModified() <= dest.lastModified()) {
+            return;
+        }
+        GzipCompressorInputStream in = new GzipCompressorInputStream(new FileInputStream(src));
+        src.createNewFile();
+        OutputStream out = new FileOutputStream(dest);
+        IOUtils.copy(in, out);
+        in.close();
+        out.close();
+    }
+
+    public static void untar(File src, File dest) throws IOException {
+        TarArchiveInputStream tar = new TarArchiveInputStream(new FileInputStream(src));
+        TarArchiveEntry entry = tar.getNextTarEntry();
+        while (entry != null) {
+            File destEntry = new File (dest, entry.getName());
+            if (entry.isDirectory()) {
+                destEntry.mkdirs();
+            } else {
+                // copy file
+                destEntry.getParentFile().mkdirs();
+                OutputStream out = new FileOutputStream(destEntry.getAbsoluteFile());
+                IOUtils.copy(tar, out);
+                out.close();
+            }
+            entry = tar.getNextTarEntry();
+        }
+        tar.close();
     }
 
     public static void copy(File toDir, FileSet fileset) throws IOException {
