@@ -18,11 +18,11 @@ import java.util.function.Predicate;
 
 public abstract class Transformer {
     protected final UnknownElement element;
-    protected final ElementGenerator elementGenerator;
-    protected final AntIntrospectionHelper introspectionHelper;
+    public final ElementGenerator elementGenerator;
+    public final AntIntrospectionHelper introspectionHelper;
     protected final NamingManager namingManager;
     protected final Resolvable resolver;
-    protected final JavaGenerator generator;
+    public final JavaGenerator generator;
     protected final String taskName;
     protected Log log = LogFactory.getLog(this.getClass());
 
