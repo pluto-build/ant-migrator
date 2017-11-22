@@ -1,5 +1,8 @@
 package <pkg>.lib;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -77,6 +80,38 @@ public class FileOperations {
             entry = tar.getNextTarEntry();
         }
         tar.close();
+    }
+
+    public static void zip(File baseDir, File destFile) throws IOException {
+        ZipArchiveOutputStream out = new ZipArchiveOutputStream(destFile);
+        packageFiles(out, baseDir.getAbsolutePath(), s -> true);
+        out.close();
+    }
+
+    public static void zip(Predicate<String> includeFilePredicate, File baseDir, File destFile) throws IOException {
+        ZipArchiveOutputStream out = new ZipArchiveOutputStream(destFile);
+        packageFiles(out, baseDir.getAbsolutePath(), includeFilePredicate);
+        out.close();
+    }
+
+    private static void packageFiles(ArchiveOutputStream out, String path, Predicate<String> includeFilePredicate) throws IOException {
+        File f = new File(path);
+        for (String fileString : matchedFiles(f, includeFilePredicate)) {
+            String base = "";
+            if (fileString.contains("/"))
+                base = fileString.substring(0, fileString.lastIndexOf("/")) + "/";
+            File sub = new File(f, fileString);
+            ArchiveEntry entry = out.createArchiveEntry(sub, base + sub.getName());
+            out.putArchiveEntry(entry);
+            if (sub.isDirectory()) {
+                out.closeArchiveEntry();
+            } else {
+                FileInputStream in = new FileInputStream(sub);
+                IOUtils.copy(in, out);
+                out.closeArchiveEntry();
+                in.close();
+            }
+        }
     }
 
     public static void copy(File toDir, FileSet fileset) throws IOException {
