@@ -9,10 +9,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileSetUtils {
+
     @NotNull
     public static String getPredicateFromFileSet(UnknownElement fileset, SpecializedTaskTransformer transformer) {
+       return getPredicateFromFileSet("fileset", fileset, transformer);
+    }
+
+    @NotNull
+    public static String getPredicateFromZipFileSet(UnknownElement fileset, SpecializedTaskTransformer transformer) {
+        return getPredicateFromFileSet("zipfileset", fileset, transformer);
+
+    }
+
+    @NotNull
+    public static String getPredicateFromFileSet(String tagword, UnknownElement fileset, SpecializedTaskTransformer transformer) {
         AntIntrospectionHelper fileSetIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(transformer.elementGenerator.getProject(), fileset, null, transformer.generator.getPkg(), transformer.introspectionHelper);
-        if (!fileset.getTaskName().equals("fileset"))
+        if (!fileset.getTaskName().equals(tagword))
             throw new MigrationException("Copy did contain an unexpected child.");
 
         if (fileset.getChildren() == null)

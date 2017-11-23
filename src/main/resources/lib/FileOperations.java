@@ -83,24 +83,28 @@ public class FileOperations {
     }
 
     public static void zip(File baseDir, File destFile) throws IOException {
-        ZipArchiveOutputStream out = new ZipArchiveOutputStream(destFile);
-        packageFiles(out, baseDir.getAbsolutePath(), s -> true);
-        out.close();
+        zip(s -> true,  baseDir, "", destFile);
     }
 
     public static void zip(Predicate<String> includeFilePredicate, File baseDir, File destFile) throws IOException {
-        ZipArchiveOutputStream out = new ZipArchiveOutputStream(destFile);
-        packageFiles(out, baseDir.getAbsolutePath(), includeFilePredicate);
+        zip(includeFilePredicate, baseDir, "", destFile);
+    }
+
+    public static void zip(Predicate<String> includeFilePredicate, File baseDir, String prefix, File destFile) throws IOException {
+        OutputStream out = zipWithoutClosing(includeFilePredicate, baseDir, prefix, destFile);
         out.close();
     }
 
-    private static void packageFiles(ArchiveOutputStream out, String path, Predicate<String> includeFilePredicate) throws IOException {
-        File f = new File(path);
-        for (String fileString : matchedFiles(f, includeFilePredicate)) {
-            String base = "";
-            if (fileString.contains("/"))
-                base = fileString.substring(0, fileString.lastIndexOf("/")) + "/";
-            File sub = new File(f, fileString);
+    public static OutputStream zipWithoutClosing(Predicate<String> includeFilePredicate, File baseDir, String prefix, File destFile) throws IOException {
+        ZipArchiveOutputStream out = new ZipArchiveOutputStream(destFile);
+        packageFiles(out, baseDir, prefix, includeFilePredicate);
+        return out;
+    }
+
+    public static void packageFiles(ArchiveOutputStream out, File dir, String prefix, Predicate<String> includeFilePredicate) throws IOException {
+        for (String fileString : matchedFiles(dir, includeFilePredicate)) {
+            File sub = new File(dir, fileString);
+            String base = calculateBasePath(fileString, prefix);
             ArchiveEntry entry = out.createArchiveEntry(sub, base + sub.getName());
             out.putArchiveEntry(entry);
             if (sub.isDirectory()) {
@@ -112,6 +116,19 @@ public class FileOperations {
                 in.close();
             }
         }
+    }
+
+    private static String calculateBasePath(String filePath, String prefix) {
+        String base = "";
+        if (filePath.contains("/")) {
+            base = filePath.substring(0, filePath.lastIndexOf("/") + 1);
+        }
+        if (prefix.endsWith("/") || filePath.startsWith("/")) {
+            base = prefix + base;
+        } else {
+            base = prefix + "/" + base;
+        }
+        return base;
     }
 
     public static void copy(File toDir, FileSet fileset) throws IOException {

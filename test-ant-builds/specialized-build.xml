@@ -58,6 +58,15 @@
                 <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
             </fileset>
         </zip>
+        <zip destfile="testzip4.zip">
+            <zipfileset dir="dblp" prefix="test/this/">
+                <include name="**/*"/>
+                <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </zipfileset>
+            <zipfileset dir="dblp" prefix="test/that/">
+                <include name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </zipfileset>
+        </zip>
 
         <gunzip src="temp.txt.gz" dest="temp.txt"/>
         <untar src="temp.tar" dest="tempuntar"/>
