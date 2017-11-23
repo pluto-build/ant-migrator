@@ -101,6 +101,15 @@ public class FileOperations {
         return out;
     }
 
+    public static void addFileToArchive(ArchiveOutputStream out, File file, String path) throws IOException {
+        ArchiveEntry entry = out.createArchiveEntry(file, path);
+        out.putArchiveEntry(entry);
+        FileInputStream in = new FileInputStream(file);
+        IOUtils.copy(in, out);
+        out.closeArchiveEntry();
+        in.close();
+    }
+
     public static void packageFiles(ArchiveOutputStream out, File dir, String prefix, Predicate<String> includeFilePredicate) throws IOException {
         for (String fileString : matchedFiles(dir, includeFilePredicate)) {
             File sub = new File(dir, fileString);

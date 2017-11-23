@@ -67,6 +67,11 @@
                 <include name="DBLP Search.lbaction/Contents/Info.plist"/>
             </zipfileset>
         </zip>
+        <zip destfile="testzip5.zip">
+            <zipfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/OK.txt"/>
+            <zipfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/K"/>
+            <zipfileset file="sub/result.txt" fullpath="result.txt"/>
+        </zip>
 
         <gunzip src="temp.txt.gz" dest="temp.txt"/>
         <untar src="temp.tar" dest="tempuntar"/>

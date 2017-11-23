@@ -8,6 +8,7 @@ import antplutomigrator.generate.transformers.SpecializedTaskTransformer;
 import org.apache.tools.ant.UnknownElement;
 
 import java.io.OutputStream;
+import java.util.Map;
 
 public class ZipTransformer extends SpecializedTaskTransformer {
     public ZipTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
@@ -41,23 +42,27 @@ public class ZipTransformer extends SpecializedTaskTransformer {
             generator.increaseIndentation(1);
             generator.printString("ArchiveOutputStream out = new ZipArchiveOutputStream(" + generateToFile(dest) + ");");
             for (UnknownElement fileset : this.element.getChildren()) {
+                Map<String, Object> attributes = fileset.getWrapper().getAttributeMap();
                 if (fileset.getTaskName().equals("zipfileset")) {
                     // TODO includes and excludes attributes in zipfileset tag
-                    // TODO support file fullpath attribute combination
-                    if (fileset.getWrapper().getAttributeMap().containsKey("dir")) {
+                    if (attributes.containsKey("dir")) {
                         String dir = generateToFile(attributeForKey(fileset, "dir"));
                         String predicate = FileSetUtils.getPredicateFromZipFileSet(fileset, this);
                         String prefix = generateToString(attributeForKey(fileset, "prefix"));
                         prefix = prefix.equals("null") ? "\"\"" : prefix;
                         generator.printString("FileOperations.packageFiles(out, " + dir + ", " + prefix + ", s -> " + predicate + ");");
-                    } else if (fileset.getWrapper().getAttributeMap().containsKey("src")) {
+                    } else if (attributes.containsKey("file") && attributes.containsKey("fullpath") && fileset.getChildren() == null) {
+                        String file = generateToFile(attributeForKey(fileset, "file"));
+                        String fullpath = generateToString(attributeForKey(fileset, "fullpath"));
+                        generator.printString("FileOperations.addFileToArchive(out, " + file + ", "+ fullpath +");");
+                    } else if (attributes.containsKey("src")) {
                         // TODO extract zipfile at path src and include content into new zipfile (Not used in tomcat script)
                         throw new UnsupportedOperationException("src is not currently not supported");
                     } else {
-                        throw new MigrationException("src or dir inside of zipfileset is not defined");
+                        throw new MigrationException("src, dir or file with fullpath inside of zipfileset is not defined");
                     }
                 } else if (fileset.getTaskName().equals("fileset")) {
-                    if (fileset.getWrapper().getAttributeMap().containsKey("dir")) {
+                    if (attributes.containsKey("dir")) {
                         String dir = generateToFile(attributeForKey(fileset, "dir"));
                         String predicate = FileSetUtils.getPredicateFromFileSet(fileset, this);
                         generator.printString("FileOperations.packageFiles(out, " + dir + ", \"\",  s -> " + predicate + ");");
