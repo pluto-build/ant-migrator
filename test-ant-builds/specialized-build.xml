@@ -54,6 +54,26 @@
         <available file="DBLP.zip" property="dblp.exists"/>
         <echo message="Download complete: ${dblp.exists}" />
         <unzip src="DBLP.zip" dest="dblp"/>
+        <zip basedir="dblp" destfile="testzip.zip"/>
+        <zip basedir="dblp" zipfile="testzip2.zip"/>
+        <zip destfile="testzip3.zip">
+            <fileset dir="dblp">
+                <include name="**/*"/>
+                <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </fileset>
+        </zip>
+        <zip destfile="testzip4.zip">
+            <zipfileset dir="dblp" prefix="test/this/">
+                <include name="**/*"/>
+                <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </zipfileset>
+            <zipfileset dir="dblp" prefix="test/that/">
+                <include name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </zipfileset>
+        </zip>
+
+        <gunzip src="temp.txt.gz" dest="temp.txt"/>
+        <untar src="temp.tar" dest="tempuntar"/>
         <copy todir="sub2">
             <fileset dir="dblp">
                 <include name="**/*.js"/>
