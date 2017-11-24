@@ -1,3 +1,7 @@
+<!--
+-bf test-ant-builds/specialized-build.xml -noFD -pkg build.pluto.plutoanttester.specializedtest -od ./test-ant-builds/specialized-build/ -m -migStats
+-->
+
 <project name="SpecializedTest" default="main" basedir=".">
     <property name="testProperty" value="Hello, world!" />
     <property name="testRec1" value="1" />
@@ -54,6 +58,7 @@
             <fileset dir="dblp">
                 <include name="**/*.js"/>
                 <exclude name="**/*.plist"/>
+                <contains text="TEST"/>
             </fileset>
         </copy>
         <copy todir="sub3" flatten="true">

@@ -2,6 +2,7 @@ package antplutomigrator.generate.transformers;
 
 import antplutomigrator.generate.BuilderGenerator;
 import antplutomigrator.generate.ElementGenerator;
+import antplutomigrator.generate.Statistics;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import org.apache.tools.ant.UnknownElement;
 
@@ -19,6 +20,7 @@ public class DefaultFileSelectorTransformer extends FileSelectorTransformer {
 
     @Override
     public void transform() {
+        Statistics.getInstance().defaultGenerated(element);
         //generator.printString("final " + ((BuilderGenerator)generator).getInputName() + " f" + elementGenerator.getContextName() + " = " + elementGenerator.getContextName()+";");
         if (!elementGenerator.isNoConstructor()) {
             ConstructorTaskTransformer constructorTaskTransformer = new ConstructorTaskTransformer(element, elementGenerator, introspectionHelper);
