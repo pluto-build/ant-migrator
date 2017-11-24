@@ -72,6 +72,28 @@
             <zipfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/K"/>
             <zipfileset file="sub/result.txt" fullpath="result.txt"/>
         </zip>
+        <tar basedir="dblp" destfile="testtar.tar" compression="gzip" longfile="omit"/>
+        <tar basedir="dblp" destfile="testtar2.tar" compression="none" longfile="posix"/>
+        <tar destfile="testtar3.tar" longfile="truncate">
+            <fileset dir="dblp">
+                <include name="**/*"/>
+                <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </fileset>
+        </tar>
+        <tar destfile="testtar4.tar" longfile="fail" compression="bzip2">
+            <tarfileset dir="dblp" prefix="test/this/">
+                <include name="**/*"/>
+                <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </tarfileset>
+            <tarfileset dir="dblp" prefix="test/that/">
+                <include name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </tarfileset>
+        </tar>
+        <tar destfile="testtar5.tar" longfile="gnu">
+            <tarfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/OK.txt"/>
+            <tarfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/K"/>
+            <tarfileset file="sub/result.txt" fullpath="result.txt"/>
+        </tar>
 
         <gunzip src="temp.txt.gz" dest="temp.txt"/>
         <untar src="temp.tar" dest="tempuntar"/>
