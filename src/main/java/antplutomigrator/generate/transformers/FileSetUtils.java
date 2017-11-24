@@ -22,6 +22,12 @@ public class FileSetUtils {
     }
 
     @NotNull
+    public static String getPredicateFromTarFileSet(UnknownElement fileset, SpecializedTaskTransformer transformer) {
+        return getPredicateFromFileSet("tarfileset", fileset, transformer);
+
+    }
+
+    @NotNull
     public static String getPredicateFromFileSet(String tagword, UnknownElement fileset, SpecializedTaskTransformer transformer) {
         AntIntrospectionHelper fileSetIntrospectionHelper = AntIntrospectionHelper.getInstanceFor(transformer.elementGenerator.getProject(), fileset, null, transformer.generator.getPkg(), transformer.introspectionHelper);
         if (!fileset.getTaskName().equals(tagword))

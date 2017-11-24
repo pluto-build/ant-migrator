@@ -32,15 +32,14 @@ public class ZipTransformer extends SpecializedTaskTransformer {
         } else {
             throw new MigrationException("You need to use at least destfile or zipfile (deprecated)");
         }
+        generator.addImport("org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream");
+        generator.addImport("org.apache.commons.compress.archivers.ArchiveOutputStream");
+        // introduces this scope to avoid name clashes for different transformer runs
+        generator.printString("try(ArchiveOutputStream out = new ZipArchiveOutputStream(" + generateToFile(dest) + ")) {", "}");
+        generator.increaseIndentation(1);
         if (this.containsKey("basedir")) {
-            generator.printString("FileOperations.zip(" + generateToFile(attributeForKey("basedir")) + ", " + generateToFile(dest) + ");");
+            generator.printString("FileOperations.packageFiles(out, " + generateToFile(attributeForKey("basedir")) + ", \"\", s -> true);");
         } else if (this.element.getChildren() != null) {
-            generator.addImport("org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream");
-            generator.addImport("org.apache.commons.compress.archivers.ArchiveOutputStream");
-            // introduces this scope to avoid name clashes for different transformer runs
-            generator.printString("{", "}");
-            generator.increaseIndentation(1);
-            generator.printString("ArchiveOutputStream out = new ZipArchiveOutputStream(" + generateToFile(dest) + ");");
             for (UnknownElement fileset : this.element.getChildren()) {
                 Map<String, Object> attributes = fileset.getWrapper().getAttributeMap();
                 if (fileset.getTaskName().equals("zipfileset")) {
@@ -52,6 +51,7 @@ public class ZipTransformer extends SpecializedTaskTransformer {
                         prefix = prefix.equals("null") ? "\"\"" : prefix;
                         generator.printString("FileOperations.packageFiles(out, " + dir + ", " + prefix + ", s -> " + predicate + ");");
                     } else if (attributes.containsKey("file") && attributes.containsKey("fullpath") && fileset.getChildren() == null) {
+                        // only look at one file
                         String file = generateToFile(attributeForKey(fileset, "file"));
                         String fullpath = generateToString(attributeForKey(fileset, "fullpath"));
                         generator.printString("FileOperations.addFileToArchive(out, " + file + ", "+ fullpath +");");
@@ -71,8 +71,7 @@ public class ZipTransformer extends SpecializedTaskTransformer {
                     }
                 }
             }
-            generator.printString("out.close();");
-            generator.closeOneLevel();
         }
+        generator.closeOneLevel();
     }
 }
