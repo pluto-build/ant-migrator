@@ -36,7 +36,7 @@ public class TarTransformer extends SpecializedTaskTransformer {
         // introduces this scope to avoid name clashes for different transformer runs
         // set compression
         String destFile = generateToFile(dest);
-        String compression = getOptionalAttribute("compression");
+        String compression = getOptionalAttribute(this.element, "compression");
         destFile = "new FileOutputStream(" + destFile + ")";
         if (compression.equals("") || compression.equals("none")) {
         } else if (compression.equals("gzip")) {
@@ -50,7 +50,7 @@ public class TarTransformer extends SpecializedTaskTransformer {
         }
         generator.printString("try(TarArchiveOutputStream out = new TarArchiveOutputStream(" + destFile + ")) {", "}");
         // set longfile mode
-        String longfile = getOptionalAttribute("longfile");
+        String longfile = getOptionalAttribute(this.element, "longfile");
         int longfileCode = getLongfileCode(longfile);
         if (longfileCode == -1) {
             throw new MigrationException("Unsupported longfile mode used");
@@ -68,7 +68,11 @@ public class TarTransformer extends SpecializedTaskTransformer {
                         String predicate = FileSetUtils.getPredicateFromTarFileSet(fileset, this);
                         String prefix = generateToString(attributeForKey(fileset, "prefix"));
                         prefix = prefix.equals("null") ? "\"\"" : prefix;
-                        generator.printString("FileOperations.packageFiles(out, " + dir + ", " + prefix + ", s -> " + predicate + ");");
+                        String dirmodeString = getOptionalAttribute(fileset, "dirmode");
+                        int dirmode = dirmodeString.equals("") ? 755 : Integer.valueOf(dirmodeString);
+                        String filemodeString = getOptionalAttribute(fileset, "filemode");
+                        int filemode = filemodeString.equals("") ? 644 : Integer.valueOf(filemodeString);
+                        generator.printString("FileOperations.packageFiles(out, " + dir + ", " + prefix + ", s -> " + predicate + ", "+ dirmode + ", " + filemode + ");");
                     } else if (attributes.containsKey("file") && attributes.containsKey("fullpath") && fileset.getChildren() == null) {
                         // only look at one file
                         String file = generateToFile(attributeForKey(fileset, "file"));
@@ -91,9 +95,9 @@ public class TarTransformer extends SpecializedTaskTransformer {
         generator.closeOneLevel();
     }
 
-    private String getOptionalAttribute(String name) {
+    private String getOptionalAttribute(UnknownElement element, String name) {
         if (this.containsKey(name)) {
-            return generateToString(attributeForKey(name)).replace("\"","");
+            return generateToString(attributeForKey(element, name)).replace("\"","");
         } else return "";
     }
 

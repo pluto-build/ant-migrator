@@ -4,6 +4,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -119,6 +120,25 @@ public class FileOperations {
             if (sub.isDirectory()) {
                 out.closeArchiveEntry();
             } else {
+                FileInputStream in = new FileInputStream(sub);
+                IOUtils.copy(in, out);
+                out.closeArchiveEntry();
+                in.close();
+            }
+        }
+    }
+    public static void packageFiles(ArchiveOutputStream out, File dir, String prefix, Predicate<String> includeFilePredicate, int dirmode, int filemode) throws IOException {
+        for (String fileString : matchedFiles(dir, includeFilePredicate)) {
+            File sub = new File(dir, fileString);
+            String base = calculateBasePath(fileString, prefix);
+            TarArchiveEntry entry = (TarArchiveEntry) out.createArchiveEntry(sub, base + sub.getName());
+            if (sub.isDirectory()) {
+                entry.setMode(dirmode);
+                out.putArchiveEntry(entry);
+                out.closeArchiveEntry();
+            } else {
+                entry.setMode(filemode);
+                out.putArchiveEntry(entry);
                 FileInputStream in = new FileInputStream(sub);
                 IOUtils.copy(in, out);
                 out.closeArchiveEntry();
