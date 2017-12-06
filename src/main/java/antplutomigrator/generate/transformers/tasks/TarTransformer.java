@@ -10,6 +10,9 @@ import org.apache.tools.ant.UnknownElement;
 import java.util.Map;
 
 public class TarTransformer extends SpecializedTaskTransformer {
+    public static final int DEFAULT_FILE_MODE = 644;
+    public static final int DEFAULT_DIR_MODE = 755;
+
     public TarTransformer(UnknownElement element, ElementGenerator elementGenerator, AntIntrospectionHelper introspectionHelper) {
         super(element, elementGenerator, introspectionHelper);
     }
@@ -69,9 +72,9 @@ public class TarTransformer extends SpecializedTaskTransformer {
                         String prefix = generateToString(attributeForKey(fileset, "prefix"));
                         prefix = prefix.equals("null") ? "\"\"" : prefix;
                         String dirmodeString = getOptionalAttribute(fileset, "dirmode");
-                        int dirmode = dirmodeString.equals("") ? 755 : Integer.valueOf(dirmodeString);
+                        int dirmode = dirmodeString.equals("") ? DEFAULT_DIR_MODE : Integer.valueOf(dirmodeString);
                         String filemodeString = getOptionalAttribute(fileset, "filemode");
-                        int filemode = filemodeString.equals("") ? 644 : Integer.valueOf(filemodeString);
+                        int filemode = filemodeString.equals("") ? DEFAULT_FILE_MODE : Integer.valueOf(filemodeString);
                         generator.printString("FileOperations.packageFiles(out, " + dir + ", " + prefix + ", s -> " + predicate + ", "+ dirmode + ", " + filemode + ");");
                     } else if (attributes.containsKey("file") && attributes.containsKey("fullpath") && fileset.getChildren() == null) {
                         // only look at one file
