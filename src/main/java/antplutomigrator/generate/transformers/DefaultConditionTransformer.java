@@ -1,6 +1,7 @@
 package antplutomigrator.generate.transformers;
 
 import antplutomigrator.generate.ElementGenerator;
+import antplutomigrator.generate.Statistics;
 import antplutomigrator.generate.introspectionhelpers.AntIntrospectionHelper;
 import org.apache.tools.ant.UnknownElement;
 
@@ -16,6 +17,7 @@ public class DefaultConditionTransformer extends ConditionTransformer {
 
     @Override
     public void transform() {
+        Statistics.getInstance().defaultGenerated(element);
         if (!elementGenerator.isNoConstructor()) {
             ConstructorTaskTransformer constructorTaskTransformer = new ConstructorTaskTransformer(element, elementGenerator, introspectionHelper);
             constructorTaskTransformer.transform();
