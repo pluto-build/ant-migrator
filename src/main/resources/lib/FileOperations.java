@@ -4,7 +4,6 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -23,6 +22,10 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
 
 public class FileOperations {
     private static final String NULL_PLACEHOLDER = "null";
@@ -158,6 +161,45 @@ public class FileOperations {
             base = prefix + "/" + base;
         }
         return base;
+    }
+
+    public static void packageFiles(JarOutputStream out, File dir, String prefix, Predicate<String> includeFilePredicate) throws IOException {
+        for (String fileString : matchedFiles(dir, includeFilePredicate)) {
+            File sub = new File(dir, fileString);
+            String base = calculateBasePath(fileString, prefix);
+            JarEntry entry = new JarEntry(base + sub.getName());
+            out.putNextEntry(entry);
+            if (sub.isDirectory()) {
+                out.closeEntry();
+            } else {
+                FileInputStream in = new FileInputStream(sub);
+                IOUtils.copy(in, out);
+                out.closeEntry();
+                in.close();
+            }
+        }
+    }
+
+    public static void addFileToArchive(JarOutputStream out, File file, String path) throws IOException {
+        JarEntry entry = new JarEntry(path);
+        out.putNextEntry(entry);
+        FileInputStream in = new FileInputStream(file);
+        IOUtils.copy(in, out);
+        out.closeEntry();
+        in.close();
+    }
+
+    public static Manifest getManifest(File file) throws IOException {
+        if (file.isDirectory()) {
+            return null;
+        }
+        boolean isManifestJar = file.getName().endsWith(".jar");
+        if (isManifestJar) {
+            JarInputStream jarFile = new JarInputStream(new FileInputStream(context.toFile("MANIFEST.mf")));
+            return jarFile.getManifest();
+        } else {
+            return new Manifest(new FileInputStream(file));
+        }
     }
 
     public static void copy(File toDir, FileSet fileset) throws IOException {

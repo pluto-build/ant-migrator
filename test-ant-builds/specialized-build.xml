@@ -98,6 +98,23 @@
             <tarfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/K"/>
             <tarfileset file="sub/result.txt" fullpath="result.txt"/>
         </tar>
+        <jar destfile="testjar.jar">
+            <zipfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/OK.txt"/>
+            <zipfileset file="sub/result.txt" fullpath="WHAT/IS/THIS/STUFF/K"/>
+            <zipfileset file="sub/result.txt" fullpath="result.txt"/>
+        </jar>
+        <jar destfile="testjar2.jar" manifest="MANIFEST.mf">
+            <fileset dir="dblp">
+                <include name="**/*"/>
+                <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </fileset>
+        </jar>
+        <jar destfile="testjar3.jar" manifest="commons-compress-1.15.jar">
+            <fileset dir="dblp">
+                <include name="**/*"/>
+                <exclude name="DBLP Search.lbaction/Contents/Info.plist"/>
+            </fileset>
+        </jar>
 
         <gunzip src="temp.txt.gz" dest="temp.txt"/>
         <untar src="temp.tar" dest="tempuntar"/>
