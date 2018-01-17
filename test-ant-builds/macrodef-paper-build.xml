@@ -1,0 +1,23 @@
+<project name="MacrodefTest" default="main" basedir=".">
+    <macrodef name="checksum-zip">
+        <attribute name="algorithm" default="MD5"/>
+        <attribute name="destfile" />
+        <element name="files" implicit="yes" />
+        <sequential>
+            <checksum algorithm="@{algorithm}" toDir="sums">
+                <files />
+            </checksum>
+            <zip destfile="@{destfile}">
+                <files />
+                <fileset dir="sums" />
+            </zip>
+        </sequential>
+    </macrodef>
+
+    <target name="main">
+        <checksum-zip algorithm="SHA-512" destfile="code.zip">
+            <fileset dir="src" />
+            <fileset dir="test" />
+        </checksum-zip>
+    </target>
+</project>
