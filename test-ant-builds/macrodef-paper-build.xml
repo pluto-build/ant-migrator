@@ -1,3 +1,6 @@
+<!--
+-bf test-ant-builds/macrodef-paper-build.xml -noFD -pkg build.pluto.plutoanttester.macrodefpapertest -od ./test-ant-builds/macrodef-paper-build/ -m -c
+-->
 <project name="MacrodefTest" default="main" basedir=".">
     <macrodef name="checksum-zip">
         <attribute name="algorithm" default="MD5"/>
